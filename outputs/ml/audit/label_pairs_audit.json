@@ -396,27 +396,30 @@
   ],
   "exhaustive": {
     "rows": 536143,
-    "tolerance_rel": 1e-05,
+    "tolerance": {
+      "abs": 1e-06,
+      "rel": 1e-05
+    },
     "entry_open": {
       "mismatches": 0,
-      "max_rel_diff": 5.901899127386661e-08,
+      "max_abs_diff": 5.859375005456968e-05,
       "nan_pattern_mismatches": 0
     },
     "fwd_max_high": {
       "mismatches": 0,
-      "max_rel_diff": 5.9471065242668945e-08,
+      "max_abs_diff": 5.9434097643418227e-08,
       "nan_pattern_mismatches": 0
     },
     "fwd_max_close": {
-      "mismatches": 23689,
-      "max_rel_diff": 0.05807975800298237,
+      "mismatches": 0,
+      "max_abs_diff": 1.858502480800439e-07,
       "nan_pattern_mismatches": 0
     },
     "label_high": {
       "mismatches": 0
     },
     "label_close": {
-      "mismatches": 3
+      "mismatches": 5750
     },
     "resolved_mismatches": 0,
     "base_rate_matrix": 0.0309160615149965,

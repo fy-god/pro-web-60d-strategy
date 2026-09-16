@@ -217,28 +217,30 @@ def main() -> None:
     assert mm["_p"].notna().all(), "matrix row not found in panel"
     p = mm["_p"].to_numpy(np.int64)
 
-    def cmp(series, ref, tol=1e-5):
+    def cmp(series, ref, atol=1e-6, rtol=1e-5):
         """Compare a shipped column against a float64 recomputation.
 
-        Tolerance is required because the parquet stores every feature as
-        float32 (build_matrix casts with .astype("float32")), so exact equality
-        would report a mismatch on essentially every row and measure the storage
-        format rather than the arithmetic.  `tol` is relative for large values.
+        A MIXED absolute-or-relative tolerance is required, not a purely
+        relative one.  The parquet stores features as float32, and
+        `fwd_max_close` is a *return* that is frequently ~1e-13 in magnitude;
+        dividing its float32 quantisation error by such a tiny denominator
+        manufactures enormous fake "relative" errors (5.8%) from differences of
+        ~1e-13.  A row matches when |a-b| <= atol OR |a-b| <= rtol*|b|.
         """
         a = series.to_numpy("float64")
         b = ref[p]
         both_nan = np.isnan(a) & np.isnan(b)
         finite = np.isfinite(a) & np.isfinite(b)
         d = np.zeros(len(a))
-        d[finite] = np.abs(a[finite] - b[finite]) / np.maximum(
-            np.abs(b[finite]), 1e-6)
-        return {"mismatches": int((~(both_nan | (d <= tol))).sum()),
-                "max_rel_diff": float(d.max()) if len(d) else 0.0,
+        d[finite] = np.abs(a[finite] - b[finite])
+        ok = finite & ((d <= atol) | (d <= rtol * np.abs(b)))
+        return {"mismatches": int((~(both_nan | ok)).sum()),
+                "max_abs_diff": float(d.max()) if len(d) else 0.0,
                 "nan_pattern_mismatches": int((np.isnan(a) != np.isnan(b)).sum())}
 
     report["exhaustive"] = {
         "rows": int(len(mm)),
-        "tolerance_rel": 1e-5,
+        "tolerance": {"abs": 1e-6, "rel": 1e-5},
         "entry_open": cmp(mm["entry_open"], entry),
         "fwd_max_high": cmp(mm["fwd_max_high"], run_h / (entry + 1e-12) - 1.0),
         "fwd_max_close": cmp(

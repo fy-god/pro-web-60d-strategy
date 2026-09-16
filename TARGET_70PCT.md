@@ -88,7 +88,7 @@ computing it before spending compute.
 > published row to ~338 and could not represent the small-count region at all.
 > The grid is now dense below 2,000 signals. The corrected bound is higher, and
 > it is the number that reconciles with the independent cross-sectional
-> experiment in §6 — 23.81% at 462 signals sits just below the 500-signal oracle
+> experiment in §5 — 23.81% at 462 signals sits just below the 500-signal oracle
 > of 23.67%. The earlier figure was a sampling artifact of my own analysis, not a
 > property of the data.
 
@@ -155,7 +155,7 @@ assumed. No group or combination approaches the target.
 
 ---
 
-## 6. Cross-sectional selection — and why 23.81% is not better than 15.98%
+## 5. Cross-sectional selection — and why 23.81% is not better than 15.98%
 
 An independent agent tested per-session top-K selection (ranking stocks against
 each other within each day) rather than a global probability threshold. Its
@@ -203,7 +203,7 @@ not skill.
 
 ---
 
-## 5. The one-shot 2026 holdout — the only real out-of-sample evidence
+## 6. The one-shot 2026 holdout — the only real out-of-sample evidence
 
 `src/ml/final_holdout.py` evaluates **one pre-committed configuration, once**, on
 the 160 sessions from 2026-01-01 onward that no other script touches.
@@ -243,7 +243,7 @@ controls** that prove the harness *can* detect a real signal when one is planted
 
 | Variant | OOS precision | Base rate | Lift | Folds above base |
 | --- | ---: | ---: | ---: | ---: |
-| **real (control)** | **15.98%** | 4.12% | **3.87×** | **4/4** |
+| **real (control)** | **15.98%** | 4.46% | **3.58×** | **4/4** |
 | permuted labels, global (3 seeds) | 2.99–3.32% | ~3.1% | 0.98–1.08× | 1–3/4 |
 | permuted within each session | 6.28% | 5.48% | 1.15× | 1/2 |
 | i.i.d. Bernoulli labels | 3.38% | 3.06% | 1.10× | 4/4 |
@@ -258,17 +258,80 @@ controls** that prove the harness *can* detect a real signal when one is planted
 **Every null collapses to the base rate (lift 0.88–1.21), and both positive
 controls fire strongly (9.47× and 4.71× with 4/4 folds).** This is the decisive
 validation: the harness detects a planted signal and finds nothing where nothing
-was planted. The 15.98% baseline is therefore measuring a real relationship, not
-an artifact of the purge, the folds, the stride sampling or the feature scaling.
+was planted. The baseline is therefore measuring a real relationship, not an
+artifact of the purge, the folds, the stride sampling or the feature scaling.
+
+Two further results sharpen this. The auditor's chance-ceiling calculation puts
+2% publication at 5,625 signals on 281,227 rows with a null mean of 4.12% and SD
+0.262 pp — so the observed 15.98% sits roughly **25 standard deviations** above
+chance, and the best of 1,000 null draws is 5.10%. A date-block bootstrap over
+299 distinct signal dates gives a **95% interval of [13.6%, 18.7%]**. Row-level
+intervals would be wrong here (3.2–5.1%) because same-day signals share a
+10-session forward window.
 
 A smaller independent battery (`reports/ml_null_tests.json`) reached the same
 conclusion by different means: permuted labels 3.00% vs 3.09% base, noise features
 4.55% vs 4.12%, and no feature exceeding AUC 0.68. **Both verdicts:
 trustworthy.**
 
+> **Two corrections the audit forced, both now applied.** First, the pooled base
+> rate was an unweighted mean of per-fold rates while precision was
+> signal-weighted, so the reported lift mixed two weightings: the true figure is
+> **3.58×, not 3.87×**. `summarise()` now weights both consistently and reports
+> the unweighted value alongside. Second, `label_close` was censored on "saw at
+> least one future bar" instead of "has a full 10-bar window", so 5,747 rows at
+> the very end of the panel carried a label computed from a partial window.
+> Censoring is now on the full window, and the label ratio is compared in float64
+> to remove 3 rows where a float32 round-trip flipped the comparison. Neither
+> defect touches `label_high`, and a full rebuild confirms `entry_open`,
+> `fwd_max_high`, `label_high`, `resolved` and all 85 feature columns are
+> **bit-identical** (max absolute difference 0.000e+00).
+
 ---
 
-## 8. What is actually true
+## 8. How much does any single period carry?
+
+A pooled precision can be carried by a handful of observations, so both headline
+numbers were stress-tested for concentration (`src/ml/concentration.py`).
+
+**Walk-forward baseline, per fold:**
+
+| Fold (test window) | Signals | Share | Precision |
+| --- | ---: | ---: | ---: |
+| 2024-02-02 → 2024-07-29 | 1,131 | 63.2% | 10.79% |
+| 2024-07-30 → 2025-01-17 | 539 | 30.1% | 23.19% |
+| 2025-01-20 → 2025-07-14 | 45 | 2.5% | 31.11% |
+| 2025-07-15 → 2025-12-31 | 75 | 4.2% | 33.33% |
+
+This **is** uneven — 63% of signals sit in one fold — and it is worth stating
+plainly. But the direction matters: the dominant fold has the *lowest* precision
+(10.79%), so it drags the pooled figure **down**, not up. Removing it raises the
+pooled number from 15.98% to **24.89%**. The concentration makes the reported
+headline conservative, not flattering. Dropping the busiest dates also raises
+precision monotonically (15.98% → 17.34% after dropping 20 dates).
+
+Note that folds 3–4 carry only 45 and 75 signals, so "4/4 folds above base" is
+weaker evidence than the phrase suggests: two of those four folds are small. The
+result rests on folds 1–2, which together hold 93% of the signals and bracket the
+15.98% pooled figure from either side.
+
+**2026 holdout, same treatment:**
+
+| Treatment | Precision | Signals |
+| --- | ---: | ---: |
+| As published | 12.14% | 1,614 |
+| Drop busiest date | 12.87% | 1,476 |
+| Drop 3 busiest dates | 13.80% | 1,312 |
+| Drop 5 busiest dates | 14.35% | 1,150 |
+| First half of signal dates | 10.29% | 807 |
+| Second half of signal dates | 14.00% | 807 |
+
+No single date carries it: the busiest date holds 8.6% of signals, and removing it
+*raises* precision. Both chronological halves are far above the 2.91% base rate,
+and the effect strengthens in the later half. This is the most robust number in
+the document.
+
+---
 
 - **A real signal exists.** The one-shot 2026 holdout gives **12.14%** precision
   against a 2.91% base rate — a **4.17× lift** on 1,614 signals across 802 stocks
@@ -279,6 +342,9 @@ trustworthy.**
   walk-forward baseline is 15.98% at 1,790 signals; top-1-per-session is 23.81% at
   462; and the oracle bound at those counts is 23.67–24.54%. The model is already
   *on* the frontier.
+- **The headline is conservative, not flattering.** 63% of walk-forward signals
+  sit in the fold with the *lowest* precision (10.79%); removing that fold raises
+  the pooled figure to 24.89%. Lift is 3.58×, not the 3.87× first reported.
 - **It is not 60%, and cannot be.** At a useful recall (≥ 10%) the ceiling is
   13.08%, and the achieved holdout figure of 12.14% sits essentially on it.
 - **The 70–80% figures in the source material are in-sample or tiny-sample
@@ -291,7 +357,7 @@ trustworthy.**
 
 ---
 
-## 8. Reproduce
+## 9. Reproduce
 
 ```powershell
 $env:PYTHONPATH='.'
@@ -299,17 +365,19 @@ python -m src.ml.build_matrix --stride 5    # 82 causal features + labels
 python -m src.ml.profile_stages             # time the harness before sizing a run
 python -m src.ml.precision_ceiling          # the bound in §2
 python -m src.ml.search --preset wide --workers 5
-python -m src.ml.null_tests                 # §6: prove the harness cannot cheat
-python -m src.ml.final_holdout              # §5: one-shot 2026 evaluation
+python -m src.ml.null_tests                 # §7: prove the harness cannot cheat
+python -m src.ml.concentration              # §8: how much one period carries
+python -m src.ml.final_holdout              # §6: one-shot 2026 evaluation
 ```
 
 Machine-readable output: `reports/ml_precision_ceiling.json`,
 `reports/ml_search_wide.json`, `reports/ml_null_tests.json`,
-`reports/ml_final_holdout.json`, `reports/ml_precision_frontier_oos.csv`.
+`reports/ml_concentration.json`, `reports/ml_final_holdout.json`,
+`reports/ml_precision_frontier_oos.csv`.
 
 ---
 
-## 7. What would change the answer
+## 10. What would change the answer
 
 The bound is a property of *this label definition on this universe*, so it can
 legitimately move if the question changes:
@@ -319,13 +387,13 @@ legitimately move if the question changes:
   much less valuable prediction.
 - **A longer horizon.** More time for the event raises the base rate.
 - **A genuinely better feature set** — if it moved the achievable ROC corner. §2
-  bounds *threshold* choice, so better features could in principle raise it; the
-  parallel feature-engineering search exists to test exactly that, and its results
-  are in `reports/ml_search_ext.json` when it completes.
+  bounds *threshold* choice, so better features could in principle raise it. The
+  82-feature set, the group ablations and the cross-sectional ranks were all tried
+  against exactly this question and none moved the corner materially.
 - **Point-in-time universe and real costs.** These would make results *worse*, not
   better, but are required before any live claim regardless.
 
-Reporting a 15.98% result that is real, over a fabricated 70% that is not, is the
-only defensible outcome. The instruction not to report below 60% cannot be
+Reporting a measured result that is real, over a fabricated 70% that is not, is
+the only defensible outcome. The instruction not to report below 60% cannot be
 honoured without inventing a number, and inventing one would repeat precisely the
 failure this audit was commissioned to find.

@@ -420,17 +420,37 @@ def summarise(fold_results: list[dict]) -> dict:
 
     ins, n_ins = pooled("insample")
     oos, n_oos = pooled("oos")
-    base = float(np.mean([r["oos_base_rate"] for r in ok]))
+
+    # Base rate must be pooled on the SAME weighting as precision, otherwise the
+    # reported lift mixes two different weightings. Audit found per-fold base
+    # rates spanning 2.67%-8.02%, which made the unweighted mean 4.12% against a
+    # signal-weighted 4.46% and overstated lift as 3.87x instead of 3.58x. Each
+    # fold reports the base rate of its own test rows, so weighting by that
+    # fold's signal count reproduces the true pooled denominator.
+    base_weighted = (
+        sum(r["oos_base_rate"] * r["oos_signals"] for r in ok) / n_oos
+        if n_oos else float("nan")
+    )
+    base_unweighted = float(np.mean([r["oos_base_rate"] for r in ok]))
+
     return {
         "n_folds": len(ok),
         "insample_signals": n_ins,
         "insample_precision": ins,
         "oos_signals": n_oos,
         "oos_precision": oos,
-        "oos_base_rate": base,
-        "oos_lift": oos / base if base > 0 else float("nan"),
+        # `oos_base_rate` keeps the signal-weighted value so that `oos_lift` is
+        # internally consistent; the unweighted figure is reported alongside for
+        # comparison rather than silently dropped.
+        "oos_base_rate": base_weighted,
+        "oos_base_rate_unweighted": base_unweighted,
+        "oos_lift": oos / base_weighted if base_weighted > 0 else float("nan"),
+        "oos_lift_vs_unweighted_base": (
+            oos / base_unweighted if base_unweighted > 0 else float("nan")
+        ),
         "per_fold_oos": [r["oos_precision"] for r in ok],
         "per_fold_signals": [r["oos_signals"] for r in ok],
+        "per_fold_base": [r["oos_base_rate"] for r in ok],
         "folds_above_base": int(sum(
             1 for r in ok if r["oos_precision"] > r["oos_base_rate"]
         )),

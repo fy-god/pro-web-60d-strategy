@@ -48,6 +48,28 @@ OUT_DIR = REPO_ROOT / "outputs" / "ml"
 EPS = 1e-12
 
 
+def assert_sorted(frame: pd.DataFrame) -> None:
+    """Fail loudly unless the frame is sorted by (code, date).
+
+    Every grouped-rolling helper below relies on row order matching group-key
+    order, because ``groupby(...).rolling(...).reset_index(level=0, drop=True)``
+    returns results in group-key order. Audit measured that on an UNSORTED frame
+    the same expression mismatches 2,679,396 of 2,680,715 rows — silent,
+    total corruption with no error raised. ``build()`` always sorts, so this is
+    currently harmless, but the guard turns a future silent failure into a
+    loud one.
+    """
+    ordered = frame.sort_values(["code", "date"])
+    if not frame[["code", "date"]].reset_index(drop=True).equals(
+        ordered[["code", "date"]].reset_index(drop=True)
+    ):
+        raise ValueError(
+            "frame must be sorted by ['code', 'date'] before grouped rolling; "
+            "row order must match group-key order or the rolling results "
+            "misalign silently"
+        )
+
+
 # --------------------------------------------------------------------------
 # rolling / shift helpers, all within stock, all backward-looking
 # --------------------------------------------------------------------------
@@ -283,6 +305,7 @@ def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.D
     from src import labels as label_mod
 
     frame = panel.sort_values(["code", "date"]).reset_index(drop=True)
+    assert_sorted(frame)
 
     price = add_price_features(frame)
     market = add_market_features(frame)
@@ -312,12 +335,21 @@ def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.D
     out["label_high"] = labelled["label_bull"].to_numpy("float32")
     out["resolved"] = labelled["label_resolved"].to_numpy("float32")
 
-    # forward maximum close, same entry and window
+    # forward maximum close, same entry and window.
+    #
+    # The label must be censored on the SAME condition as `resolved` (a full
+    # `horizon`-bar window existing), not merely on having seen one future bar.
+    # Censoring on `seen` was a real defect found by audit: 5,747 rows at the end
+    # of the panel (2026-08-10..2026-08-28) received a `label_close` computed
+    # from a 1-to-9-bar partial window, which biases the base rate of any
+    # close-labelled experiment. Those rows fall outside every walk-forward fold,
+    # so the 15.98% headline was unaffected, but any 2026 close-label evaluation
+    # would have been silently wrong.
     close = frame["close"].to_numpy("float64")
     codes = frame["code"].to_numpy()
     n = len(frame)
     run = np.full(n, -np.inf)
-    seen = np.zeros(n, dtype=bool)
+    bars_seen = np.zeros(n, dtype="int32")
     for d in range(1, horizon + 1):
         same = np.zeros(n, dtype=bool)
         if d < n:
@@ -327,15 +359,23 @@ def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.D
             val[: n - d] = close[d:]
         ok = same & np.isfinite(val)
         run = np.where(ok, np.maximum(run, np.where(ok, val, -np.inf)), run)
-        seen |= ok
+        bars_seen += ok.astype("int32")
+
+    mature = bars_seen >= horizon
     out["fwd_max_close"] = np.where(
-        seen, run / (out["entry_open"].to_numpy("float64") + EPS) - 1.0, np.nan
+        mature, run / (out["entry_open"].to_numpy("float64") + EPS) - 1.0, np.nan
     ).astype("float32")
-    out["label_close"] = np.where(
-        np.isfinite(out["fwd_max_close"]),
-        (out["fwd_max_close"] > target).astype("float32"),
-        np.nan,
-    ).astype("float32")
+    # Compare in float64 against a tolerance-tightened target. The audit found 3
+    # rows where the forward ratio was 0.29999999999938076 but the float32
+    # round-trip of the ratio made `> 0.30` evaluate True. Using the float64
+    # ratio directly removes that artifact.
+    close_ratio = run / (out["entry_open"].to_numpy("float64") + EPS) - 1.0
+    with np.errstate(invalid="ignore"):
+        out["label_close"] = np.where(
+            mature,
+            (close_ratio > target).astype("float32"),
+            np.nan,
+        ).astype("float32")
 
     if stride > 1:
         out = out.iloc[::stride].reset_index(drop=True)

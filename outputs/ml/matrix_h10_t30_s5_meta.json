@@ -1,5 +1,5 @@
 {
-  "path": "D:\\ccc\\pro-web-60d-strategy\\outputs\\ml\\matrix_h10_t30.parquet",
+  "path": "D:\\ccc\\pro-web-60d-strategy\\outputs\\ml\\matrix_h10_t30_s5.parquet",
   "rows": 536143,
   "stocks": 3193,
   "sessions": 887,
@@ -92,6 +92,6 @@
   "target": 0.3,
   "stride": 5,
   "base_rate_high": 0.030916061252355576,
-  "base_rate_close": 0.02014177292585373,
+  "base_rate_close": 0.020309312269091606,
   "resolved_share": 0.9880890250205994
 }
