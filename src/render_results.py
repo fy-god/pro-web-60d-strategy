@@ -83,6 +83,43 @@ def baselines() -> str:
     return "\n".join(lines) + "\n"
 
 
+def expectancy_table() -> str:
+    """Hit rate vs. what a holder actually earns, on the same signals."""
+    path = REPORTS / "hitrate_vs_expectancy.csv"
+    if not path.exists():
+        return "_Expectancy analysis not available._\n"
+    frame = pd.read_csv(path).sort_values("hit_rate", ascending=False)
+    lines = [
+        "| Strategy | Signals | Hit rate | **Net 10d return** | At-target | If hit | If miss | Net win rate |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for r in frame.itertuples():
+        lines.append(
+            f"| `{r.strategy_id}` | {r.signals} | {r.hit_rate*100:.2f}% "
+            f"| **{r.net_expectancy*100:+.2f}%** | {r.net_expectancy_at_target*100:+.2f}% "
+            f"| {r.mean_return_if_hit*100:+.2f}% | {r.mean_return_if_miss*100:+.2f}% "
+            f"| {r.net_win_rate*100:.2f}% |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def tradeability_table() -> str:
+    path = REPORTS / "tradeability_by_strategy.csv"
+    if not path.exists():
+        return "_Tradeability analysis not available._\n"
+    frame = pd.read_csv(path).sort_values("unfillable_pct", ascending=False)
+    lines = [
+        "| Strategy | Signals | Unfillable | Share | One-word limit | Hit rate as reported | Hit rate excluding unfillable |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for r in frame.itertuples():
+        lines.append(
+            f"| `{r.label}` | {r.signals} | {r.unfillable} | {r.unfillable_pct*100:.2f}% "
+            f"| {r.one_word_limit} | {r.hit_rate*100:.2f}% | {r.tradeable_hit_rate*100:.2f}% |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     sections = [
         "# Measured Results\n",
@@ -96,6 +133,27 @@ def main() -> None:
         "divided by the natural base rate of 3.035%: a lift of 1.0 means the "
         "strategy is indistinguishable from picking at random.\n",
         webpro_table(),
+        "\n## What a holder actually earns — the hit-rate inversion\n",
+        "Hit rate is the share of signals whose forward **maximum high** touches "
+        "+30% within 10 sessions. It says nothing about what happens on the other "
+        "signals. This table computes, on those same signals, the mean realised "
+        "next-open-to-horizon-close return net of 10.2 bp round-trip cost.\n",
+        "**The two rankings are inverted** (Spearman rho = -0.511): the strategies "
+        "with the highest hit rates lose the most money. `leader_momentum` has the "
+        "best hit rate in the family and the worst expectancy; `rsi_mean_reversion` "
+        "and `strict_oversold_rebound_v2` sit at or below the 3.035% base rate and "
+        "are among the minority that make money.\n",
+        "**If hit** and **if miss** are conditional means and are therefore "
+        "selection-biased by construction; they appear only to expose the lottery "
+        "structure — winners are credited with their +30% touch while losers run to "
+        "the horizon close.\n",
+        expectancy_table(),
+        "\n## Can the signals actually be bought?\n",
+        "Every hit rate above assumes the entry is the next session's open. A stock "
+        "that gaps to its price limit at the open has no sellers, so that entry does "
+        "not exist. This measures how much of each strategy's signal count is "
+        "unfillable, and the hit rate once those are removed.\n",
+        tradeability_table(),
         "\n## 60-Day Low-Zone family — V00–V08\n",
         "Scored under both contracts. V07/V08 use a per-year threshold chosen on "
         "the evaluation year itself and are flagged as in-sample fits, which is "

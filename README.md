@@ -9,6 +9,13 @@ This repository is an **audit**, not a product. Its most important output is
 which strategies do *not* work, and why the numbers that were previously
 reported for them do not support the claims attached to them.
 
+> **Can this be traded intraday? No — see §9.** Three findings make that
+> conclusive: the signal needs the daily *close* (so the earliest possible fill
+> is the next session's open), 15.8% of the highest-hit-rate strategy's signals
+> are unbuyable limit-up opens, and **the hit-rate ranking is inverted against
+> realised return** (Spearman −0.511) — the strategies with the best hit rates
+> lose the most money.
+
 ---
 
 ## 1. What was verified
@@ -219,12 +226,16 @@ winners is the exact failure mode this audit exists to prevent.
 
 ```bash
 python -m src.data_pipeline --build --verify     # wire up + verify the panel
-python -m tests.test_engine                      # 9/9 engine unit tests
+python -m tests.test_engine                      # 10/10 engine unit tests
 python -m src.validate_cards                     # 11/11 published selectors reproduced
 python -m src.build_shards --shards 8            # shard by code for bounded memory
 python -m src.scan_all --stride 5                # 36 Web Pro strategies, full universe
 python -m src.backtest_lowzone                   # V00-V08 low-zone family
 python -m src.make_charts                        # 120-session charts per strategy
+python -m src.tradeability                       # can the signals be filled?
+python -m src.live_readiness                     # realised expectancy net of costs
+python -m src.hitrate_vs_expectancy              # hit rate vs. what it earns
+python -m src.render_results                     # regenerate RESULTS.md
 ```
 
 Requires `pandas`, `numpy`, `scikit-learn`, `pyarrow`, `matplotlib`.
@@ -242,3 +253,105 @@ here is a forecast, a recommendation, or evidence of profitability.
 Hit rate is reported per version with its denominator, its distinct-stock and
 distinct-date counts, its Wilson interval, and its lift over the natural base
 rate, because precision without those four things cannot be interpreted.
+
+---
+
+## 9. Can this be used in live trading, including intraday?
+
+**No.** Not "not yet" and not "with more tuning" — the measurements below rule
+out intraday use structurally, and rule out end-of-day use on the evidence
+available.
+
+### 9.1 The signal is not knowable until the close
+
+Every strategy consumes a 60-bar **daily** card (`src/runner.make_card`), and the
+signal bar is the last visible bar. Evaluating the rule requires that bar's
+**close** and its full-day high/low/volume. Mid-session you do not have them.
+
+Substituting the current price for the close changes the rule. A strategy tested
+on `close > ma20` is a different strategy from one tested on `price_so_far >
+ma20`, and the difference is not a rounding error: it decides membership in
+every band, breakout and low-zone condition. **Nothing in §5 was backtested that
+way**, so intraday use would be running unvalidated logic.
+
+Consequence: the earliest moment a signal can be acted on is **the next
+session's open** — one overnight gap after the information arrives. That gap is
+not captured by any hit rate here, because entry is *defined* as that open.
+
+The original project's own intraday documentation makes the same distinction
+explicitly, describing a *different* system: the signal "is confirmed at the close
+of a one-minute candle and the fill window is the next minute". That is a
+one-minute strategy with a one-minute holding latency. This one is a daily
+strategy. They are not interchangeable.
+
+### 9.2 15.8% of the best strategy's signals cannot be bought
+
+A share that gaps to its price limit at the open has no sellers, so the stated
+entry — the next open — does not exist. The original project's entry test
+(`next_day_volume > 0 and next_day_open > 0`) accepts such bars as valid, which
+biases its precision upward. Measuring it on the actual emitted signals
+(`src/tradeability.py`, 646,718 signals):
+
+| Strategy | Signals | Unfillable | Share | One-word limit boards | Hit rate as reported | Excluding unfillable |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `leader_momentum` | 619 | 98 | **15.83%** | 32 | 20.52% | **18.23%** |
+| `strict_gap_follow_through` | 3,172 | 430 | 13.56% | 171 | 14.06% | 12.33% |
+| `gap_follow_through` | 4,022 | 487 | 12.11% | 193 | 12.85% | 11.17% |
+| `strict_leader_momentum_v2` | 3,261 | 368 | 11.28% | 123 | 15.85% | 14.62% |
+
+Family-wide: **10,976 of 646,718 signals (1.70%) are unfillable**, of which 4,410
+are one-word limit boards where the entire session is pinned. Concretely, the
+highest-hit-rate strategy in the whole family loses **2.3 percentage points** of
+its headline precisely because the best signal is the one you cannot get filled
+on. ST names are treated as 10% boards for lack of status data, so their true 5%
+limit makes this an **underestimate**.
+
+### 9.3 The headline number is inverted against what you earn
+
+Hit rate counts a signal as a success if the forward **maximum high** touches
++30% within 10 sessions. It never asks what the other signals did, or what the
+holder actually got. Computing the realised next-open-to-horizon-close return on
+the *same* signals, net of 10.2 bp round-trip cost (`src/hitrate_vs_expectancy.py`):
+
+| Strategy | Hit rate | Net 10d return | If hit | If miss | Net win rate |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `leader_momentum` | 20.62% | **−4.65%** | +22.37% | −11.54% | 32.79% |
+| `strict_leader_momentum_v2` | 15.96% | **−1.82%** | +26.33% | −7.05% | 37.76% |
+| `strict_relative_strength` | 15.75% | **−1.80%** | +27.74% | −7.20% | 37.01% |
+| `strict_relative_strength_v2` | 15.24% | **−1.86%** | +27.69% | −7.06% | 36.70% |
+| `rsi_mean_reversion` | 4.10% | **+1.69%** | +29.06% | +0.63% | 52.61% |
+| `strict_oversold_rebound_v2` | 3.51% | **+0.74%** | +27.50% | −0.12% | 49.78% |
+
+**Spearman rank correlation between hit rate and net expectancy: −0.511.** The
+reporting metric orders the strategies almost exactly backwards. Four of the top
+five hit rates lose money; `leader_momentum` is simultaneously the best hit rate
+and the worst expectancy in the family. Only **15 of 35** strategies have
+positive net expectancy, and only **20 of 35** stay positive even when every hit
+is credited with a perfect +30% exit.
+
+The mechanism is plain in the conditional columns: winners are held to their
++30% touch (+22% to +29%) while losers run to the horizon close (−7% to −12%).
+These are high-variance, negatively-skewed signals. A 20% chance of +30% does not
+compensate for an 80% chance of −11.5%.
+
+### 9.4 What would be required first
+
+| Requirement | Status |
+| --- | --- |
+| Point-in-time universe (no survivorship bias) | **not met** — universe is today's listed set |
+| Transaction costs and slippage | **partly met** — 10.2 bp modelled; slippage not |
+| Limit-up / unfillable entry filter | **met** — `src/tradeability.py` (§9.2) |
+| True out-of-sample period (never used for selection) | **not met** — one pooled 2023–2026 sample |
+| Independent confirmation on unseen data | **not met** |
+| Intraday-minute validation of the daily rules | **not met** — and the local minute data is 2 weeks × 100 stocks, which cannot support it |
+
+The one strategy family with a genuinely frozen cross-year test in the source
+material failed it (7/50 = 14.0%, with 48/50 loss false alerts), and two lockbox
+sweeps passed 0 of 48 variants. So the honest expectation for unseen data is
+**worse** than anything in the table above.
+
+**Verdict: research artifact only.** Intraday use is ruled out by §9.1 (the rule
+needs the close) and §9.2 (the best entries are unfillable); end-of-day use is
+ruled out by §9.3 (the metric that looks best earns the least). Any live use
+would need a point-in-time universe, a true holdout, slippage modelling and
+intraday validation first.

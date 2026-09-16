@@ -120,8 +120,14 @@ def scan_all(stride: int, workers: int | None, codes_limit: int = 0,
 
     rows: list[dict] = []
     for sid, group in emitted.groupby("strategy_id", sort=False):
-        report = {"strategy_id": sid,
-                  "evaluated_points": int((signals["strategy_id"] == sid).sum())}
+        report = {
+            "strategy_id": sid,
+            # NOTE: only *emitted signals* cross the worker boundary, so this
+            # counts signals for this strategy — not the 493,246 points every
+            # strategy was evaluated on. That shared count is in
+            # reports/webpro_baselines.json.
+            "signals_for_strategy": int(len(group)),
+        }
         for regime in labels.REGIMES:
             sub = pd.DataFrame({
                 "code": group["code"].to_numpy(),

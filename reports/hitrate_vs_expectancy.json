@@ -1,0 +1,8 @@
+{
+  "spearman_hit_rate_vs_net_expectancy": -0.5109243697478991,
+  "spearman_hit_rate_vs_at_target_expectancy": -0.4745098039215686,
+  "positive_expectancy_count": 15,
+  "positive_at_target_count": 20,
+  "strategies": 35,
+  "note": "Hit rate is the share of signals whose forward MAXIMUM HIGH reaches +30% within 10 sessions. Net expectancy is the mean realised next-open-to-horizon-close return less 10.2bp round-trip cost. A negative rank correlation means the reported hit-rate ranking orders strategies in the opposite order to what they earn."
+}

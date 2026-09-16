@@ -54,6 +54,96 @@ Horizon 10 sessions, target +30%, entry at the next session's open, signals de-d
 | 35 | `rsi_mean_reversion` | 12553 | 351 | **2.80%** | 3.035% | 0.92x | 2.52% | 3147 | 535 |
 
 
+## What a holder actually earns — the hit-rate inversion
+
+Hit rate is the share of signals whose forward **maximum high** touches +30% within 10 sessions. It says nothing about what happens on the other signals. This table computes, on those same signals, the mean realised next-open-to-horizon-close return net of 10.2 bp round-trip cost.
+
+**The two rankings are inverted** (Spearman rho = -0.511): the strategies with the highest hit rates lose the most money. `leader_momentum` has the best hit rate in the family and the worst expectancy; `rsi_mean_reversion` and `strict_oversold_rebound_v2` sit at or below the 3.035% base rate and are among the minority that make money.
+
+**If hit** and **if miss** are conditional means and are therefore selection-biased by construction; they appear only to expose the lottery structure — winners are credited with their +30% touch while losers run to the horizon close.
+
+| Strategy | Signals | Hit rate | **Net 10d return** | At-target | If hit | If miss | Net win rate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `leader_momentum` | 616 | 20.62% | **-4.65%** | -3.08% | +22.37% | -11.54% | 32.79% |
+| `strict_leader_momentum_v2` | 3239 | 15.96% | **-1.82%** | -1.24% | +26.33% | -7.05% | 37.76% |
+| `strict_relative_strength` | 2864 | 15.75% | **-1.80%** | -1.44% | +27.74% | -7.20% | 37.01% |
+| `strict_relative_strength_v2` | 3267 | 15.24% | **-1.86%** | -1.51% | +27.69% | -7.06% | 36.70% |
+| `strict_gap_follow_through` | 3137 | 14.22% | **-0.05%** | +0.30% | +27.57% | -4.51% | 42.72% |
+| `gap_follow_through` | 3978 | 13.00% | **+0.12%** | +0.43% | +27.63% | -3.87% | 43.49% |
+| `strict_obv_volume_price_v2` | 2892 | 12.34% | **-0.90%** | -0.48% | +26.62% | -4.66% | 40.21% |
+| `strict_obv_volume_price` | 2857 | 12.29% | **-0.92%** | -0.52% | +26.72% | -4.68% | 40.15% |
+| `oversold_rebound` | 334 | 12.28% | **+3.96%** | +4.15% | +28.43% | +0.65% | 58.68% |
+| `strict_gap_follow_through_v2` | 5981 | 11.67% | **+0.41%** | +0.74% | +27.20% | -3.02% | 45.24% |
+| `turnover_weak_to_strong` | 269 | 11.15% | **-0.05%** | +0.10% | +28.68% | -3.54% | 41.64% |
+| `relative_strength_rank` | 20112 | 11.11% | **-0.25%** | -0.05% | +28.16% | -3.69% | 41.71% |
+| `limit_up_retest` | 12035 | 10.69% | **+0.05%** | +0.30% | +27.69% | -3.14% | 44.29% |
+| `strict_turnover_weak_to_strong_v2` | 6792 | 10.17% | **-0.09%** | +0.23% | +26.86% | -3.03% | 43.83% |
+| `reversal_engulf` | 62 | 9.68% | **-3.55%** | -2.64% | +20.55% | -6.02% | 32.26% |
+| `main_wave_acceleration` | 14482 | 8.76% | **-0.26%** | -0.05% | +27.55% | -2.82% | 42.27% |
+| `turnover_regime_switch` | 2844 | 8.72% | **-0.23%** | -0.11% | +28.70% | -2.88% | 42.97% |
+| `donchian_turtle` | 24242 | 8.01% | **-0.24%** | -0.02% | +27.33% | -2.53% | 43.07% |
+| `washout_complete` | 5755 | 6.64% | **-0.06%** | -0.05% | +29.92% | -2.08% | 42.52% |
+| `atr_trend_follow` | 37800 | 6.57% | **-0.03%** | +0.13% | +27.51% | -1.86% | 44.28% |
+| `strict_bollinger_release_v2` | 3722 | 6.31% | **-0.15%** | +0.20% | +24.42% | -1.69% | 44.25% |
+| `strict_washout_complete` | 19351 | 6.26% | **+0.37%** | +0.43% | +29.18% | -1.44% | 45.55% |
+| `high_level_consensus` | 162 | 6.17% | **+1.81%** | +1.16% | +40.54% | -0.63% | 47.53% |
+| `strict_washout_complete_v2` | 22770 | 6.10% | **+0.35%** | +0.41% | +29.16% | -1.41% | 45.69% |
+| `obv_volume_price` | 76693 | 5.84% | **+0.36%** | +0.46% | +28.26% | -1.27% | 45.83% |
+| `platform_breakout` | 1514 | 5.75% | **-1.39%** | -1.08% | +24.70% | -2.87% | 35.80% |
+| `strict_first_board_breakout_v2` | 16420 | 4.67% | **+0.59%** | +0.73% | +27.02% | -0.60% | 47.77% |
+| `bollinger_squeeze` | 47903 | 4.65% | **+0.01%** | +0.17% | +26.57% | -1.18% | 45.31% |
+| `first_board_breakout` | 5749 | 4.28% | **+0.64%** | +0.75% | +27.38% | -0.45% | 47.61% |
+| `strict_platform_breakout` | 13034 | 4.25% | **-0.37%** | -0.23% | +26.72% | -1.46% | 42.70% |
+| `pullback_retest` | 7948 | 4.15% | **+0.28%** | +0.31% | +29.45% | -0.87% | 46.14% |
+| `strict_platform_breakout_v2` | 19538 | 4.13% | **-0.31%** | -0.17% | +26.63% | -1.36% | 43.47% |
+| `rsi_mean_reversion` | 25476 | 4.10% | **+1.69%** | +1.73% | +29.06% | +0.63% | 52.61% |
+| `strict_oversold_rebound_v2` | 146580 | 3.51% | **+0.74%** | +0.83% | +27.50% | -0.12% | 49.78% |
+| `strict_accumulation_base_v2` | 77081 | 3.47% | **+0.78%** | +0.84% | +28.27% | -0.10% | 49.81% |
+
+
+## Can the signals actually be bought?
+
+Every hit rate above assumes the entry is the next session's open. A stock that gaps to its price limit at the open has no sellers, so that entry does not exist. This measures how much of each strategy's signal count is unfillable, and the hit rate once those are removed.
+
+| Strategy | Signals | Unfillable | Share | One-word limit | Hit rate as reported | Hit rate excluding unfillable |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `leader_momentum` | 619 | 98 | 15.83% | 32 | 20.52% | 18.23% |
+| `strict_gap_follow_through` | 3172 | 430 | 13.56% | 171 | 14.06% | 12.33% |
+| `gap_follow_through` | 4022 | 487 | 12.11% | 193 | 12.85% | 11.17% |
+| `strict_leader_momentum_v2` | 3261 | 368 | 11.28% | 123 | 15.85% | 14.62% |
+| `strict_gap_follow_through_v2` | 6040 | 568 | 9.40% | 226 | 11.56% | 10.14% |
+| `strict_relative_strength` | 2889 | 190 | 6.58% | 63 | 15.61% | 14.56% |
+| `strict_obv_volume_price` | 2887 | 183 | 6.34% | 57 | 12.16% | 11.43% |
+| `strict_obv_volume_price_v2` | 2923 | 183 | 6.26% | 57 | 12.21% | 11.50% |
+| `strict_relative_strength_v2` | 3299 | 203 | 6.15% | 69 | 15.10% | 14.08% |
+| `turnover_weak_to_strong` | 269 | 12 | 4.46% | 8 | 11.15% | 10.51% |
+| `turnover_regime_switch` | 2891 | 120 | 4.15% | 58 | 8.58% | 7.94% |
+| `main_wave_acceleration` | 14736 | 599 | 4.06% | 260 | 8.61% | 7.85% |
+| `relative_strength_rank` | 20366 | 806 | 3.96% | 340 | 10.97% | 10.31% |
+| `donchian_turtle` | 24564 | 905 | 3.68% | 391 | 7.90% | 7.23% |
+| `strict_turnover_weak_to_strong_v2` | 6834 | 222 | 3.25% | 82 | 10.11% | 9.79% |
+| `limit_up_retest` | 12195 | 365 | 2.99% | 134 | 10.55% | 10.11% |
+| `oversold_rebound` | 336 | 9 | 2.68% | 5 | 12.20% | 11.62% |
+| `strict_bollinger_release_v2` | 3763 | 99 | 2.63% | 37 | 6.25% | 5.98% |
+| `atr_trend_follow` | 38463 | 992 | 2.58% | 419 | 6.46% | 5.99% |
+| `platform_breakout` | 1537 | 33 | 2.15% | 14 | 5.66% | 5.25% |
+| `washout_complete` | 5916 | 113 | 1.91% | 49 | 6.46% | 6.13% |
+| `strict_washout_complete` | 19897 | 379 | 1.90% | 157 | 6.09% | 5.74% |
+| `strict_washout_complete_v2` | 23412 | 431 | 1.84% | 176 | 5.93% | 5.59% |
+| `high_level_consensus` | 169 | 3 | 1.78% | 2 | 5.92% | 5.42% |
+| `reversal_engulf` | 63 | 1 | 1.59% | 0 | 9.52% | 8.06% |
+| `bollinger_squeeze` | 48501 | 702 | 1.45% | 289 | 4.60% | 4.35% |
+| `strict_platform_breakout` | 13206 | 179 | 1.36% | 71 | 4.20% | 3.99% |
+| `strict_platform_breakout_v2` | 19777 | 250 | 1.26% | 95 | 4.08% | 3.89% |
+| `obv_volume_price` | 77978 | 961 | 1.23% | 384 | 5.75% | 5.52% |
+| `strict_first_board_breakout_v2` | 16643 | 154 | 0.93% | 72 | 4.60% | 4.51% |
+| `pullback_retest` | 8165 | 64 | 0.78% | 29 | 4.04% | 3.81% |
+| `strict_accumulation_base_v2` | 78544 | 445 | 0.57% | 154 | 3.40% | 3.32% |
+| `first_board_breakout` | 5803 | 22 | 0.38% | 9 | 4.24% | 4.22% |
+| `strict_oversold_rebound_v2` | 147964 | 363 | 0.25% | 167 | 3.48% | 3.44% |
+| `rsi_mean_reversion` | 25614 | 37 | 0.14% | 17 | 4.08% | 4.05% |
+
+
 ## 60-Day Low-Zone family — V00–V08
 
 Scored under both contracts. V07/V08 use a per-year threshold chosen on the evaluation year itself and are flagged as in-sample fits, which is what the source project's own record does.
