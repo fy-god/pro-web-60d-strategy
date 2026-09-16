@@ -1,0 +1,830 @@
+{
+  "matrix": "outputs\\ml\\matrix_h10_t30_s5.parquet",
+  "folds": 5,
+  "horizon": 10,
+  "embargo": 2,
+  "min_train_sessions": 150,
+  "final_holdout_start": "2026-01-01",
+  "baseline_cfg": {
+    "name": "null",
+    "model": "hgb",
+    "params": {},
+    "feature_groups": [],
+    "label": "label_high",
+    "target_rate": 0.02
+  },
+  "battery_seconds": 2906.3,
+  "instrumentation": "wf.make_model patched in-process to a recording proxy; wf.evaluate_fold and wf.summarise executed unmodified.",
+  "variants": {
+    "real": {
+      "kind": "real",
+      "seed": 0,
+      "description": "shipped features + shipped label_high (control)"
+    },
+    "perm_global_101": {
+      "kind": "perm_global",
+      "seed": 101,
+      "description": "global label shuffle"
+    },
+    "perm_global_202": {
+      "kind": "perm_global",
+      "seed": 202,
+      "description": "global label shuffle"
+    },
+    "perm_global_303": {
+      "kind": "perm_global",
+      "seed": 303,
+      "description": "global label shuffle"
+    },
+    "perm_within_date_404": {
+      "kind": "perm_within_date",
+      "seed": 404,
+      "description": "label shuffled inside each session (preserves the per-date base rate)"
+    },
+    "label_bernoulli_505": {
+      "kind": "label_bernoulli",
+      "seed": 505,
+      "description": "i.i.d. Bernoulli labels at the same global base rate"
+    },
+    "feat_gauss_7": {
+      "kind": "feat_gauss",
+      "seed": 7,
+      "description": "all features ~ N(0,1), real labels"
+    },
+    "feat_gauss_8": {
+      "kind": "feat_gauss",
+      "seed": 8,
+      "description": "all features ~ N(0,1), real labels"
+    },
+    "feat_gauss_auc0": {
+      "kind": "feat_gauss_auc0",
+      "seed": 9,
+      "description": "N(0,1) features AND Bernoulli labels (double null)"
+    },
+    "feat_permute_9": {
+      "kind": "feat_permute",
+      "seed": 9,
+      "description": "each feature column independently row-permuted, real labels"
+    },
+    "perm_train_only_606": {
+      "kind": "perm_train_only",
+      "seed": 606,
+      "description": "labels shuffled in the TRAIN block only; test labels real. Isolates the fit+threshold path: a real model on real test labels is trained on noise"
+    },
+    "perm_test_only_707": {
+      "kind": "perm_test_only",
+      "seed": 707,
+      "description": "test labels shuffled inside each test block; training untouched. Isolates the EVALUATION path: can evaluate_fold report lift when the test labels carry no information"
+    },
+    "oracle_strong": {
+      "kind": "oracle_strong",
+      "seed": 11,
+      "description": "POSITIVE CONTROL: fwd_max_high + N(0,0.3) added as a feature"
+    },
+    "oracle_weak": {
+      "kind": "oracle_weak",
+      "seed": 12,
+      "description": "MDE CALIBRATION: label_high + N(0,2) added as a feature"
+    }
+  },
+  "results": [
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5060095549409103,
+      "oos_signals": 1790,
+      "oos_precision": 0.15977653631284916,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.8740369466635105,
+      "per_fold_oos": [
+        0.10786914235190097,
+        0.23191094619666047,
+        0.3111111111111111,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1131,
+        539,
+        45,
+        75
+      ],
+      "folds_above_base": 4,
+      "config": "real",
+      "variant": "real",
+      "seed": 0,
+      "seconds": 1381.1,
+      "pooled_auc": 0.6306394698097203,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.3247863247863248,
+          "at_signals": 117,
+          "at_share": 0.00041603402233782676
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.23665480427046262,
+          "at_signals": 562,
+          "at_share": 0.0019983856457594755
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.19111111111111112,
+          "at_signals": 2025,
+          "at_share": 0.007200588848154693
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21981393009806388,
+      "oos_signals": 8864,
+      "oos_precision": 0.03260379061371841,
+      "oos_base_rate": 0.03120228568696916,
+      "oos_lift": 1.0449167391392278,
+      "per_fold_oos": [
+        0.03355704697986577,
+        0.03443619176232275,
+        0.03576230169400377,
+        0.025298988040478382
+      ],
+      "per_fold_signals": [
+        1490,
+        1481,
+        3719,
+        2174
+      ],
+      "folds_above_base": 3,
+      "config": "perm_global_101",
+      "variant": "perm_global",
+      "seed": 101,
+      "seconds": 1137.4,
+      "pooled_auc": 0.49853792463947655,
+      "pooled_rows": 281227,
+      "pooled_positives": 8775,
+      "pooled_base_rate": 0.031202551675337007,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.05357142857142857,
+          "at_signals": 112,
+          "at_share": 0.00039825479061398797
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.03634361233480176,
+          "at_signals": 5448,
+          "at_share": 0.0193722508862947
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.03634361233480176,
+          "at_signals": 5448,
+          "at_share": 0.0193722508862947
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21810409856675886,
+      "oos_signals": 4253,
+      "oos_precision": 0.03315306842229015,
+      "oos_base_rate": 0.030760322466110362,
+      "oos_lift": 1.0777867643883108,
+      "per_fold_oos": [
+        0.03621730382293763,
+        0.0218408736349454,
+        0.0341521869382864,
+        0.03582718651211802
+      ],
+      "per_fold_signals": [
+        994,
+        641,
+        1669,
+        949
+      ],
+      "folds_above_base": 3,
+      "config": "perm_global_202",
+      "variant": "perm_global",
+      "seed": 202,
+      "seconds": 1103.5,
+      "pooled_auc": 0.4959245855394495,
+      "pooled_rows": 281227,
+      "pooled_positives": 8648,
+      "pooled_base_rate": 0.0307509591895515,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.05,
+          "at_signals": 100,
+          "at_share": 0.000355584634476775
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.03363687047017283,
+          "at_signals": 5381,
+          "at_share": 0.01913400918119526
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.03363687047017283,
+          "at_signals": 5381,
+          "at_share": 0.01913400918119526
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.2315313050037717,
+      "oos_signals": 5913,
+      "oos_precision": 0.029934043632673768,
+      "oos_base_rate": 0.03059345686785437,
+      "oos_lift": 0.9784459390114404,
+      "per_fold_oos": [
+        0.031655225019069415,
+        0.030279503105590064,
+        0.02461139896373057,
+        0.02924451665312754
+      ],
+      "per_fold_signals": [
+        2622,
+        1288,
+        772,
+        1231
+      ],
+      "folds_above_base": 1,
+      "config": "perm_global_303",
+      "variant": "perm_global",
+      "seed": 303,
+      "seconds": 950.5,
+      "pooled_auc": 0.496514204814793,
+      "pooled_rows": 281227,
+      "pooled_positives": 8598,
+      "pooled_base_rate": 0.030573166872313113,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.05,
+          "at_signals": 100,
+          "at_share": 0.000355584634476775
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.03184588165913112,
+          "at_signals": 5087,
+          "at_share": 0.018088590355833545
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.03184588165913112,
+          "at_signals": 5087,
+          "at_share": 0.018088590355833545
+        }
+      ]
+    },
+    {
+      "n_folds": 2,
+      "insample_signals": 7189,
+      "insample_precision": 0.20155793573515093,
+      "oos_signals": 732,
+      "oos_precision": 0.06284153005464481,
+      "oos_base_rate": 0.054816570214066086,
+      "oos_lift": 1.1463966061583235,
+      "per_fold_oos": [
+        0.059931506849315065,
+        0.07432432432432433
+      ],
+      "per_fold_signals": [
+        584,
+        148
+      ],
+      "folds_above_base": 1,
+      "config": "perm_within_date_404",
+      "variant": "perm_within_date",
+      "seed": 404,
+      "seconds": 1018.5,
+      "pooled_auc": 0.48092491873530735,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.0609234715690466,
+          "at_signals": 9356,
+          "at_share": 0.03326849840164707
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.0609234715690466,
+          "at_signals": 9356,
+          "at_share": 0.03326849840164707
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.0609234715690466,
+          "at_signals": 9356,
+          "at_share": 0.03326849840164707
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21458385717877798,
+      "oos_signals": 5925,
+      "oos_precision": 0.03375527426160337,
+      "oos_base_rate": 0.030612872919150713,
+      "oos_lift": 1.102649671291937,
+      "per_fold_oos": [
+        0.03715170278637771,
+        0.030612244897959183,
+        0.033873343151693665,
+        0.03367003367003367
+      ],
+      "per_fold_signals": [
+        1615,
+        1764,
+        1358,
+        1188
+      ],
+      "folds_above_base": 4,
+      "config": "label_bernoulli_505",
+      "variant": "label_bernoulli",
+      "seed": 505,
+      "seconds": 799.3,
+      "pooled_auc": 0.4980699534853718,
+      "pooled_rows": 281227,
+      "pooled_positives": 8607,
+      "pooled_base_rate": 0.030605169489416023,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.036458333333333336,
+          "at_signals": 576,
+          "at_share": 0.002048167494586224
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.036458333333333336,
+          "at_signals": 576,
+          "at_share": 0.002048167494586224
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.034282216100397916,
+          "at_signals": 3267,
+          "at_share": 0.011616950008356238
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.2703042494342469,
+      "oos_signals": 4835,
+      "oos_precision": 0.04446742502585315,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 1.0781836397794722,
+      "per_fold_oos": [
+        0.03463992707383774,
+        0.09657039711191336,
+        0.02559867877786953,
+        0.02748414376321353
+      ],
+      "per_fold_signals": [
+        1097,
+        1108,
+        1211,
+        1419
+      ],
+      "folds_above_base": 2,
+      "config": "feat_gauss_7",
+      "variant": "feat_gauss",
+      "seed": 7,
+      "seconds": 317.9,
+      "pooled_auc": 0.44241603938831847,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.042408122139490405,
+          "at_signals": 234224,
+          "at_share": 0.8328645542568814
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.042408122139490405,
+          "at_signals": 234224,
+          "at_share": 0.8328645542568814
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.042408122139490405,
+          "at_signals": 234224,
+          "at_share": 0.8328645542568814
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.27684184058335426,
+      "oos_signals": 4827,
+      "oos_precision": 0.03625440232028175,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 0.8790458055303318,
+      "per_fold_oos": [
+        0.03469210754553339,
+        0.06760316066725197,
+        0.021331058020477817,
+        0.02421129860601614
+      ],
+      "per_fold_signals": [
+        1153,
+        1139,
+        1172,
+        1363
+      ],
+      "folds_above_base": 1,
+      "config": "feat_gauss_8",
+      "variant": "feat_gauss",
+      "seed": 8,
+      "seconds": 260.0,
+      "pooled_auc": 0.44024137138930036,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.04262615951168686,
+          "at_signals": 237061,
+          "at_share": 0.8429524903369876
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.04262615951168686,
+          "at_signals": 237061,
+          "at_share": 0.8429524903369876
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.04262615951168686,
+          "at_signals": 237061,
+          "at_share": 0.8429524903369876
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.2984158913754086,
+      "oos_signals": 4744,
+      "oos_precision": 0.03267284991568297,
+      "oos_base_rate": 0.031054572726532108,
+      "oos_lift": 1.05211075365298,
+      "per_fold_oos": [
+        0.033299697275479316,
+        0.03102189781021898,
+        0.0362095531587057,
+        0.03016924208977189
+      ],
+      "per_fold_signals": [
+        991,
+        1096,
+        1298,
+        1359
+      ],
+      "folds_above_base": 4,
+      "config": "feat_gauss_auc0",
+      "variant": "feat_gauss_auc0",
+      "seed": 9,
+      "seconds": 256.7,
+      "pooled_auc": 0.4976205582419151,
+      "pooled_rows": 281227,
+      "pooled_positives": 8733,
+      "pooled_base_rate": 0.03105320612885676,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.08,
+          "at_signals": 100,
+          "at_share": 0.000355584634476775
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.039942938659058486,
+          "at_signals": 701,
+          "at_share": 0.002492648287682193
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.032,
+          "at_signals": 2000,
+          "at_share": 0.0071116926895355
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.2812672868996731,
+      "oos_signals": 4756,
+      "oos_precision": 0.040370058873002525,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 0.9788364626127875,
+      "per_fold_oos": [
+        0.028624192059095107,
+        0.08117443868739206,
+        0.02727272727272727,
+        0.026053639846743294
+      ],
+      "per_fold_signals": [
+        1083,
+        1158,
+        1210,
+        1305
+      ],
+      "folds_above_base": 2,
+      "config": "feat_permute_9",
+      "variant": "feat_permute",
+      "seed": 9,
+      "seconds": 226.2,
+      "pooled_auc": 0.44102443298833716,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.0547945205479452,
+          "at_signals": 146,
+          "at_share": 0.0005191535663360915
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.04232294282260042,
+          "at_signals": 236562,
+          "at_share": 0.8411781230109484
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.04232294282260042,
+          "at_signals": 236562,
+          "at_share": 0.8411781230109484
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.19668091526276088,
+      "oos_signals": 4979,
+      "oos_precision": 0.04960835509138381,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 1.2028336883640927,
+      "per_fold_oos": [
+        0.029684601113172542,
+        0.06627471940138963,
+        0.04891304347826087,
+        0.03773584905660377
+      ],
+      "per_fold_signals": [
+        1078,
+        1871,
+        1288,
+        742
+      ],
+      "folds_above_base": 3,
+      "config": "perm_train_only_606",
+      "variant": "perm_train_only",
+      "seed": 606,
+      "seconds": 215.6,
+      "pooled_auc": 0.43513772224657227,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.059233449477351915,
+          "at_signals": 287,
+          "at_share": 0.0010205279009483442
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.05114638447971781,
+          "at_signals": 1134,
+          "at_share": 0.004032329754966629
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.04669647292598112,
+          "at_signals": 2013,
+          "at_share": 0.007157918692017481
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5060095549409103,
+      "oos_signals": 1790,
+      "oos_precision": 0.049720670391061456,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 1.20555695193375,
+      "per_fold_oos": [
+        0.03713527851458886,
+        0.07421150278293136,
+        0.044444444444444446,
+        0.06666666666666667
+      ],
+      "per_fold_signals": [
+        1131,
+        539,
+        45,
+        75
+      ],
+      "folds_above_base": 3,
+      "config": "perm_test_only_707",
+      "variant": "perm_test_only",
+      "seed": 707,
+      "seconds": 249.3,
+      "pooled_auc": 0.4787221640407651,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.06267029972752043,
+          "at_signals": 367,
+          "at_share": 0.001304995608529764
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.057539682539682536,
+          "at_signals": 504,
+          "at_share": 0.001792146557762946
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.04377564979480164,
+          "at_signals": 2193,
+          "at_share": 0.007797971034075675
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.569575056575308,
+      "oos_signals": 3962,
+      "oos_precision": 0.39045936395759717,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 9.467310013409142,
+      "per_fold_oos": [
+        0.2869884575026233,
+        0.48625429553264604,
+        0.47294117647058825,
+        0.4989293361884368
+      ],
+      "per_fold_signals": [
+        1906,
+        1164,
+        425,
+        467
+      ],
+      "folds_above_base": 4,
+      "config": "oracle_strong",
+      "variant": "oracle_strong",
+      "seed": 11,
+      "seconds": 246.7,
+      "pooled_auc": 0.775418571193718,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.8627450980392157,
+          "at_signals": 102,
+          "at_share": 0.0003626963271663105
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.6427145708582834,
+          "at_signals": 501,
+          "at_share": 0.0017814790187286426
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.45819070904645476,
+          "at_signals": 2045,
+          "at_share": 0.007271705775050048
+        }
+      ]
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5176263515212471,
+      "oos_signals": 2230,
+      "oos_precision": 0.19417040358744395,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 4.707971112688525,
+      "per_fold_oos": [
+        0.13977042538825118,
+        0.2821497120921305,
+        0.296875,
+        0.36585365853658536
+      ],
+      "per_fold_signals": [
+        1481,
+        521,
+        64,
+        164
+      ],
+      "folds_above_base": 4,
+      "config": "oracle_weak",
+      "variant": "oracle_weak",
+      "seed": 12,
+      "seconds": 256.6,
+      "pooled_auc": 0.6750519858637893,
+      "pooled_rows": 281227,
+      "pooled_positives": 11496,
+      "pooled_base_rate": 0.04087800957945005,
+      "harness_vs_audit_precision_max_abs_diff": 0.0,
+      "harness_vs_audit_signals_max_abs_diff": 0,
+      "scores_monotone": true,
+      "test_oracle_frontier": [
+        {
+          "min_signals": 100,
+          "max_precision": 0.32038834951456313,
+          "at_signals": 103,
+          "at_share": 0.00036625217351107824
+        },
+        {
+          "min_signals": 500,
+          "max_precision": 0.28,
+          "at_signals": 500,
+          "at_share": 0.001777923172383875
+        },
+        {
+          "min_signals": 2000,
+          "max_precision": 0.22521175884404585,
+          "at_signals": 2007,
+          "at_share": 0.007136583613948874
+        }
+      ]
+    }
+  ]
+}

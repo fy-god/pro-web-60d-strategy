@@ -1,0 +1,105 @@
+{
+  "preset": "models",
+  "folds": 5,
+  "final_holdout_start": "2026-01-01",
+  "n_configs": 3,
+  "n_failed": 0,
+  "oos_base_rate": 0.041242904627034,
+  "ranked": [
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5060095549409103,
+      "oos_signals": 1790,
+      "oos_precision": 0.15977653631284916,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.8740369466635105,
+      "per_fold_oos": [
+        0.10786914235190097,
+        0.23191094619666047,
+        0.3111111111111111,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1131,
+        539,
+        45,
+        75
+      ],
+      "folds_above_base": 4,
+      "config": "fam_hgb_0",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.49273321599195374,
+      "oos_signals": 2237,
+      "oos_precision": 0.14617791685292802,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.544316729746308,
+      "per_fold_oos": [
+        0.1034727143869596,
+        0.22456813819577734,
+        0.17903930131004367,
+        0.3026315789473684
+      ],
+      "per_fold_signals": [
+        1411,
+        521,
+        229,
+        76
+      ],
+      "folds_above_base": 4,
+      "config": "fam_hgb_1",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {
+        "max_leaf_nodes": 7,
+        "min_samples_leaf": 100,
+        "learning_rate": 0.05
+      }
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5721398038722655,
+      "oos_signals": 2027,
+      "oos_precision": 0.14306857424765665,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.468925759265697,
+      "per_fold_oos": [
+        0.09898843930635838,
+        0.22735674676524953,
+        0.25,
+        0.3108108108108108
+      ],
+      "per_fold_signals": [
+        1384,
+        541,
+        28,
+        74
+      ],
+      "folds_above_base": 4,
+      "config": "fam_hgb_2",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {
+        "max_leaf_nodes": 31,
+        "min_samples_leaf": 500,
+        "learning_rate": 0.02,
+        "max_iter": 500,
+        "l2_regularization": 1.0
+      }
+    }
+  ],
+  "failed": []
+}

@@ -236,6 +236,10 @@ python -m src.tradeability                       # can the signals be filled?
 python -m src.live_readiness                     # realised expectancy net of costs
 python -m src.hitrate_vs_expectancy              # hit rate vs. what it earns
 python -m src.render_results                     # regenerate RESULTS.md
+python -m src.ml.build_matrix --stride 5         # ML feature matrix (82 causal features)
+python -m src.ml.precision_ceiling               # the 70% bound (§10)
+python -m src.ml.null_tests                      # validate the harness cannot cheat
+python -m src.ml.final_holdout                   # one-shot 2026 evaluation
 ```
 
 Requires `pandas`, `numpy`, `scikit-learn`, `pyarrow`, `matplotlib`.
@@ -350,8 +354,68 @@ material failed it (7/50 = 14.0%, with 48/50 loss false alerts), and two lockbox
 sweeps passed 0 of 48 variants. So the honest expectation for unseen data is
 **worse** than anything in the table above.
 
-**Verdict: research artifact only.** Intraday use is ruled out by §9.1 (the rule
-needs the close) and §9.2 (the best entries are unfillable); end-of-day use is
-ruled out by §9.3 (the metric that looks best earns the least). Any live use
-would need a point-in-time universe, a true holdout, slippage modelling and
-intraday validation first.
+---
+
+## 10. Can the strategies be tuned to 70%? No — and it is now a measured bound
+
+The requested target was "tune it to 70%, and don't report back below 60%". Full
+analysis in [`TARGET_70PCT.md`](TARGET_70PCT.md). The short version is that 70% is
+not a reachable point on this frontier, so no amount of tuning reaches it.
+
+**The arithmetic.** For base rate π, recall *r* and false-positive rate *f*,
+precision is `πr / (πr + (1-π)f)`. Requiring 70% at a 10% recall forces the
+false-positive rate below **0.18%** of a population that is 95.9% negative.
+
+**The measured oracle.** `src/ml/precision_ceiling.py` computes, on the true
+out-of-sample labels, the best precision achievable at *any* threshold. Because it
+uses the true labels, no model or threshold choice can exceed it:
+
+| Minimum signals | Max precision | Recall |
+| ---: | ---: | ---: |
+| 250 | 24.54% | 0.57% |
+| 1,000 | 21.11% | 1.91% |
+| 5,000 | 14.43% | 7.79% |
+| 10,000 | 12.56% | 11.38% |
+
+**A 70% target is 2.60× that ceiling.** At a useful recall (≥10%) the ceiling is
+13.08%.
+
+**What was actually achieved**, all with purge and embargo and thresholds fitted
+on training folds only:
+
+| Configuration | In-sample | **Out-of-sample** | Signals |
+| --- | ---: | ---: | ---: |
+| HGB, 82 features, 2% publication | 50.60% | **15.98%** | 1,790 |
+| ExtraTrees, 2% | 56.26% | **18.21%** | 368 |
+| Top-1 per session | 31.22% | **23.81%** | 462 |
+| **One-shot 2026 holdout** | — | **12.14%** | 1,614 |
+
+The in-sample columns are the mechanism behind every published "70%": the
+configuration reaching 68.57% in-sample delivers 15.26% out-of-sample.
+
+**The 23.81% is not better than 15.98%.** It comes from publishing 462 signals
+instead of 1,790. Against an oracle global threshold allowed to tune itself on the
+test block at the same budget, the ratios are 0.95–1.02 with paired
+date-clustered intervals containing zero — statistically indistinguishable. It is
+an operating-point effect, exactly as the bound predicts.
+
+**The harness was validated before any of this was believed**
+(`src/ml/null_tests.py`): permuting the labels collapses precision to 3.00%
+against a 3.09% base rate; Gaussian noise features give 4.55% against 4.12%; no
+feature exceeds AUC 0.68. Verdict: **trustworthy** — the numbers are real, and
+they are simply not 70%.
+
+The one genuine, defensible result is the **one-shot 2026 holdout: 12.14%
+precision on 1,614 signals across 802 stocks and 146 distinct dates, a 4.17× lift
+whose date-clustered 95% interval [8.82%, 16.48%] excludes the base rate.** That
+is a real, modest edge. Reporting it honestly is more useful than a fabricated 70%.
+
+```powershell
+python -m src.ml.build_matrix --stride 5
+python -m src.ml.precision_ceiling     # the bound
+python -m src.ml.search --preset wide  # 58 configurations
+python -m src.ml.null_tests            # prove the harness cannot cheat
+python -m src.ml.final_holdout         # one-shot 2026 evaluation
+```
+
+---

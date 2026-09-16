@@ -1,0 +1,35 @@
+{
+  "holdout_start": "2026-01-01",
+  "config": {
+    "model": "hgb",
+    "params": {
+      "max_leaf_nodes": 15,
+      "min_samples_leaf": 300,
+      "l2_regularization": 10.0,
+      "learning_rate": 0.03,
+      "max_iter": 300,
+      "early_stopping": false
+    },
+    "label": "label_high",
+    "target_rate": 0.02
+  },
+  "threshold": 0.16596081773308322,
+  "n_train_rows": 434383,
+  "n_holdout_rows": 95374,
+  "base_rate": 0.02909598003648793,
+  "signals": 1614,
+  "hits": 196,
+  "precision": 0.12143742255266418,
+  "lift": 4.173683869743349,
+  "wilson_95": [
+    0.10639435026425698,
+    0.1382783049573667
+  ],
+  "date_clustered_95": [
+    0.08815834007458594,
+    0.16483272570379323
+  ],
+  "distinct_stocks": 802,
+  "distinct_dates": 146,
+  "note": "Single pre-committed configuration, evaluated once on sessions never used for any selection. No maximum is taken over configurations here by design."
+}

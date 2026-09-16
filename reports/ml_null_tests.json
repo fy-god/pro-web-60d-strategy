@@ -1,0 +1,109 @@
+{
+  "n_rows": 536143,
+  "n_features": 82,
+  "permuted_labels": {
+    "oos_precision": [
+      0.02813852813852814,
+      0.030266983875231298,
+      0.03162055335968379
+    ],
+    "oos_base_rate": [
+      0.03074834426994461,
+      0.031115096803930837,
+      0.03091879512353752
+    ],
+    "mean_precision": 0.030008688457814413,
+    "mean_base_rate": 0.03092741206580432,
+    "max_precision": 0.03162055335968379,
+    "verdict": "CLEAN"
+  },
+  "noise_features": {
+    "n_folds": 4,
+    "insample_signals": 19885,
+    "insample_precision": 0.2770932863967815,
+    "oos_signals": 4832,
+    "oos_precision": 0.04552980132450331,
+    "oos_base_rate": 0.041242904627034,
+    "oos_lift": 1.103942647498676,
+    "per_fold_oos": [
+      0.03300624442462088,
+      0.08770421324161651,
+      0.028044871794871796,
+      0.03538461538461538
+    ],
+    "per_fold_signals": [
+      1121,
+      1163,
+      1248,
+      1300
+    ],
+    "folds_above_base": 4,
+    "verdict": "CLEAN"
+  },
+  "feature_auc": {
+    "top": [
+      {
+        "feature": "atr14_pct",
+        "auc": 0.6800071948804998
+      },
+      {
+        "feature": "vol20",
+        "auc": 0.672270519534574
+      },
+      {
+        "feature": "cs_atr_z",
+        "auc": 0.6715310452281806
+      },
+      {
+        "feature": "cs_atr_rank",
+        "auc": 0.6688831253183412
+      },
+      {
+        "feature": "range_pct",
+        "auc": 0.6666306198287094
+      },
+      {
+        "feature": "vol10",
+        "auc": 0.6626656304854333
+      },
+      {
+        "feature": "vol60",
+        "auc": 0.6543302930286272
+      },
+      {
+        "feature": "vol5",
+        "auc": 0.6529222291221527
+      },
+      {
+        "feature": "limitup_20",
+        "auc": 0.6080108455922856
+      },
+      {
+        "feature": "range_20_60",
+        "auc": 0.5988283061988341
+      },
+      {
+        "feature": "beta_60",
+        "auc": 0.5896408250268846
+      },
+      {
+        "feature": "cs_pos60_z",
+        "auc": 0.5870167620381231
+      },
+      {
+        "feature": "limitup_10",
+        "auc": 0.5851691734662261
+      },
+      {
+        "feature": "vol_ratio_20_60",
+        "auc": 0.5845040580975203
+      },
+      {
+        "feature": "dist_ma60",
+        "auc": 0.5837742231999505
+      }
+    ],
+    "suspicious": []
+  },
+  "verdict": "TRUSTWORTHY"
+}

@@ -1,0 +1,185 @@
+{
+  "n_features": 82,
+  "n_rows": 536143,
+  "base_rate": 0.0309160615149965,
+  "top25": [
+    {
+      "feature": "atr14_pct",
+      "auc": 0.6811992384023761,
+      "auc_within_date_rank": 0.6717369150933948,
+      "finite_share": 0.9797628617738178
+    },
+    {
+      "feature": "cs_atr_z",
+      "auc": 0.6746945155316325,
+      "auc_within_date_rank": 0.6717369146714594,
+      "finite_share": 0.9797628617738178
+    },
+    {
+      "feature": "vol20",
+      "auc": 0.6728394606993562,
+      "auc_within_date_rank": 0.6638523925220046,
+      "finite_share": 0.976177997288037
+    },
+    {
+      "feature": "cs_atr_rank",
+      "auc": 0.6719854108389255,
+      "auc_within_date_rank": 0.6717369150933948,
+      "finite_share": 0.9797628617738178
+    },
+    {
+      "feature": "range_pct",
+      "auc": 0.6669794994329139,
+      "auc_within_date_rank": 0.6468457412811276,
+      "finite_share": 0.9880889986440184
+    },
+    {
+      "feature": "vol10",
+      "auc": 0.6654712006691407,
+      "auc_within_date_rank": 0.655907421414123,
+      "finite_share": 0.9821334979660277
+    },
+    {
+      "feature": "vol60",
+      "auc": 0.6555510268522503,
+      "auc_within_date_rank": 0.6596730111682917,
+      "finite_share": 0.9523709159683145
+    },
+    {
+      "feature": "vol5",
+      "auc": 0.6525742199744736,
+      "auc_within_date_rank": 0.6367758584356824,
+      "finite_share": 0.9857183624518085
+    },
+    {
+      "feature": "limitup_20",
+      "auc": 0.6072449550761522,
+      "auc_within_date_rank": 0.6057577401058091,
+      "finite_share": 0.9773698434932472
+    },
+    {
+      "feature": "range_20_60",
+      "auc": 0.6003333744743491,
+      "auc_within_date_rank": 0.5720453525057712,
+      "finite_share": 0.9535627621735246
+    },
+    {
+      "feature": "beta_60",
+      "auc": 0.5916758663738613,
+      "auc_within_date_rank": 0.592496362648065,
+      "finite_share": 0.9642744566281757
+    },
+    {
+      "feature": "vol_ratio_20_60",
+      "auc": 0.5892355107024012,
+      "auc_within_date_rank": 0.5675153296802098,
+      "finite_share": 0.9535627621735246
+    },
+    {
+      "feature": "limitup_10",
+      "auc": 0.5858097768680632,
+      "auc_within_date_rank": 0.5718409274900029,
+      "finite_share": 0.9833253441712378
+    },
+    {
+      "feature": "cs_pos60_z",
+      "auc": 0.5840466111757646,
+      "auc_within_date_rank": 0.5808932295315443,
+      "finite_share": 0.9535627621735246
+    },
+    {
+      "feature": "cs_ret60_rank",
+      "auc": 0.5819794009422352,
+      "auc_within_date_rank": 0.5816726306382538,
+      "finite_share": 0.9166808109030613
+    },
+    {
+      "feature": "dist_ma60",
+      "auc": 0.5818603517884156,
+      "auc_within_date_rank": 0.5912940028058069,
+      "finite_share": 0.9535627621735246
+    },
+    {
+      "feature": "cs_pos60_rank",
+      "auc": 0.5810915610027791,
+      "auc_within_date_rank": 0.5808877576367905,
+      "finite_share": 0.9535627621735246
+    },
+    {
+      "feature": "cs_ret60_z",
+      "auc": 0.580279130573087,
+      "auc_within_date_rank": 0.5816726233031024,
+      "finite_share": 0.9166808109030613
+    },
+    {
+      "feature": "cs_ret20_rank",
+      "auc": 0.5802688595299018,
+      "auc_within_date_rank": 0.5805853655566691,
+      "finite_share": 0.9642744566281757
+    },
+    {
+      "feature": "dist_ma20",
+      "auc": 0.5795769432679827,
+      "auc_within_date_rank": 0.5807169436685351,
+      "finite_share": 0.9773698434932472
+    },
+    {
+      "feature": "cs_ret20_z",
+      "auc": 0.5755346038796606,
+      "auc_within_date_rank": 0.5805855779429838,
+      "finite_share": 0.9642744566281757
+    },
+    {
+      "feature": "ret20",
+      "auc": 0.575236453505833,
+      "auc_within_date_rank": 0.5805853655566691,
+      "finite_share": 0.9642744566281757
+    },
+    {
+      "feature": "vol_stability_20",
+      "auc": 0.5750574159399551,
+      "auc_within_date_rank": 0.557178420701117,
+      "finite_share": 0.9773698434932472
+    },
+    {
+      "feature": "range_5_20",
+      "auc": 0.5728292008485288,
+      "auc_within_date_rank": 0.5577463411503687,
+      "finite_share": 0.9773698434932472
+    },
+    {
+      "feature": "mkt_vol20",
+      "auc": 0.5722322492369284,
+      "auc_within_date_rank": 0.4960703703620797,
+      "finite_share": 0.9859850823381076
+    }
+  ],
+  "flagged_auc_gt_0.75": [],
+  "flagged_auc_lt_0.25": [],
+  "permutation_null": {
+    "n_values": 246,
+    "mean": 0.5000994152352204,
+    "sd": 0.0019080632383152052,
+    "max": 0.5054472930159654,
+    "min": 0.49488138753786004,
+    "abs_dev_max": 0.00544729301596536,
+    "per_seed_best": [
+      {
+        "seed": 11,
+        "max_abs_auc_dev": 0.5054472930159654,
+        "feature": "mkt_dispersion"
+      },
+      {
+        "seed": 22,
+        "max_abs_auc_dev": 0.5047079834862358,
+        "feature": "kdj_k_chg5"
+      },
+      {
+        "seed": 33,
+        "max_abs_auc_dev": 0.50511861246214,
+        "feature": "cs_ret60_z"
+      }
+    ]
+  },
+  "note": "auc = single-feature AUC against label_high over all finite rows. auc_within_date_rank = AUC of the feature's within-session percentile rank, which removes the market/date component and isolates stock selection. The permutation null is the largest |AUC-0.5| reachable by the best of these features when the label is pure noise -- the threshold against which 'suspicious' is judged."
+}

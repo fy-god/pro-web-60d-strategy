@@ -1,0 +1,431 @@
+{
+  "panel_rows": 2680715,
+  "matrix_rows": 536143,
+  "T_A_beta": {
+    "production_order_alignment": {
+      "rows": 2680715,
+      "mismatches": 0,
+      "aligned": true,
+      "why": "sort_values([code,date]) makes the frame row order identical to the group-key order, so reset_index(level=0, drop=True) is positionally correct here."
+    },
+    "unsorted_frame_divergence": {
+      "rows": 2680715,
+      "mismatches": 2679396,
+      "aligned": false,
+      "why": "On an unsorted frame the grouped rolling returns values in group order while the frame is in shuffled order; every elementwise combination after it is then wrong. The helper carries no guard, so this is a latent fragility -- it does NOT affect the shipped matrix because build() always sorts first."
+    }
+  },
+  "T_A_beta_reconstruction": [
+    {
+      "code": "002967",
+      "date": "2024-02-20",
+      "n_bars_used": 60,
+      "beta_matrix": 1.1773784160614014,
+      "beta_recon": 1.177378348317237,
+      "beta_abs_diff": 6.774416427823837e-08,
+      "resid_matrix": -0.021146083250641823,
+      "resid_recon": -0.021146115836260884,
+      "resid_abs_diff": 3.258561906069324e-08
+    },
+    {
+      "code": "000430",
+      "date": "2024-02-08",
+      "n_bars_used": 60,
+      "beta_matrix": 1.2586071491241455,
+      "beta_recon": 1.2586070977239914,
+      "beta_abs_diff": 5.1400154132963394e-08,
+      "resid_matrix": -0.002666360465809703,
+      "resid_recon": -0.0026663291602298106,
+      "resid_abs_diff": 3.130557989228233e-08
+    },
+    {
+      "code": "000815",
+      "date": "2025-07-30",
+      "n_bars_used": 60,
+      "beta_matrix": 0.8923812508583069,
+      "beta_recon": 0.8923813773658895,
+      "beta_abs_diff": 1.2650758263177408e-07,
+      "resid_matrix": -0.021192610263824463,
+      "resid_recon": -0.021192612282575195,
+      "resid_abs_diff": 2.018750732551977e-09
+    },
+    {
+      "code": "002911",
+      "date": "2023-09-21",
+      "n_bars_used": 60,
+      "beta_matrix": 0.6473040580749512,
+      "beta_recon": 0.647303761133431,
+      "beta_abs_diff": 2.9694152015036224e-07,
+      "resid_matrix": -0.028187047690153122,
+      "resid_recon": -0.02818700157465185,
+      "resid_abs_diff": 4.6115501271815074e-08
+    },
+    {
+      "code": "600284",
+      "date": "2025-06-17",
+      "n_bars_used": 60,
+      "beta_matrix": 0.9325180053710938,
+      "beta_recon": 0.9325180379438124,
+      "beta_abs_diff": 3.2572718633439024e-08,
+      "resid_matrix": -0.009102845564484596,
+      "resid_recon": -0.009102863054686747,
+      "resid_abs_diff": 1.7490202151165812e-08
+    },
+    {
+      "code": "603595",
+      "date": "2025-07-04",
+      "n_bars_used": 60,
+      "beta_matrix": 2.2184853553771973,
+      "beta_recon": 2.218485930203779,
+      "beta_abs_diff": 5.748265818894538e-07,
+      "resid_matrix": -0.008807332254946232,
+      "resid_recon": -0.008807372864379444,
+      "resid_abs_diff": 4.0609433211991064e-08
+    },
+    {
+      "code": "600612",
+      "date": "2023-12-08",
+      "n_bars_used": 60,
+      "beta_matrix": 0.8483806848526001,
+      "beta_recon": 0.8483802824808814,
+      "beta_abs_diff": 4.0237171872181676e-07,
+      "resid_matrix": 0.013189151883125305,
+      "resid_recon": 0.013189150137260734,
+      "resid_abs_diff": 1.7458645709678144e-09
+    },
+    {
+      "code": "001215",
+      "date": "2023-07-07",
+      "n_bars_used": 60,
+      "beta_matrix": 0.3022637963294983,
+      "beta_recon": 0.30226447095728154,
+      "beta_abs_diff": 6.746277832481162e-07,
+      "resid_matrix": -0.010731938295066357,
+      "resid_recon": -0.010731984126326354,
+      "resid_abs_diff": 4.58312599972005e-08
+    },
+    {
+      "code": "002483",
+      "date": "2023-04-21",
+      "n_bars_used": 60,
+      "beta_matrix": 1.357985496520996,
+      "beta_recon": 1.3579856747124464,
+      "beta_abs_diff": 1.7819145026187755e-07,
+      "resid_matrix": -0.0011501064291223884,
+      "resid_recon": -0.0011500901873138583,
+      "resid_abs_diff": 1.624180853004864e-08
+    },
+    {
+      "code": "601366",
+      "date": "2024-12-16",
+      "n_bars_used": 60,
+      "beta_matrix": 0.7797600626945496,
+      "beta_recon": 0.7797603424949037,
+      "beta_abs_diff": 2.7980035410823945e-07,
+      "resid_matrix": 0.028925184160470963,
+      "resid_recon": 0.028925225691473544,
+      "resid_abs_diff": 4.153100258141862e-08
+    },
+    {
+      "code": "603111",
+      "date": "2024-03-28",
+      "n_bars_used": 60,
+      "beta_matrix": 1.4190735816955566,
+      "beta_recon": 1.4190731559218086,
+      "beta_abs_diff": 4.257737480362067e-07,
+      "resid_matrix": -0.0035706651397049427,
+      "resid_recon": -0.003570633227221773,
+      "resid_abs_diff": 3.1912483169915795e-08
+    },
+    {
+      "code": "603050",
+      "date": "2023-04-03",
+      "n_bars_used": 59,
+      "beta_matrix": 1.074018955230713,
+      "beta_recon": 1.0740191157072032,
+      "beta_abs_diff": 1.60476490318473e-07,
+      "resid_matrix": -0.00934370793402195,
+      "resid_recon": -0.009343706311414218,
+      "resid_abs_diff": 1.6226077322045729e-09
+    }
+  ],
+  "T_A_beta_reconstruction_max_abs_diff": {
+    "beta": 6.746277832481162e-07,
+    "resid": 4.6115501271815074e-08,
+    "note": "Agreement is bounded by float32 storage in the parquet and by the EPS convention: build_matrix uses ret = close/prev_close - 1 with EPS added to the denominator, this audit uses the raw ratio. A difference near 1e-7 confirms the same trailing-60-bar cov/var."
+  },
+  "T_B_artifact_vs_source": {
+    "cutoff": "2024-12-31",
+    "rows_compared": 281306,
+    "features_compared": 82,
+    "features_matching": 82,
+    "mismatching": {},
+    "worst": [
+      [
+        "ret1",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret2",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret3",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret5",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret10",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret20",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret60",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ],
+      [
+        "ret120",
+        {
+          "max_abs_diff": 0.0,
+          "n_gt_1e-6": 0
+        }
+      ]
+    ]
+  },
+  "T_C_cross_sectional": {
+    "per_feature": {
+      "cs_ret5_rank": {
+        "auc": 0.558208152109349,
+        "within_date_auc_mean": 0.5872580535112855
+      },
+      "cs_ret20_rank": {
+        "auc": 0.5802688595299018,
+        "within_date_auc_mean": 0.6177814222047553
+      },
+      "cs_ret60_rank": {
+        "auc": 0.5819794009422352,
+        "within_date_auc_mean": 0.5963088415840956
+      },
+      "cs_volratio_rank": {
+        "auc": 0.5562027608398192,
+        "within_date_auc_mean": 0.5838523011269086
+      },
+      "cs_atr_rank": {
+        "auc": 0.6719854108389255,
+        "within_date_auc_mean": 0.7023997006091852
+      },
+      "cs_pos60_rank": {
+        "auc": 0.5810915610027791,
+        "within_date_auc_mean": 0.605579827452553
+      },
+      "SYNTHETIC_noise_rank": {
+        "auc": 0.49954731575801575,
+        "within_date_auc_mean": 0.5028628271060754
+      }
+    },
+    "argument": "A within-session percentile rank is a deterministic function of the session's own cross-section, all of which is printed at that session's close. It contains no future bar, so it cannot leak the label directly. What it CAN do is concentrate signals on the absolute best stocks of a given day -- and since a stock's 10-session forward window overlaps the windows of every other stock on the same day, that concentrates the *evaluation sample* on a few market states. The effect is a variance problem, not a leakage problem; it is why the harness reports distinct_dates alongside distinct_stocks."
+  },
+  "T_D_kdj": {
+    "truncation_kdj_k_max_abs_diff": 0.0,
+    "truncation_kdj_k_n_gt_1e-9": 0,
+    "rows_compared": 1774007,
+    "independent_reimpl_max_abs_diff": 0.0,
+    "first_bar_uses_seed_50": false,
+    "stocks": 3193,
+    "note": "K/D restart at each stock's first bar (seed 50) and never reset inside a stock; every value at bar i is a function of rows <= i of the same stock only."
+  },
+  "T_E_rolling_windows": {
+    "sites": [
+      {
+        "feature_group": "vol5",
+        "statistic": "std",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol10",
+        "statistic": "std",
+        "window": 10,
+        "min_periods": 5,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol20",
+        "statistic": "std",
+        "window": 20,
+        "min_periods": 10,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol60",
+        "statistic": "std",
+        "window": 60,
+        "min_periods": 30,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "atr14_pct",
+        "statistic": "mean",
+        "window": 14,
+        "min_periods": 7,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol_ma5",
+        "statistic": "mean",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol_ma20",
+        "statistic": "mean",
+        "window": 20,
+        "min_periods": 10,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol_ma60",
+        "statistic": "mean",
+        "window": 60,
+        "min_periods": 30,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "vol_stability_20",
+        "statistic": "std",
+        "window": 20,
+        "min_periods": 10,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "dist_ma5..250",
+        "statistic": "mean",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "ma*_slope",
+        "statistic": "shift",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "pos_60/120/250",
+        "statistic": "max/min",
+        "window": 60,
+        "min_periods": 30,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "range_5_20/20_60",
+        "statistic": "mean",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "limitup_5/10/20",
+        "statistic": "sum",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "up_rate_20",
+        "statistic": "mean",
+        "window": 20,
+        "min_periods": 10,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "mkt_ret5/20/60",
+        "statistic": "sum",
+        "window": 5,
+        "min_periods": 2,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "mkt_vol20",
+        "statistic": "std",
+        "window": 20,
+        "min_periods": 10,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      },
+      {
+        "feature_group": "beta_60",
+        "statistic": "mean",
+        "window": 60,
+        "min_periods": 30,
+        "direction": "backward",
+        "ends_at": "t",
+        "requires_future": false
+      }
+    ],
+    "verdict": "Every pandas rolling(...) call in build_matrix is on a groupby(code) Series without a shift(-n), so the window is [t-w+1, t]. The only forward-looking arithmetic in the module is in the `label_*` section, which is what a target is supposed to be. min_periods = max(2, w//2) means short-history rows get NaN or a partial-window statistic; they are never back-filled from the future."
+  }
+}

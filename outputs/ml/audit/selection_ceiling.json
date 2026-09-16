@@ -1,0 +1,100 @@
+{
+  "n_rows": 281227,
+  "n_positives": 11496,
+  "pooled_base_rate": 0.04087800957945005,
+  "per_fold": [
+    {
+      "fold": "fold1_test_2024-02-02_to_2024-07-29",
+      "n_test": 67248,
+      "positives": 1982,
+      "base_rate": 0.02947299547941946,
+      "auc": 0.7829175577779149
+    },
+    {
+      "fold": "fold2_test_2024-07-30_to_2025-01-17",
+      "n_test": 68438,
+      "positives": 5486,
+      "base_rate": 0.08016014494871271,
+      "auc": 0.5627105212579837
+    },
+    {
+      "fold": "fold3_test_2025-01-20_to_2025-07-14",
+      "n_test": 72262,
+      "positives": 1929,
+      "base_rate": 0.02669452824444383,
+      "auc": 0.720730148441366
+    },
+    {
+      "fold": "fold4_test_2025-07-15_to_2025-12-31",
+      "n_test": 73279,
+      "positives": 2099,
+      "base_rate": 0.028643949835559984,
+      "auc": 0.7287828560971983
+    }
+  ],
+  "published_set": {
+    "signals": 1790,
+    "hits": 286,
+    "precision": 0.15977653631284916,
+    "base_rate_all_oos_rows": 0.04087800957945005,
+    "distinct_dates": 299,
+    "distinct_stocks": 923,
+    "signal_dates_share": 0.6471861471861472,
+    "thresholds": {
+      "fold1_test_2024-02-02_to_2024-07-29": 0.07497095909460612,
+      "fold2_test_2024-07-30_to_2025-01-17": 0.10003493585695031,
+      "fold3_test_2025-01-20_to_2025-07-14": 0.24804451987146137,
+      "fold4_test_2025-07-15_to_2025-12-31": 0.19080017229485696
+    }
+  },
+  "bootstrap_precision": {
+    "method": "resample signal DATES with replacement",
+    "n_dates": 299,
+    "n_boot": 4000,
+    "mean": 0.1599692055445272,
+    "ci95": [
+      0.13623807666882914,
+      0.1865149051636903
+    ],
+    "p_below_full_base_rate": 0.0,
+    "p_below_2x_base_rate": 0.0
+  },
+  "row_level_ci_for_contrast": {
+    "se": 0.004680101578916746,
+    "ci95": [
+      0.03170501048477323,
+      0.05005100867412687
+    ],
+    "note": "This is the interval the project would get if it ignored overlapping forward windows. It is the WRONG interval, and it is reported only to quantify how much the date-block bootstrap widens it."
+  },
+  "selection_budget": {
+    "null_precision_mean": 0.037493426150102246,
+    "null_precision_sd": 0.012487030161392826,
+    "n_null_draws": 6,
+    "real_precision": 0.1598,
+    "model": "Gaussian on the observed nulls (mean/SD above)",
+    "best_of_K": {
+      "1": {
+        "expected_best_of_K": 0.037412976283162945,
+        "p_best_of_K_ge_real": 0.0
+      },
+      "3": {
+        "expected_best_of_K": 0.048030028857239324,
+        "p_best_of_K_ge_real": 0.0
+      },
+      "10": {
+        "expected_best_of_K": 0.05671440210697825,
+        "p_best_of_K_ge_real": 0.0
+      },
+      "30": {
+        "expected_best_of_K": 0.06300616788154527,
+        "p_best_of_K_ge_real": 0.0
+      },
+      "100": {
+        "expected_best_of_K": 0.06878777867040031,
+        "p_best_of_K_ge_real": 0.0
+      }
+    },
+    "practical_note": "The 15.98% baseline was the top of a 3-config `models` preset. Selecting the best of 3 i.i.d. nulls with mean ~3.9% and SD ~0.7% gives ~4.6%. Selection cannot manufacture 15.98%."
+  }
+}

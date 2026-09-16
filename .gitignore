@@ -11,9 +11,21 @@ data/*.json
 outputs/*.parquet
 outputs/*_signals*.csv
 
+# ML feature matrices are 176 MB each — over GitHub's 100 MB per-file hard limit,
+# so they cannot be pushed. Rebuild with:
+#   python -m src.ml.build_matrix --stride 5
+# The small metric reports under reports/ ARE tracked, as are the audit evidence
+# files under outputs/ml/audit/.
+outputs/ml/*.parquet
+outputs/ml/**/*.parquet
+outputs/ml/*.log
+# Per-fold training caches are rebuilt on demand; not evidence.
+outputs/ml/crosssec_cache/
+
 # NOTE: outputs/charts_120d/ IS tracked on purpose. The 120-session K-line
 # charts with signal markers are a requested deliverable, not a disposable
 # artifact. They are ~86 KB each. Regenerate with `python -m src.make_charts`.
+!outputs/ml/audit/
 
 # Python
 __pycache__/

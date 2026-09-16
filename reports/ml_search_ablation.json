@@ -1,0 +1,642 @@
+{
+  "preset": "ablation",
+  "folds": 5,
+  "final_holdout_start": "2026-01-01",
+  "n_configs": 19,
+  "n_failed": 0,
+  "oos_base_rate": 0.041242904627034,
+  "ranked": [
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5017852652753332,
+      "oos_signals": 1661,
+      "oos_precision": 0.17098133654425046,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 4.145715198540483,
+      "per_fold_oos": [
+        0.11741293532338308,
+        0.23713235294117646,
+        0.325,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1005,
+        544,
+        40,
+        72
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_position",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5061101332662811,
+      "oos_signals": 1863,
+      "oos_precision": 0.16049382716049382,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.8914288072545924,
+      "per_fold_oos": [
+        0.11092577147623019,
+        0.2351851851851852,
+        0.27906976744186046,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1199,
+        540,
+        43,
+        81
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_kdj",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5038471209454363,
+      "oos_signals": 1887,
+      "oos_precision": 0.160042395336513,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.8804831227044083,
+      "per_fold_oos": [
+        0.10539845758354756,
+        0.22895622895622897,
+        0.34782608695652173,
+        0.3375
+      ],
+      "per_fold_signals": [
+        1167,
+        594,
+        46,
+        80
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_volume",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5060095549409103,
+      "oos_signals": 1790,
+      "oos_precision": 0.15977653631284916,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.8740369466635105,
+      "per_fold_oos": [
+        0.10786914235190097,
+        0.23191094619666047,
+        0.3111111111111111,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1131,
+        539,
+        45,
+        75
+      ],
+      "folds_above_base": 4,
+      "config": "abl_all",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5035956751320091,
+      "oos_signals": 1539,
+      "oos_precision": 0.1572449642625081,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.81265494475956,
+      "per_fold_oos": [
+        0.1053763440860215,
+        0.23031496062992127,
+        0.26666666666666666,
+        0.26744186046511625
+      ],
+      "per_fold_signals": [
+        930,
+        508,
+        15,
+        86
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_volatility",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.502791048529042,
+      "oos_signals": 1768,
+      "oos_precision": 0.15328054298642535,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.7165312281607017,
+      "per_fold_oos": [
+        0.10324232081911262,
+        0.22933884297520662,
+        0.3111111111111111,
+        0.373134328358209
+      ],
+      "per_fold_signals": [
+        1172,
+        484,
+        45,
+        67
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_candle",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5056575308021122,
+      "oos_signals": 1736,
+      "oos_precision": 0.15264976958525345,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.701237121043948,
+      "per_fold_oos": [
+        0.0994718309859155,
+        0.23142250530785563,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        1136,
+        471,
+        45,
+        84
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_limitup",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21257229067136033,
+      "oos_signals": 4213,
+      "oos_precision": 0.1492997863755044,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.6200114353158583,
+      "per_fold_oos": [
+        0.0951417004048583,
+        0.18313253012048192,
+        0.14629629629629629,
+        0.17110266159695817
+      ],
+      "per_fold_signals": [
+        988,
+        830,
+        1080,
+        1315
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_cross",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21629368871008298,
+      "oos_signals": 8153,
+      "oos_precision": 0.14792101067091867,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.586580819381937,
+      "per_fold_oos": [
+        0.15496938294865756,
+        0.14192495921696574,
+        0.12796610169491526,
+        0.15315315315315314
+      ],
+      "per_fold_signals": [
+        4246,
+        1839,
+        1180,
+        888
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_volatility",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "volatility"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5047523258737742,
+      "oos_signals": 2093,
+      "oos_precision": 0.14763497372193024,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.5796453973602556,
+      "per_fold_oos": [
+        0.10215482841181166,
+        0.20857142857142857,
+        0.21428571428571427,
+        0.27380952380952384
+      ],
+      "per_fold_signals": [
+        1253,
+        700,
+        56,
+        84
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_momentum",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.3752577319587629,
+      "oos_signals": 3380,
+      "oos_precision": 0.14615384615384616,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.543733097257289,
+      "per_fold_oos": [
+        0.12150943396226416,
+        0.19090909090909092,
+        0.1085899513776337,
+        0.171875
+      ],
+      "per_fold_signals": [
+        1325,
+        990,
+        617,
+        448
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_market",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.5028413376917275,
+      "oos_signals": 2210,
+      "oos_precision": 0.1425339366515837,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.4559626180682534,
+      "per_fold_oos": [
+        0.09865470852017937,
+        0.2366412213740458,
+        0.275,
+        0.3058823529411765
+      ],
+      "per_fold_signals": [
+        1561,
+        524,
+        40,
+        85
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_cross",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19886,
+      "insample_precision": 0.4575580810620537,
+      "oos_signals": 3102,
+      "oos_precision": 0.13668600902643455,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.314170286077263,
+      "per_fold_oos": [
+        0.17375132837407015,
+        0.17848970251716248,
+        0.017985611510791366,
+        0.039647577092511016
+      ],
+      "per_fold_signals": [
+        1882,
+        437,
+        556,
+        227
+      ],
+      "folds_above_base": 3,
+      "config": "abl_only_market",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "market"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19916,
+      "insample_precision": 0.17674231773448484,
+      "oos_signals": 8404,
+      "oos_precision": 0.12827225130890052,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.110165311315642,
+      "per_fold_oos": [
+        0.1444866920152091,
+        0.11422845691382766,
+        0.1104589114194237,
+        0.14711033274956217
+      ],
+      "per_fold_signals": [
+        2893,
+        2495,
+        1874,
+        1142
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_candle",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "candle"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.2977118430978124,
+      "oos_signals": 4143,
+      "oos_precision": 0.12647839729664495,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 3.066670459813846,
+      "per_fold_oos": [
+        0.0891640866873065,
+        0.14430577223088922,
+        0.11003236245954692,
+        0.20222929936305734
+      ],
+      "per_fold_signals": [
+        1615,
+        1282,
+        618,
+        628
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_momentum",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 20595,
+      "insample_precision": 0.13265355668851664,
+      "oos_signals": 8182,
+      "oos_precision": 0.12185284771449524,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 2.9545166330167456,
+      "per_fold_oos": [
+        0.08235294117647059,
+        0.14543446244477173,
+        0.1218568665377176,
+        0.14136807817589578
+      ],
+      "per_fold_signals": [
+        2380,
+        2716,
+        1551,
+        1535
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_limitup",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "limitup"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.1350766909730953,
+      "oos_signals": 7399,
+      "oos_precision": 0.09514799297202324,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 2.307014838854376,
+      "per_fold_oos": [
+        0.0695322376738306,
+        0.10342393222732087,
+        0.08910103420843278,
+        0.10943833236826868
+      ],
+      "per_fold_signals": [
+        1582,
+        2833,
+        1257,
+        1727
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_volume",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "volume"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.21890872516972593,
+      "oos_signals": 6099,
+      "oos_precision": 0.09214625348417774,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 2.2342328775693816,
+      "per_fold_oos": [
+        0.041918429003021146,
+        0.15534738485558158,
+        0.10753768844221105,
+        0.12340425531914893
+      ],
+      "per_fold_signals": [
+        2648,
+        1281,
+        995,
+        1175
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_position",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "position"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19888,
+      "insample_precision": 0.12183226065969428,
+      "oos_signals": 4654,
+      "oos_precision": 0.07692307692307693,
+      "oos_base_rate": 0.041242904627034,
+      "oos_lift": 1.8651226827669942,
+      "per_fold_oos": [
+        0.028445006321112517,
+        0.12201154163231658,
+        0.0872093023255814,
+        0.09009009009009009
+      ],
+      "per_fold_signals": [
+        1582,
+        1213,
+        860,
+        999
+      ],
+      "folds_above_base": 3,
+      "config": "abl_only_kdj",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "kdj"
+      ],
+      "params": {}
+    }
+  ],
+  "failed": []
+}
