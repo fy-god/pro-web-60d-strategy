@@ -1,0 +1,23 @@
+{
+  "webpro": {
+    "evaluated_points": 493246,
+    "bull_rate": 0.03034793997315741,
+    "joint_rate": 0.03031144702643306,
+    "horizon": 10,
+    "target_return": 0.3
+  },
+  "low60": {
+    "evaluated_points": 461416,
+    "bull_rate": 0.0007520328727222289,
+    "joint_rate": 0.0007476983893059626,
+    "horizon": 60,
+    "target_return": 3.0
+  },
+  "low504": {
+    "evaluated_points": 187729,
+    "bull_rate": 0.04695598442435639,
+    "joint_rate": 0.024854977121275882,
+    "horizon": 504,
+    "target_return": 3.0
+  }
+}

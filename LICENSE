@@ -1,0 +1,35 @@
+MIT License
+
+Copyright (c) 2026 Pro Web 60-Day Strategy Verification
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+NOTICE ON MARKET DATA AND RESEARCH CLAIMS
+
+This repository contains a verification/audit of research strategies. It is
+published for reproducibility and review. Nothing in it is investment advice,
+a trading recommendation, or a claim of future performance. The measured hit
+rates are retrospective, in-sample or pooled measurements on a
+survivorship-biased universe with no transaction costs, slippage, limit-up
+unfillability filter, or point-in-time index membership. See README.md §8.
+
+The strategy source under `experts/` is vendored from a third-party research
+bundle solely to verify it; see README.md §3 for the reproduction result.
