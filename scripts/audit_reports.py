@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import sys
 from pathlib import Path
 
@@ -170,16 +171,54 @@ def check_cross_report(f: Findings) -> None:
     models = load("ml_search_models.json")
     if ceiling and models:
         # The ceiling module reports the pooled out-of-sample base rate
-        # independently of the walk-forward module. They share fold definitions,
-        # so they must agree exactly; a mismatch means the two disagree about
-        # which rows are out-of-sample.
+        # independently of the walk-forward module. Both now run on the full
+        # session grid, so they must agree closely; a large mismatch means the
+        # two disagree about which rows are out-of-sample, or that one report is
+        # stale relative to the matrix on disk.
         pooled_base = ceiling.get("base_rate")
         configs = [r for r in (models.get("ranked") or [])
                    if r.get("config") == "fam_hgb_0"]
-        if configs:
-            f.check(f.close(pooled_base, configs[0]["oos_base_rate"], rtol=1e-4),
-                    f"base rate agrees across modules: ceiling {pooled_base:.6f} "
-                    f"vs walkforward {configs[0]['oos_base_rate']:.6f}")
+        if configs and pooled_base:
+            got = configs[0]["oos_base_rate"]
+            # The two modules drop different rows when fitting (the ceiling keeps
+            # every scorable row; evaluate_fold requires resolved labels), so a
+            # small difference is expected. A difference beyond ~0.5% relative
+            # means they are not describing the same population.
+            rel = abs(pooled_base - got) / max(pooled_base, 1e-12)
+            f.check(rel < 5e-3,
+                    f"base rate agrees across modules within 0.5%: ceiling "
+                    f"{pooled_base:.6f} vs walkforward {got:.6f} "
+                    f"(rel {rel*100:.3f}%)")
+
+    # Every report that carries a base rate must agree on which grid it came
+    # from. Mixing grids silently is the failure mode that produced the stale
+    # 15.98% in an earlier revision of the documents.
+    #
+    # Compare the MEDIAN base rate over configs that completed every fold and saw
+    # a non-trivial number of signals. An earlier version compared each report's
+    # top-level `oos_base_rate` field, which raised a false alarm: a report's
+    # most precise config can be a degenerate one that completed only 2 of 4
+    # folds, so its base rate describes those two folds rather than the grid.
+    full_fold_bases: dict[str, float] = {}
+    for name in ("ml_search_models.json", "ml_search_wide.json",
+                 "ml_search_ablation.json"):
+        report = load(name)
+        if not report:
+            continue
+        rows = [r for r in (report.get("ranked") or [])
+                if r.get("n_folds", 0) >= 4 and r.get("oos_signals", 0) >= 100
+                and r.get("oos_base_rate")]
+        if rows:
+            full_fold_bases[name] = float(
+                statistics.median([r["oos_base_rate"] for r in rows])
+            )
+    if len(full_fold_bases) > 1:
+        vals = list(full_fold_bases.values())
+        spread = max(vals) - min(vals)
+        f.check(spread < 5e-4,
+                f"search reports share one grid: median base rate over full-fold "
+                f"configs spans {spread:.6f} "
+                f"({ {k: round(v, 6) for k, v in full_fold_bases.items()} })")
 
     matrix_meta = ROOT / "outputs" / "ml" / "matrix_h10_t30_s5_meta.json"
     if matrix_meta.exists():
@@ -219,8 +258,8 @@ def check_prose(f: Findings, verbose: bool) -> None:
     # Figures that MUST appear in the headline documents, and figures that must
     # NOT appear because they were corrected.
     must_appear = {
-        "README.md": ["12.14", "4.17", "15.98", "23.81"],
-        "TARGET_70PCT.md": ["12.14", "24.54", "15.98"],
+        "README.md": ["13.61", "4.70", "26.78"],
+        "TARGET_70PCT.md": ["13.61", "26.78", "16.64"],
     }
     for doc, needles in must_appear.items():
         path = ROOT / doc
@@ -232,12 +271,18 @@ def check_prose(f: Findings, verbose: bool) -> None:
             f.check(needle in text,
                     f"{doc} cites {needle}")
 
-    # Retired figures. Each is kept here with the reason so the list doubles as
-    # a record of corrections rather than a mystery.
+    # Retired figures. Each is kept with the reason so the list doubles as a
+    # record of corrections rather than a mystery. Values retired by the
+    # 2026-09-17 review fixes are marked so a regression is caught.
     retired = {
         "20.23": "precision ceiling before the frontier grid was densified",
         "3.87": "lift computed against an unweighted-mean base rate",
         "3.58": "lift computed against a signal-weighted base rate",
+        "12.14": "2026 holdout before the purge and the phase-corrected grid",
+        "15.98": "walk-forward baseline on the stride-5 grid",
+        "4.17": "holdout lift before the purge and the phase-corrected grid",
+        "24.54": "frontier on the stride-5 grid",
+        "13.08": "recall-floor precision on the stride-5 grid",
     }
     # A correction table legitimately lists retired values next to the reasons
     # they were retired. Rather than matching keywords on the line, mark the

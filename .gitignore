@@ -42,3 +42,9 @@ Thumbs.db
 
 # Local scratch
 *.log
+
+# Scheduled audit output. Regenerated every four hours by
+# scripts/scheduled_report_audit.py; see scripts/register_report_audit_task.ps1
+# for the Windows Scheduled Task. Kept local so the repository does not gain a
+# log file every four hours.
+logs/
