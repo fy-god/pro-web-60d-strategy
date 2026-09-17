@@ -1,0 +1,87 @@
+{
+  "kind": "artificial_software_and_arithmetic_counterexamples",
+  "market_training_runs": 0,
+  "scope": "U07-U12 only; U01-U06 and U13-U14 are label counterexamples belonging to another repository and are not copied here",
+  "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+  "numpy": "2.4.4",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "source": "docs/reviews/2026-09-17_ML_update_review.md section 13",
+  "checks": [
+    {
+      "id": "U07",
+      "check": "a fixed-score frontier is not a bound on other rankings",
+      "source": "src/ml/precision_ceiling.py::frontier (argsort -> cumsum -> /k)",
+      "observed": {
+        "old_ranking_max_precision_min2": 0.2,
+        "new_ranking_max_precision_min2": 1.0,
+        "identical_labels": true
+      },
+      "note": "Same 10 labels, different score order: 20% vs 100%. The frontier constrains the ranking it was computed from, not every model."
+    },
+    {
+      "id": "U12",
+      "check": "a prefix inside a score tie is not achievable by a scalar threshold",
+      "source": "src/ml/precision_ceiling.py::frontier vs. threshold selection",
+      "observed": {
+        "prefix_precision_at_k2": 1.0,
+        "nonempty_threshold_precision": 0.2
+      },
+      "note": "Top-K reporting and threshold reporting are different units; ties must have an explicit rule."
+    },
+    {
+      "id": "U08",
+      "check": "date-only holdout split admits training rows whose label ends later",
+      "source": "src/ml/final_holdout.py (frame['date'] < HOLDOUT_START) with the 10-session label horizon",
+      "observed": {
+        "train_rows": 13,
+        "rows_crossing_boundary": 10,
+        "first_crossing_signal_date": "2025-12-18"
+      },
+      "note": "Constructed calendar, not the real panel. It shows the filter is label-blind; the real affected-row count must come from the panel."
+    },
+    {
+      "id": "U09",
+      "check": "a global stride shifts one stock's samples when another is added",
+      "source": "src/ml/build_matrix.py (out.iloc[::stride] after concatenation)",
+      "observed": {
+        "stock_A_dates_before": [
+          0,
+          5
+        ],
+        "stock_A_dates_after": [
+          4,
+          9
+        ]
+      },
+      "note": "Stock A's own bars are unchanged; its sampled dates are not. Any stride>1 matrix is therefore not reproducible under a panel change."
+    },
+    {
+      "id": "U10",
+      "check": "the 0.5pp tolerance classifies a below-limit gap as open-at-limit",
+      "source": "src/tradeability.py (gap >= limit - LIMIT_TOLERANCE)",
+      "observed": {
+        "gap": 0.096,
+        "configured_limit": 0.1,
+        "tolerance": 0.005,
+        "classified_open_at_limit": true,
+        "actual_fillability_still_unknown": true
+      },
+      "note": "A 9.6% gap is treated like a 10% limit gap. This is a tolerance property of the code, not a verdict on any real stock's fill."
+    },
+    {
+      "id": "U11",
+      "check": "float32 entry can flip an exact-target comparison",
+      "source": "src/ml/build_matrix.py (.astype('float32')) applied to a price used in an exact-boundary test",
+      "observed": {
+        "entry": 9.99,
+        "float32_entry": 9.989999771118164,
+        "close": 39.96,
+        "strict_4x_target_met": false,
+        "expression_after_float32_rounding": true
+      },
+      "note": "39.96 is exactly 4x9.99, so the strict test is False. Rounding the entry to float32 makes the same expression read True. Widening back to float64 cannot restore the discarded precision."
+    }
+  ],
+  "passed": 6,
+  "total": 6
+}

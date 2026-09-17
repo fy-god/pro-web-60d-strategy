@@ -13,6 +13,17 @@ than taken on trust.
 | [`ZIP_ARTIFACT_AUDIT.md`](ZIP_ARTIFACT_AUDIT.md) | Extracts and audits 11 previously-unexamined result archives, traces the generating code, and finds the single most serious methodology defect in the project. |
 | [`OTHER_PROJECTS_AUDIT.md`](OTHER_PROJECTS_AUDIT.md) | Audits three sibling projects (`ly`, `a_share_intraday_lab`, the Web Pro export). **No validated strategy in any of them.** |
 
+One audit is also **executable**, so its numbers can be reproduced rather than
+read:
+
+| Script | What it establishes |
+| --- | --- |
+| [`review_counterexamples.py`](review_counterexamples.py) | Reproduces U07–U12 from `docs/reviews/2026-09-17_ML_update_review.md` §13 against this repository's own source: the frontier bounds one ranking only, a prefix inside a score tie is not threshold-reachable, the date-only holdout split is label-blind, a global stride makes a stride>1 matrix panel-dependent, the 0.5pp tolerance classifies a 9.6% gap as open-at-limit, and a float32 entry can flip an exact-4x test. Writes `review_counterexamples.json`. |
+
+Run it with `python audit/review_counterexamples.py`. It loads no panel, fits no
+model and claims no hit rate; the U01–U06/U13–U14 label counterexamples live in
+the private repository that owns that training code and are not copied here.
+
 ## The four findings that matter most
 
 **1. The "70% success rate" is not a hit rate.**
