@@ -231,7 +231,7 @@ Brier / logloss / PR-AUC
 | U11 | 原始9.99与float32入场 | 精确四倍边界可能被误报 |
 | U12 | 10条同分、前2条为正 | 前缀100%不可由非空标量阈值实现 |
 
-14项总诊断另包含原模型更新的标签反例，完整脚本与JSON在本次会话验证附件；此公开报告不复制其他私有仓库的源码。未执行全市场fit。
+上表U07–U12为可执行反例，脚本与真实执行输出就在本仓库[`audit/review_counterexamples.py`](../../audit/review_counterexamples.py)与[`audit/review_counterexamples.json`](../../audit/review_counterexamples.json)，运行`python audit/review_counterexamples.py`可复现表中数值。14项总诊断中另有U01–U06、U13–U14是原模型更新的标签反例，位于持有该训练代码的另一个仓库；此公开报告不复制该私有仓库的源码。未执行全市场fit。
 
 ## 14. 建议提交顺序与停止条件
 
