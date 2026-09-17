@@ -54,7 +54,7 @@ def run_null(frame: pd.DataFrame, cols: list[str], label_col: str, seed: int) ->
 
 
 def main() -> None:
-    frame = wf.load_matrix()
+    frame = wf.load_matrix()  # resolves to the densest grid; see resolve_stride
     cols = wf.feature_columns(frame)
     print(f"matrix: {len(frame):,} rows, {len(cols)} features")
 
@@ -141,11 +141,12 @@ def main() -> None:
         else "SUSPECT"
     )
 
-    (REPORT_DIR / "ml_null_tests.json").write_text(
-        json.dumps(report, indent=2, default=str), encoding="utf-8"
-    )
+    # Route through save_report so the matrix and stride are stamped. This file
+    # writes its own JSON, which bypassed provenance and left readers unable to
+    # tell which grid the battery ran on.
+    path = wf.save_report("null_tests", report)
     print(f"\nOVERALL HARNESS VERDICT: {report['verdict']}")
-    print(f"wrote {REPORT_DIR / 'ml_null_tests.json'}")
+    print(f"wrote {path}")
 
 
 if __name__ == "__main__":

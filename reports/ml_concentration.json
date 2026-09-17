@@ -2,53 +2,53 @@
   "walkforward_folds": [
     {
       "fold": "fold1_test_2024-02-02_to_2024-07-29",
-      "signals": 1131,
-      "share_of_total": 0.6318435754189944,
-      "precision": 0.10786914235190097,
+      "signals": 10173,
+      "share_of_total": 0.8377666145104176,
+      "precision": 0.1455814410694977,
       "dates": 115
     },
     {
       "fold": "fold2_test_2024-07-30_to_2025-01-17",
-      "signals": 539,
-      "share_of_total": 0.3011173184357542,
-      "precision": 0.23191094619666047,
-      "dates": 107
+      "signals": 1448,
+      "share_of_total": 0.11924565593345961,
+      "precision": 0.2472375690607735,
+      "dates": 116
     },
     {
       "fold": "fold3_test_2025-01-20_to_2025-07-14",
-      "signals": 45,
-      "share_of_total": 0.025139664804469275,
-      "precision": 0.3111111111111111,
-      "dates": 28
+      "signals": 147,
+      "share_of_total": 0.012105739932471382,
+      "precision": 0.2108843537414966,
+      "dates": 50
     },
     {
       "fold": "fold4_test_2025-07-15_to_2025-12-31",
-      "signals": 75,
-      "share_of_total": 0.04189944134078212,
-      "precision": 0.3333333333333333,
-      "dates": 49
+      "signals": 375,
+      "share_of_total": 0.030881989623651487,
+      "precision": 0.336,
+      "dates": 105
     }
   ],
-  "walkforward_pooled": 0.15977653631284916,
-  "walkforward_total_signals": 1790,
-  "walkforward_largest_fold_share": 0.6318435754189944,
-  "walkforward_excluding_largest_fold": 0.2488619119878604,
+  "walkforward_pooled": 0.16437453677015565,
+  "walkforward_total_signals": 12143,
+  "walkforward_largest_fold_share": 0.8377666145104176,
+  "walkforward_excluding_largest_fold": 0.2614213197969543,
   "holdout": {
-    "signals": 1614,
-    "dates": 146,
-    "precision": 0.12143742255266418,
-    "base_rate": 0.029095979407429695,
-    "busiest_date_share": 0.08550185873605948,
+    "signals": 6202,
+    "dates": 150,
+    "precision": 0.1360851338277975,
+    "base_rate": 0.028958184644579887,
+    "busiest_date_share": 0.06788132860367624,
     "drop_top_dates": {
-      "0": 0.12143742255266418,
-      "1": 0.12872628726287264,
-      "3": 0.13795731707317074,
-      "5": 0.14347826086956522,
-      "10": 0.16647662485746864,
-      "20": 0.13532513181019332,
-      "40": 0.13920454545454544
+      "0": 0.1360851338277975,
+      "1": 0.1413250302715793,
+      "3": 0.15227537922987164,
+      "5": 0.1610989010989011,
+      "10": 0.1619559072922555,
+      "20": 0.14188267394270124,
+      "40": 0.16304347826086957
     },
-    "first_half_precision": 0.10285006195786865,
-    "second_half_precision": 0.14002478314745972
+    "first_half_precision": 0.1073847146081909,
+    "second_half_precision": 0.16478555304740405
   }
 }

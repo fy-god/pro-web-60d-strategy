@@ -31,6 +31,8 @@ from src.ml import walkforward as wf
 
 REPORT_DIR = Path(__file__).resolve().parents[2] / "reports"
 HOLDOUT_START = "2026-01-01"
+# Must match the horizon the matrix was labelled with, or the purge drops the
+# wrong number of sessions and the holdout silently overlaps the training set.
 HORIZON = 10
 
 
@@ -45,7 +47,7 @@ def drop_top_dates(dates: np.ndarray, y: np.ndarray, n_drop: int) -> tuple[float
 
 
 def main() -> None:
-    frame = wf.load_matrix()  # resolves to the densest grid; see resolve_stride
+    frame = wf.load_matrix()
     cols = wf.feature_columns(frame)
     sessions = np.sort(frame["date"].unique())
     folds = wf.folds(sessions, n_folds=5, horizon=10, embargo=2,
@@ -53,7 +55,7 @@ def main() -> None:
     cfg = wf.Config(name="conc", model="hgb", label="label_high", target_rate=0.02)
 
     print("=" * 78)
-    print("A. WALK-FORWARD BASELINE â€?per-fold breakdown")
+    print("A. WALK-FORWARD BASELINE â€” per-fold breakdown")
     print("=" * 78)
     fold_rows = []
     for fold in folds:
@@ -114,16 +116,17 @@ def main() -> None:
     }
 
     print("\n" + "=" * 78)
-    print("B. 2026 HOLDOUT â€?same scrutiny on the headline claim")
+    print("B. 2026 HOLDOUT â€” same scrutiny on the headline claim")
     print("=" * 78)
     # Reuse the SAME purged split as the holdout module rather than re-deriving
     # one. An earlier version of this file filtered on `date < cutoff` alone,
     # which leaves the last `horizon` pre-cutoff sessions in the training set
     # even though their labels look forward into the holdout. That is the exact
     # leak `final_holdout.purge_by_label_end` exists to remove, and hand-rolling
-    # the split here meant the two modules silently disagreed: they reported the
-    # same one-shot holdout on different row sets and different base rates, which
-    # is impossible from a single matrix. The audit caught it.
+    # the split here made the two modules disagree: they reported the same
+    # one-shot holdout on different row sets and different base rates, which is
+    # impossible from a single matrix. An audit caught it.
+    cutoff = np.datetime64(pd.Timestamp(HOLDOUT_START))
     train, purged, test = final_holdout.purge_by_label_end(frame, cutoff, HORIZON)
     if len(purged):
         print(f"  purged {len(purged):,} pre-cutoff row(s) whose "

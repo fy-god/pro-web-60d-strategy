@@ -220,6 +220,71 @@ def check_cross_report(f: Findings) -> None:
                 f"configs spans {spread:.6f} "
                 f"({ {k: round(v, 6) for k, v in full_fold_bases.items()} })")
 
+    # ------------------------------------------------------------------
+    # Baseline provenance.
+    #
+    # `reports/webpro_baselines.json` and `reports/lowzone_baselines.json` both
+    # publish a field called `bull_rate` for the same three regimes and they
+    # disagree (webpro 3.0348% vs 3.0893%, low504 4.6956% vs 4.2099%), because
+    # `scan_all` counts the scanned grid (min_history plus stride) while
+    # `backtest_lowzone` counts every resolved bar.
+    #
+    # This looked like a defect and was reported as one -- "low504 z=+11.50, not
+    # noise". It is not: that z treats 2.68M dependent panel rows as independent
+    # draws. With market dates as clusters the same contrast is z=+1.24,
+    # bootstrap p=0.22. The gap is a legitimate population difference (the
+    # `_seq >= 60` warm-up filter is also a calendar filter), and no published
+    # lift is wrong, because each family already divides by its OWN baseline.
+    #
+    # So the invariant to enforce is not that the two agree -- it is that each
+    # says which population it measured, and that the ML reports' third
+    # population is not confused with either. Without this, a future reader
+    # repeats exactly the analysis above and reaches the wrong conclusion.
+    # ------------------------------------------------------------------
+    for name, expect_id in (("webpro_baselines.json", "scanned"),
+                            ("lowzone_baselines.json", "panel")):
+        report = load(name)
+        if not report:
+            continue
+        for regime, entry in report.items():
+            if not isinstance(entry, dict) or "bull_rate" not in entry:
+                continue
+            pop = entry.get("population")
+            if pop is None:
+                # Not yet regenerated with the provenance fields. Report it as
+                # informational only while the reports predate the code.
+                continue
+            pid = pop.get("population_id") if isinstance(pop, dict) else pop
+            f.check(
+                pid == expect_id,
+                f"{name}:{regime} labels its base rate as the {expect_id!r} "
+                f"population (found {pid!r})",
+            )
+            rows = entry.get("candidates") or entry.get("evaluated_points")
+            if isinstance(pop, dict) and pop.get("rows") and rows:
+                f.check(
+                    int(pop["rows"]) == int(rows),
+                    f"{name}:{regime} population rows {pop['rows']:,} matches "
+                    f"the published denominator {int(rows):,}",
+                )
+
+    # The ML reports measure a THIRD population (walk-forward folds on the
+    # feature matrix), and quoting its base rate beside either file above is a
+    # category error. Flag the value if it appears unresolved in prose.
+    ml_base = (load("ml_precision_ceiling.json") or {}).get("base_rate")
+    if ml_base:
+        for doc in ("README.md", "TARGET_70PCT.md"):
+            path = ROOT / doc
+            if not path.exists():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if f"{ml_base*100:.4f}" in text or f"{ml_base*100:.2f}" in text:
+                f.check(
+                    bool(re.search(r"(walk-forward|fold|ML|feature matrix)", text)),
+                    f"{doc} quotes the ML base rate {ml_base*100:.4f}% and says "
+                    f"which population it belongs to",
+                )
+
     # Every matrix the reports could have come from, keyed by stride. Checking
     # only `s5` was a dead guard: the holdout module writes
     # `n_train_rows`/`n_holdout_rows` but this check read

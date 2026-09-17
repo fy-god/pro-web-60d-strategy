@@ -233,7 +233,10 @@ def main() -> None:
         ratio = 0.70 / best10 if best10 > 0 else float("inf")
         print(f"  the target is {ratio:.2f}x the best achieved precision")
 
-    (REPORT_DIR / "ml_precision_ceiling.json").write_text(json.dumps({
+    # Route through save_report so the matrix and stride are stamped. This module
+    # wrote its own JSON, so the report could not be tied back to the grid it
+    # measured -- and the ceiling does differ between grids.
+    path = wf.save_report("precision_ceiling", {
         "base_rate": base,
         "oos_rows": int(len(y_all)),
         "oos_positives": int(y_all.sum()),
@@ -260,8 +263,8 @@ def main() -> None:
             "degenerate artifact of publishing a single row and is exactly the "
             "trap the source project fell into with 5-22 hand-picked cases."
         ),
-    }, indent=2), encoding="utf-8")
-    print(f"\nwrote {REPORT_DIR / 'ml_precision_ceiling.json'}")
+    })
+    print(f"\nwrote {path}")
 
 
 if __name__ == "__main__":
