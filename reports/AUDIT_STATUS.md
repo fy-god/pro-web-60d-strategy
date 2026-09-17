@@ -4,12 +4,12 @@ _Written automatically every four hours by `scripts/scheduled_report_audit.py`. 
 
 | | |
 |---|---|
-| Last run (local) | 2026-09-18 01:22:01 |
+| Last run (local) | 2026-09-18 05:33:52 |
 | Verdict | **PASS** |
 | Consistency check | exit code 0 |
-| Checks | 111 checks run, 0 problem(s) |
-| Remote drift | 0 path(s) differ from origin/main |
-| Detail log | `logs/report_audit/audit_2026-09-18_012201.log` (local, not committed) |
+| Checks | 112 checks run, 0 problem(s) |
+| Remote drift | git fetch failed (exit 124): TIMEOUT after 300s: git fetch origin main --quiet |
+| Detail log | `logs/report_audit/audit_2026-09-18_053352.log` (local, not committed) |
 
 ## Headline
 
