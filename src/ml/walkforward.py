@@ -50,6 +50,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO_ROOT / "outputs" / "ml"
 REPORT_DIR = REPO_ROOT / "reports"
 
+# Provenance of the last matrix read in this process, set by load_matrix and
+# consumed by save_report. See save_report for why this is recorded rather than
+# guessed from the output directory.
+LAST_LOAD: dict = {}
+
 META_COLUMNS = {
     "code", "date", "entry_open", "fwd_max_high", "fwd_min_low",
     "fwd_max_close", "label_high", "label_close", "resolved",
@@ -547,11 +552,43 @@ def load_matrix(
         raise FileNotFoundError(
             f"{path} missing; run `python -m src.ml.build_matrix --stride {stride}` first"
         )
-    return pd.read_parquet(path)
+    frame = pd.read_parquet(path)
+    # Record what was actually read so save_report can stamp it. Provenance has
+    # to come from the file this process opened, not from a directory listing.
+    global LAST_LOAD
+    LAST_LOAD = {
+        "path": str(path),
+        "stride": stride,
+        "rows": int(len(frame)),
+        "sessions": int(frame["date"].nunique()),
+        "horizon": horizon,
+        "target": target,
+    }
+    return frame
 
 
 def save_report(name: str, payload: dict) -> Path:
+    """Write ``reports/ml_<name>.json``, stamping which matrix was measured.
+
+    Several reports published numbers from different grids and nothing in the
+    file said which, so a reader could not tell whether two figures were even
+    comparable. Two reports disagreeing on the "same" base rate (0.04087801 vs
+    0.04089445) is exactly that ambiguity, and it is a property of the grid, not
+    an arithmetic error.
+
+    The provenance comes from ``LAST_LOAD``, which ``load_matrix`` sets when it
+    actually reads a file in this process. It is deliberately NOT inferred from
+    whatever matrix happens to sit in the output directory: guessing would stamp
+    a confident, wrong grid, which is worse than stamping nothing.
+    """
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = REPORT_DIR / f"ml_{name}.json"
-    path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    enriched = dict(payload)
+    if LAST_LOAD:
+        enriched.setdefault("_matrix", Path(LAST_LOAD["path"]).name)
+        enriched.setdefault("stride", LAST_LOAD["stride"])
+        enriched.setdefault("_matrix_rows", LAST_LOAD["rows"])
+        enriched.setdefault("_matrix_sessions", LAST_LOAD["sessions"])
+    path.write_text(json.dumps(enriched, indent=2, default=str),
+                    encoding="utf-8")
     return path
