@@ -4,7 +4,7 @@
   "final_holdout_start": "2026-01-01",
   "n_configs": 19,
   "n_failed": 0,
-  "oos_base_rate": 0.041242904627034,
+  "oos_base_rate": 0.04087800957945005,
   "ranked": [
     {
       "n_folds": 4,
@@ -12,8 +12,11 @@
       "insample_precision": 0.5017852652753332,
       "oos_signals": 1661,
       "oos_precision": 0.17098133654425046,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 4.145715198540483,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.045970875874084494,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005092866294634443,
+      "oos_lift": 4.182721671218679,
       "per_fold_oos": [
         0.11741293532338308,
         0.23713235294117646,
@@ -25,6 +28,12 @@
         544,
         40,
         72
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_position",
@@ -49,8 +58,11 @@
       "insample_precision": 0.5061101332662811,
       "oos_signals": 1863,
       "oos_precision": 0.16049382716049382,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.8914288072545924,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.0440647474521311,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0031867378726810475,
+      "oos_lift": 3.9261654080431625,
       "per_fold_oos": [
         0.11092577147623019,
         0.2351851851851852,
@@ -62,6 +74,12 @@
         540,
         43,
         81
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_kdj",
@@ -86,8 +104,11 @@
       "insample_precision": 0.5038471209454363,
       "oos_signals": 1887,
       "oos_precision": 0.160042395336513,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.8804831227044083,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04532568951251037,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0044476799330603195,
+      "oos_lift": 3.9151220175105723,
       "per_fold_oos": [
         0.10539845758354756,
         0.22895622895622897,
@@ -99,6 +120,12 @@
         594,
         46,
         80
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_volume",
@@ -123,8 +150,11 @@
       "insample_precision": 0.5060095549409103,
       "oos_signals": 1790,
       "oos_precision": 0.15977653631284916,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.8740369466635105,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.044631187722484096,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.003753178143034046,
+      "oos_lift": 3.908618300074255,
       "per_fold_oos": [
         0.10786914235190097,
         0.23191094619666047,
@@ -136,6 +166,12 @@
         539,
         45,
         75
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_all",
@@ -151,8 +187,11 @@
       "insample_precision": 0.5035956751320091,
       "oos_signals": 1539,
       "oos_precision": 0.1572449642625081,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.81265494475956,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.046130628355640656,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005252618776190605,
+      "oos_lift": 3.8466883754916816,
       "per_fold_oos": [
         0.1053763440860215,
         0.23031496062992127,
@@ -164,6 +203,12 @@
         508,
         15,
         86
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_volatility",
@@ -188,8 +233,11 @@
       "insample_precision": 0.502791048529042,
       "oos_signals": 1768,
       "oos_precision": 0.15328054298642535,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.7165312281607017,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.043246752979094485,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.002368743399644435,
+      "oos_lift": 3.7497066164268826,
       "per_fold_oos": [
         0.10324232081911262,
         0.22933884297520662,
@@ -201,6 +249,12 @@
         484,
         45,
         67
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_candle",
@@ -225,8 +279,11 @@
       "insample_precision": 0.5056575308021122,
       "oos_signals": 1736,
       "oos_precision": 0.15264976958525345,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.701237121043948,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04311295892433825,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0022349493448882013,
+      "oos_lift": 3.7342759874001454,
       "per_fold_oos": [
         0.0994718309859155,
         0.23142250530785563,
@@ -238,6 +295,12 @@
         471,
         45,
         84
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_limitup",
@@ -262,8 +325,11 @@
       "insample_precision": 0.21257229067136033,
       "oos_signals": 4213,
       "oos_precision": 0.1492997863755044,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.6200114353158583,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.03848780545427455,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.002390204125175502,
+      "oos_lift": 3.65232524556576,
       "per_fold_oos": [
         0.0951417004048583,
         0.18313253012048192,
@@ -275,6 +341,12 @@
         830,
         1080,
         1315
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_cross",
@@ -292,8 +364,11 @@
       "insample_precision": 0.21629368871008298,
       "oos_signals": 8153,
       "oos_precision": 0.14792101067091867,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.586580819381937,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04041361660109392,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0004643929783561332,
+      "oos_lift": 3.6185962132872693,
       "per_fold_oos": [
         0.15496938294865756,
         0.14192495921696574,
@@ -305,6 +380,12 @@
         1839,
         1180,
         888
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_volatility",
@@ -322,8 +403,11 @@
       "insample_precision": 0.5047523258737742,
       "oos_signals": 2093,
       "oos_precision": 0.14763497372193024,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.5796453973602556,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.046317606386854934,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005439596807404884,
+      "oos_lift": 3.611598882645901,
       "per_fold_oos": [
         0.10215482841181166,
         0.20857142857142857,
@@ -335,6 +419,12 @@
         700,
         56,
         84
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_momentum",
@@ -359,8 +449,11 @@
       "insample_precision": 0.3752577319587629,
       "oos_signals": 3380,
       "oos_precision": 0.14615384615384616,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.543733097257289,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.043702152651659484,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.002824143072209434,
+      "oos_lift": 3.575366013596703,
       "per_fold_oos": [
         0.12150943396226416,
         0.19090909090909092,
@@ -372,6 +465,12 @@
         990,
         617,
         448
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_market",
@@ -396,8 +495,11 @@
       "insample_precision": 0.5028413376917275,
       "oos_signals": 2210,
       "oos_precision": 0.1425339366515837,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.4559626180682534,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.0414089496661989,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0005309400867488517,
+      "oos_lift": 3.4868120566035956,
       "per_fold_oos": [
         0.09865470852017937,
         0.2366412213740458,
@@ -409,6 +511,12 @@
         524,
         40,
         85
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_cross",
@@ -433,8 +541,11 @@
       "insample_precision": 0.4575580810620537,
       "oos_signals": 3102,
       "oos_precision": 0.13668600902643455,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.314170286077263,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.036054962975963174,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.004823046603486876,
+      "oos_lift": 3.343754024049853,
       "per_fold_oos": [
         0.17375132837407015,
         0.17848970251716248,
@@ -446,6 +557,12 @@
         437,
         556,
         227
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 3,
       "config": "abl_only_market",
@@ -463,8 +580,11 @@
       "insample_precision": 0.17674231773448484,
       "oos_signals": 8404,
       "oos_precision": 0.12827225130890052,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.110165311315642,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04378889507511851,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0029108854956684596,
+      "oos_lift": 3.1379280113820607,
       "per_fold_oos": [
         0.1444866920152091,
         0.11422845691382766,
@@ -476,6 +596,12 @@
         2495,
         1874,
         1142
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_candle",
@@ -493,8 +619,11 @@
       "insample_precision": 0.2977118430978124,
       "oos_signals": 4143,
       "oos_precision": 0.12647839729664495,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.066670459813846,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.044617381722256835,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.003739372142806785,
+      "oos_lift": 3.0940449057536163,
       "per_fold_oos": [
         0.0891640866873065,
         0.14430577223088922,
@@ -506,6 +635,12 @@
         1282,
         618,
         628
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_momentum",
@@ -523,8 +658,11 @@
       "insample_precision": 0.13265355668851664,
       "oos_signals": 8182,
       "oos_precision": 0.12185284771449524,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.9545166330167456,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04561627465490577,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0047382650754557165,
+      "oos_lift": 2.9808899446941854,
       "per_fold_oos": [
         0.08235294117647059,
         0.14543446244477173,
@@ -536,6 +674,12 @@
         2716,
         1551,
         1535
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_limitup",
@@ -553,8 +697,11 @@
       "insample_precision": 0.1350766909730953,
       "oos_signals": 7399,
       "oos_precision": 0.09514799297202324,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.307014838854376,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04821504160797711,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.007337032028527063,
+      "oos_lift": 2.327608265443909,
       "per_fold_oos": [
         0.0695322376738306,
         0.10342393222732087,
@@ -566,6 +713,12 @@
         2833,
         1257,
         1727
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_volume",
@@ -583,8 +736,11 @@
       "insample_precision": 0.21890872516972593,
       "oos_signals": 6099,
       "oos_precision": 0.09214625348417774,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.2342328775693816,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.039506039411183524,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0013719701682665258,
+      "oos_lift": 2.254176620441445,
       "per_fold_oos": [
         0.041918429003021146,
         0.15534738485558158,
@@ -596,6 +752,12 @@
         1281,
         995,
         1175
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "abl_only_position",
@@ -613,8 +775,11 @@
       "insample_precision": 0.12183226065969428,
       "oos_signals": 4654,
       "oos_precision": 0.07692307692307693,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 1.8651226827669942,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04199250856192011,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0011144989824700621,
+      "oos_lift": 1.8817715861035278,
       "per_fold_oos": [
         0.028445006321112517,
         0.12201154163231658,
@@ -626,6 +791,12 @@
         1213,
         860,
         999
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 3,
       "config": "abl_only_kdj",

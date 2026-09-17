@@ -387,6 +387,13 @@ def evaluate_fold(
         "label": y_col,
         "n_train": int(len(tr)),
         "n_test": int(len(te)),
+        # Raw counts so the pooled base rate can be computed exactly rather than
+        # approximated by averaging per-fold rates. Averaging per-fold rates is
+        # wrong whenever folds differ in size: the pooled base rate is
+        # sum(positives) / sum(test rows), which is weighted by TEST ROWS, not
+        # by signal count and not equally. Both wrong versions were shipped at
+        # different times; this is the one that is actually correct.
+        "oos_positives": int(y_te.sum()),
         "n_features": len(cols),
         "threshold": thr,
         "target_rate": cfg.target_rate,
@@ -406,7 +413,22 @@ def evaluate_fold(
 
 
 def summarise(fold_results: list[dict]) -> dict:
-    """Pool fold results, weighting by signal count, and report both regimes."""
+    """Pool fold results exactly, and report every weighting for transparency.
+
+    Precision and the base rate are both pooled as ratio-of-sums, which is the
+    only pooling that reproduces the number you would get by concatenating all
+    out-of-sample rows into one frame:
+
+        precision = sum(hits) / sum(signals)
+        base rate = sum(positives) / sum(test rows)
+
+    Earlier versions averaged per-fold rates instead. Averaging is wrong whenever
+    folds differ in size, and it was wrong twice in two different ways: first the
+    base rate was an unweighted mean (4.12% against a true 4.46%), then it was
+    weighted by signal count (which is also 4.46% here only by coincidence, since
+    bigger folds happened to have higher base rates). Both are reported below so
+    the difference is visible rather than hidden.
+    """
     ok = [r for r in fold_results if "error" not in r and r.get("oos_signals", 0) > 0]
     if not ok:
         return {"error": "no usable folds", "n_folds": len(fold_results)}
@@ -421,17 +443,17 @@ def summarise(fold_results: list[dict]) -> dict:
     ins, n_ins = pooled("insample")
     oos, n_oos = pooled("oos")
 
-    # Base rate must be pooled on the SAME weighting as precision, otherwise the
-    # reported lift mixes two different weightings. Audit found per-fold base
-    # rates spanning 2.67%-8.02%, which made the unweighted mean 4.12% against a
-    # signal-weighted 4.46% and overstated lift as 3.87x instead of 3.58x. Each
-    # fold reports the base rate of its own test rows, so weighting by that
-    # fold's signal count reproduces the true pooled denominator.
-    base_weighted = (
+    # Exact pooled base rate: total positives over total out-of-sample rows.
+    n_rows = sum(r.get("n_test", 0) for r in ok)
+    n_pos = sum(r.get("oos_positives", 0) for r in ok)
+    base_exact = (n_pos / n_rows) if n_rows else float("nan")
+
+    # The two approximations, kept for comparison.
+    base_by_signals = (
         sum(r["oos_base_rate"] * r["oos_signals"] for r in ok) / n_oos
         if n_oos else float("nan")
     )
-    base_unweighted = float(np.mean([r["oos_base_rate"] for r in ok]))
+    base_flat = float(np.mean([r["oos_base_rate"] for r in ok]))
 
     return {
         "n_folds": len(ok),
@@ -439,15 +461,14 @@ def summarise(fold_results: list[dict]) -> dict:
         "insample_precision": ins,
         "oos_signals": n_oos,
         "oos_precision": oos,
-        # `oos_base_rate` keeps the signal-weighted value so that `oos_lift` is
-        # internally consistent; the unweighted figure is reported alongside for
-        # comparison rather than silently dropped.
-        "oos_base_rate": base_weighted,
-        "oos_base_rate_unweighted": base_unweighted,
-        "oos_lift": oos / base_weighted if base_weighted > 0 else float("nan"),
-        "oos_lift_vs_unweighted_base": (
-            oos / base_unweighted if base_unweighted > 0 else float("nan")
+        "oos_base_rate": base_exact,
+        "oos_base_rate_by_signals": base_by_signals,
+        "oos_base_rate_unweighted": base_flat,
+        "oos_base_rate_max_abs_diff": float(
+            np.nanmax(np.abs(np.array([base_exact, base_by_signals, base_flat])
+                             - base_exact))
         ),
+        "oos_lift": oos / base_exact if base_exact > 0 else float("nan"),
         "per_fold_oos": [r["oos_precision"] for r in ok],
         "per_fold_signals": [r["oos_signals"] for r in ok],
         "per_fold_base": [r["oos_base_rate"] for r in ok],

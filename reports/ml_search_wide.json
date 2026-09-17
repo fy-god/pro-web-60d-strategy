@@ -3,8 +3,8 @@
   "folds": 5,
   "final_holdout_start": "2026-01-01",
   "n_configs": 58,
-  "n_failed": 14,
-  "oos_base_rate": 0.03453791316643965,
+  "n_failed": 2,
+  "oos_base_rate": 0.0346682782306207,
   "ranked": [
     {
       "n_folds": 2,
@@ -12,8 +12,11 @@
       "insample_precision": 0.9160177975528365,
       "oos_signals": 3,
       "oos_precision": 0.3333333333333333,
-      "oos_base_rate": 0.03453791316643965,
-      "oos_lift": 9.65122970015548,
+      "oos_base_rate": 0.0346682782306207,
+      "oos_base_rate_by_signals": 0.02958309129011751,
+      "oos_base_rate_unweighted": 0.03453791316643965,
+      "oos_base_rate_max_abs_diff": 0.005085186940503191,
+      "oos_lift": 9.614937641723355,
       "per_fold_oos": [
         0.5,
         0.0
@@ -21,6 +24,10 @@
       "per_fold_signals": [
         2,
         1
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064
       ],
       "folds_above_base": 1,
       "config": "wide_hgb_13",
@@ -42,8 +49,11 @@
       "insample_precision": 0.5626382465312688,
       "oos_signals": 368,
       "oos_precision": 0.18206521739130435,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 4.414461567092532,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.029297524062060484,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.011580485517389567,
+      "oos_lift": 4.453866987761339,
       "per_fold_oos": [
         0.15272727272727274,
         0.0,
@@ -55,6 +65,12 @@
         1,
         20,
         72
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 3,
       "config": "wide_extratrees_24",
@@ -70,12 +86,57 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.3411113904953483,
+      "oos_signals": 4477,
+      "oos_precision": 0.18181818181818182,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04270339346289579,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.00182538388344574,
+      "oos_lift": 4.447823748971975,
+      "per_fold_oos": [
+        0.18714222809335096,
+        0.18091286307053941,
+        0.1381957773512476,
+        0.20625
+      ],
+      "per_fold_signals": [
+        2271,
+        1205,
+        521,
+        480
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_volatility_candle_kdj_0.02",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "candle",
+        "kdj"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 4973,
       "insample_precision": 0.47054092097325556,
       "oos_signals": 515,
       "oos_precision": 0.1650485436893204,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 4.001865173703939,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.028875933128060288,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.012002076451389763,
+      "oos_lift": 4.037587577950288,
       "per_fold_oos": [
         0.13861386138613863,
         0.0,
@@ -87,6 +148,12 @@
         1,
         94,
         117
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 3,
       "config": "wide_extratrees_18",
@@ -102,8 +169,11 @@
       "insample_precision": 0.5060095549409103,
       "oos_signals": 1790,
       "oos_precision": 0.15977653631284916,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.8740369466635105,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.044631187722484096,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.003753178143034046,
+      "oos_lift": 3.908618300074255,
       "per_fold_oos": [
         0.10786914235190097,
         0.23191094619666047,
@@ -115,6 +185,12 @@
         539,
         45,
         75
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_2",
@@ -130,8 +206,11 @@
       "insample_precision": 0.4089011817953231,
       "oos_signals": 3913,
       "oos_precision": 0.15716841298236647,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.8107988368827286,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.045782544463526205,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.004904534884076155,
+      "oos_lift": 3.8448156991816265,
       "per_fold_oos": [
         0.10254545454545455,
         0.18090839107005388,
@@ -143,6 +222,12 @@
         1299,
         511,
         728
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_extratrees_26",
@@ -158,12 +243,54 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 4973,
+      "insample_precision": 0.42288357128493864,
+      "oos_signals": 382,
+      "oos_precision": 0.1544502617801047,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.031503301027731544,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.009374708551718507,
+      "oos_lift": 3.7783214830926855,
+      "per_fold_oos": [
+        0.14385964912280702,
+        0.3157894736842105,
+        0.14285714285714285,
+        0.2
+      ],
+      "per_fold_signals": [
+        285,
+        19,
+        63,
+        15
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_36",
+      "model": "logistic",
+      "label": "label_high",
+      "target_rate": 0.005,
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 19885,
       "insample_precision": 0.6857430223786773,
       "oos_signals": 996,
       "oos_precision": 0.15261044176706828,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.7002835553690567,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.045850856996343926,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.004972847416893876,
+      "oos_lift": 3.7333139097796897,
       "per_fold_oos": [
         0.10068259385665529,
         0.20987654320987653,
@@ -175,6 +302,12 @@
         324,
         20,
         66
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_14",
@@ -196,8 +329,11 @@
       "insample_precision": 0.8743047830923248,
       "oos_signals": 20,
       "oos_precision": 0.15,
-      "oos_base_rate": 0.054816570214066086,
-      "oos_lift": 2.736398855569216,
+      "oos_base_rate": 0.0550388396739531,
+      "oos_base_rate_by_signals": 0.03200735295288412,
+      "oos_base_rate_unweighted": 0.054816570214066086,
+      "oos_base_rate_max_abs_diff": 0.02303148672106898,
+      "oos_lift": 2.7253481521156933,
       "per_fold_oos": [
         0.15789473684210525,
         0.0
@@ -205,6 +341,10 @@
       "per_fold_signals": [
         19,
         1
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271
       ],
       "folds_above_base": 1,
       "config": "wide_hgb_12",
@@ -222,12 +362,54 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 4973,
+      "insample_precision": 0.42107379851196464,
+      "oos_signals": 434,
+      "oos_precision": 0.1497695852534562,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.031124041950113,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.00975396762933705,
+      "oos_lift": 3.66381794990203,
+      "per_fold_oos": [
+        0.13432835820895522,
+        0.3888888888888889,
+        0.15151515151515152,
+        0.2
+      ],
+      "per_fold_signals": [
+        335,
+        18,
+        66,
+        15
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_42",
+      "model": "logistic",
+      "label": "label_high",
+      "target_rate": 0.005,
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 19885,
       "insample_precision": 0.2571284888106613,
       "oos_signals": 4788,
       "oos_precision": 0.14786967418546365,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.585336084416753,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.042149036763827856,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0012710271843778057,
+      "oos_lift": 3.6173403672716935,
       "per_fold_oos": [
         0.0956768249468462,
         0.17151848937844216,
@@ -240,6 +422,12 @@
         1018,
         1088
       ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
       "folds_above_base": 4,
       "config": "wide_extratrees_20",
       "model": "extratrees",
@@ -251,11 +439,55 @@
     {
       "n_folds": 4,
       "insample_signals": 19885,
+      "insample_precision": 0.4940407342217752,
+      "oos_signals": 1323,
+      "oos_precision": 0.1473922902494331,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04153616958123012,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0006581600017800671,
+      "oos_lift": 3.605662109427394,
+      "per_fold_oos": [
+        0.09271523178807947,
+        0.25236593059936907,
+        0.15384615384615385,
+        0.3333333333333333
+      ],
+      "per_fold_signals": [
+        906,
+        317,
+        13,
+        87
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_market_cross_0.02",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
       "insample_precision": 0.4207191350264018,
       "oos_signals": 3892,
       "oos_precision": 0.14696813977389517,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.563476944772705,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.046892478339987845,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0060144687605377944,
+      "oos_lift": 3.5952861033571,
       "per_fold_oos": [
         0.09951287404314545,
         0.17903930131004367,
@@ -267,6 +499,12 @@
         1374,
         488,
         593
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_rf_32",
@@ -282,8 +520,11 @@
       "insample_precision": 0.49273321599195374,
       "oos_signals": 2237,
       "oos_precision": 0.14617791685292802,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.544316729746308,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04096549812034885,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0003648950475839477,
+      "oos_lift": 3.5759548558453718,
       "per_fold_oos": [
         0.1034727143869596,
         0.22456813819577734,
@@ -295,6 +536,12 @@
         521,
         229,
         76
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_8",
@@ -314,8 +561,11 @@
       "insample_precision": 0.6328172129499297,
       "oos_signals": 277,
       "oos_precision": 0.1444043321299639,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.501313339490386,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.029856530539578117,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.011021479039871933,
+      "oos_lift": 3.532567598461496,
       "per_fold_oos": [
         0.13385826771653545,
         0.0,
@@ -328,6 +578,12 @@
         15,
         5
       ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
       "folds_above_base": 3,
       "config": "wide_rf_30",
       "model": "rf",
@@ -338,12 +594,56 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.30676389238119184,
+      "oos_signals": 4325,
+      "oos_precision": 0.14150289017341042,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04645726899069407,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005579259411244021,
+      "oos_lift": 3.4615895350380734,
+      "per_fold_oos": [
+        0.11516314779270634,
+        0.1539491298527443,
+        0.1264,
+        0.19129082426127528
+      ],
+      "per_fold_signals": [
+        1563,
+        1494,
+        625,
+        643
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_volume_limitup_0.02",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volume",
+        "limitup"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 49714,
       "insample_precision": 0.27861367019350686,
       "oos_signals": 8754,
       "oos_precision": 0.13890792780443226,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.368044250534686,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04230053967736489,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0014225300979148411,
+      "oos_lift": 3.3981088911497106,
       "per_fold_oos": [
         0.10870066928225249,
         0.16608238387379493,
@@ -356,6 +656,12 @@
         822,
         1317
       ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
       "folds_above_base": 4,
       "config": "wide_hgb_4",
       "model": "hgb",
@@ -366,12 +672,57 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 49714,
+      "insample_precision": 0.20819085167156134,
+      "oos_signals": 14467,
+      "oos_precision": 0.1387986451925071,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04340655801999964,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0025285484405495884,
+      "oos_lift": 3.395435507268023,
+      "per_fold_oos": [
+        0.15014689964434824,
+        0.13195625759416768,
+        0.110881897885508,
+        0.1433710174717369
+      ],
+      "per_fold_signals": [
+        6467,
+        4115,
+        1939,
+        1946
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_volatility_candle_kdj_0.05",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "candle",
+        "kdj"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 4973,
       "insample_precision": 0.4572692539714458,
       "oos_signals": 371,
       "oos_precision": 0.13746630727762804,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 5.149289025210118,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.020145175852699378,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.006342323569475592,
+      "oos_lift": 5.189855980234327,
       "per_fold_oos": [
         0.08943089430894309,
         0.0,
@@ -384,6 +735,12 @@
         40,
         77
       ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
       "folds_above_base": 3,
       "config": "wide_rf_31",
       "model": "rf",
@@ -394,12 +751,95 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.22122202665325622,
+      "oos_signals": 2129,
+      "oos_precision": 0.13010803193987788,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.03602828562483635,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.004849723954613701,
+      "oos_lift": 3.1828367691680617,
+      "per_fold_oos": [
+        0.11996497373029773,
+        0.14006514657980457,
+        0.1254681647940075,
+        0.2054794520547945
+      ],
+      "per_fold_signals": [
+        1142,
+        307,
+        534,
+        146
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_38",
+      "model": "logistic",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 49714,
+      "insample_precision": 0.27356479060224487,
+      "oos_signals": 6713,
+      "oos_precision": 0.13004617905556384,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.043125935607340606,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0022479260278905552,
+      "oos_lift": 3.1813236601651926,
+      "per_fold_oos": [
+        0.0886715052066898,
+        0.15931108719052745,
+        0.15916955017301038,
+        0.18411552346570398
+      ],
+      "per_fold_signals": [
+        3169,
+        1858,
+        578,
+        1108
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_market_cross_0.05",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [
+        "momentum",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 4973,
       "insample_precision": 0.37422079227830285,
       "oos_signals": 532,
       "oos_precision": 0.12969924812030076,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.858346224250103,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.019392970893098344,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0070945285290766255,
+      "oos_lift": 4.8966210835183,
       "per_fold_oos": [
         0.09523809523809523,
         0.0,
@@ -411,6 +851,12 @@
         1,
         110,
         127
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 3,
       "config": "wide_extratrees_19",
@@ -426,8 +872,11 @@
       "insample_precision": 0.5116796440489433,
       "oos_signals": 255,
       "oos_precision": 0.12941176470588237,
-      "oos_base_rate": 0.054816570214066086,
-      "oos_lift": 2.3608146989224608,
+      "oos_base_rate": 0.0550388396739531,
+      "oos_base_rate_by_signals": 0.030069314884940558,
+      "oos_base_rate_unweighted": 0.054816570214066086,
+      "oos_base_rate_max_abs_diff": 0.024969524789012543,
+      "oos_lift": 2.3512807586880493,
       "per_fold_oos": [
         0.12698412698412698,
         0.3333333333333333
@@ -435,6 +884,10 @@
       "per_fold_signals": [
         252,
         3
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271
       ],
       "folds_above_base": 2,
       "config": "wide_hgb_6",
@@ -454,8 +907,11 @@
       "insample_precision": 0.4100140760104565,
       "oos_signals": 513,
       "oos_precision": 0.1286549707602339,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.819229104892211,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.019412174085628335,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.007075325336546635,
+      "oos_lift": 4.857195792990778,
       "per_fold_oos": [
         0.10452961672473868,
         0.0,
@@ -467,6 +923,12 @@
         1,
         101,
         124
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 3,
       "config": "wide_extratrees_25",
@@ -486,8 +948,11 @@
       "insample_precision": 0.38626946131874323,
       "oos_signals": 6462,
       "oos_precision": 0.12813370473537605,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.10680602867594,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04428613830718363,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.003408128727733578,
+      "oos_lift": 3.134538742311726,
       "per_fold_oos": [
         0.0798240100565682,
         0.16269430051813472,
@@ -499,6 +964,12 @@
         1930,
         505,
         845
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_16",
@@ -520,8 +991,11 @@
       "insample_precision": 0.26936074345254857,
       "oos_signals": 11336,
       "oos_precision": 0.12632321806633734,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 3.0629078918834125,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.039735467211810344,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0011425423676397067,
+      "oos_lift": 3.0902487514911146,
       "per_fold_oos": [
         0.10780449349625541,
         0.1622503057480636,
@@ -533,6 +1007,12 @@
         2453,
         2484,
         1325
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_10",
@@ -552,8 +1032,11 @@
       "insample_precision": 0.534020618556701,
       "oos_signals": 1321,
       "oos_precision": 0.12187736563209689,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.565349820617558,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.027074698352684494,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0005871989305095242,
+      "oos_lift": 4.601316405506473,
       "per_fold_oos": [
         0.05527638190954774,
         0.22289156626506024,
@@ -565,6 +1048,12 @@
         332,
         60,
         133
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_15",
@@ -586,8 +1075,11 @@
       "insample_precision": 0.32783505154639175,
       "oos_signals": 2771,
       "oos_precision": 0.12125586430891375,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.542069280054573,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.027984184357370448,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0014966849351954782,
+      "oos_lift": 4.577852456974478,
       "per_fold_oos": [
         0.08598726114649681,
         0.16518424396442186,
@@ -599,6 +1091,12 @@
         787,
         223,
         191
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_9",
@@ -618,8 +1116,11 @@
       "insample_precision": 0.3455368368116671,
       "oos_signals": 1965,
       "oos_precision": 0.12061068702290076,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.517901872171331,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02844393794867612,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0019564385265011495,
+      "oos_lift": 4.553494654234033,
       "per_fold_oos": [
         0.06554307116104868,
         0.17606837606837608,
@@ -632,6 +1133,12 @@
         101,
         211
       ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
       "folds_above_base": 4,
       "config": "wide_hgb_3",
       "model": "hgb",
@@ -642,67 +1149,42 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 20501,
-      "insample_precision": 0.12165260231208233,
-      "oos_signals": 9581,
-      "oos_precision": 0.12013359774553804,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.9128306755289146,
+      "insample_signals": 19885,
+      "insample_precision": 0.22197636409353785,
+      "oos_signals": 2189,
+      "oos_precision": 0.11923252626770214,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.03551410168325971,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005363907896190338,
+      "oos_lift": 2.916788940908757,
       "per_fold_oos": [
-        0.08930075821398484,
-        0.12977512869141153,
-        0.12111292962356793,
-        0.1414141414141414
+        0.10122448979591837,
+        0.1506849315068493,
+        0.12237093690248566,
+        0.19463087248322147
       ],
       "per_fold_signals": [
-        2374,
-        3691,
-        1833,
-        1683
+        1225,
+        292,
+        523,
+        149
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
-      "config": "wide_grp_momentum_volume_limitup_0.02",
-      "model": "hgb",
+      "config": "wide_logistic_44",
+      "model": "logistic",
       "label": "label_high",
       "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volume",
-        "limitup"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 20501,
-      "insample_precision": 0.12165260231208233,
-      "oos_signals": 9581,
-      "oos_precision": 0.12013359774553804,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.9128306755289146,
-      "per_fold_oos": [
-        0.08930075821398484,
-        0.12977512869141153,
-        0.12111292962356793,
-        0.1414141414141414
-      ],
-      "per_fold_signals": [
-        2374,
-        3691,
-        1833,
-        1683
-      ],
-      "folds_above_base": 4,
-      "config": "wide_grp_volume_limitup_market_0.02",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "volume",
-        "limitup",
-        "market"
-      ],
-      "params": {}
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
     },
     {
       "n_folds": 4,
@@ -710,8 +1192,11 @@
       "insample_precision": 0.2676107333950195,
       "oos_signals": 13015,
       "oos_precision": 0.11917018824433347,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.889471275653546,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04680515009180658,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.00592714051235653,
+      "oos_lift": 2.91526396393434,
       "per_fold_oos": [
         0.0907621247113164,
         0.13387026556377885,
@@ -723,6 +1208,12 @@
         4594,
         1994,
         2097
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
       ],
       "folds_above_base": 4,
       "config": "wide_extratrees_28",
@@ -738,12 +1229,54 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 4973,
+      "insample_precision": 0.35350894832093305,
+      "oos_signals": 293,
+      "oos_precision": 0.11604095563139932,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02161306127632088,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.004874438145854091,
+      "oos_lift": 4.380970577171639,
+      "per_fold_oos": [
+        0.11557788944723618,
+        0.13636363636363635,
+        0.0784313725490196,
+        0.19047619047619047
+      ],
+      "per_fold_signals": [
+        199,
+        22,
+        51,
+        21
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_37",
+      "model": "logistic",
+      "label": "label_close",
+      "target_rate": 0.005,
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 49714,
       "insample_precision": 0.18729130627187512,
       "oos_signals": 14342,
       "oos_precision": 0.11595314461023568,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.8114689219592557,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04594602992498894,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005068020345538889,
+      "oos_lift": 2.836565327009634,
       "per_fold_oos": [
         0.07809927075982122,
         0.129644921552436,
@@ -756,6 +1289,12 @@
         2525,
         2722
       ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
       "folds_above_base": 4,
       "config": "wide_extratrees_22",
       "model": "extratrees",
@@ -766,12 +1305,56 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 49714,
+      "insample_precision": 0.1962223920827131,
+      "oos_signals": 13687,
+      "oos_precision": 0.11529188280850441,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04658649259543795,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.005708483015987899,
+      "oos_lift": 2.8203888593064783,
+      "per_fold_oos": [
+        0.10688681294807734,
+        0.12104712041884817,
+        0.09455719557195572,
+        0.14152265296590377
+      ],
+      "per_fold_signals": [
+        4603,
+        4775,
+        2168,
+        2141
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_momentum_volume_limitup_0.05",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [
+        "momentum",
+        "volume",
+        "limitup"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 19885,
       "insample_precision": 0.283530299220518,
       "oos_signals": 4557,
       "oos_precision": 0.11432960280886548,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.282621543119995,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.028660358644878585,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.002172859222703615,
+      "oos_lift": 4.316360747634422,
       "per_fold_oos": [
         0.0694249649368864,
         0.1311706629055007,
@@ -783,6 +1366,12 @@
         1418,
         744,
         969
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_extratrees_27",
@@ -797,13 +1386,55 @@
       }
     },
     {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.1679658033693739,
+      "oos_signals": 1882,
+      "oos_precision": 0.11424017003188097,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.025279858005689375,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.001207641416485595,
+      "oos_lift": 4.312984333139454,
+      "per_fold_oos": [
+        0.11323003575685339,
+        0.09921671018276762,
+        0.10505050505050505,
+        0.18181818181818182
+      ],
+      "per_fold_signals": [
+        839,
+        383,
+        495,
+        165
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_39",
+      "model": "logistic",
+      "label": "label_close",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
+    },
+    {
       "n_folds": 2,
       "insample_signals": 1798,
       "insample_precision": 0.5411568409343716,
       "oos_signals": 202,
       "oos_precision": 0.11386138613861387,
-      "oos_base_rate": 0.054816570214066086,
-      "oos_lift": 2.077134444821517,
+      "oos_base_rate": 0.0550388396739531,
+      "oos_base_rate_by_signals": 0.02997484844446197,
+      "oos_base_rate_unweighted": 0.054816570214066086,
+      "oos_base_rate_max_abs_diff": 0.02506399122949113,
+      "oos_lift": 2.0687461220680183,
       "per_fold_oos": [
         0.11,
         0.5
@@ -811,6 +1442,10 @@
       "per_fold_signals": [
         200,
         2
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271
       ],
       "folds_above_base": 2,
       "config": "wide_hgb_0",
@@ -822,23 +1457,71 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 49714,
+      "insample_precision": 0.14790602244840487,
+      "oos_signals": 6367,
+      "oos_precision": 0.11339720433485158,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.03817558802048693,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0027024215589631223,
+      "oos_lift": 2.7740392817916932,
+      "per_fold_oos": [
+        0.10484702646957718,
+        0.12227805695142378,
+        0.10126582278481013,
+        0.17024793388429751
+      ],
+      "per_fold_signals": [
+        2909,
+        1194,
+        1659,
+        605
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_40",
+      "model": "logistic",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 19885,
-      "insample_precision": 0.26366607995976865,
+      "insample_precision": 0.26376665828513957,
       "oos_signals": 4627,
-      "oos_precision": 0.11043872919818457,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.136875045823785,
+      "oos_precision": 0.11022260644045818,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.029724223103183532,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0032367236810085624,
+      "oos_lift": 4.16130661047533,
       "per_fold_oos": [
         0.06885245901639345,
         0.12429731417863835,
-        0.11360239162929746,
-        0.15745192307692307
+        0.11589895988112928,
+        0.15458937198067632
       ],
       "per_fold_signals": [
         1525,
         1601,
-        669,
-        832
+        673,
+        828
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_rf_33",
@@ -854,8 +1537,11 @@
       "insample_precision": 0.17912999748554187,
       "oos_signals": 5197,
       "oos_precision": 0.10794689243794497,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.043534445234267,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02701221634436675,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0005247169221917793,
+      "oos_lift": 4.075390081842657,
       "per_fold_oos": [
         0.0685121107266436,
         0.13501483679525222,
@@ -867,6 +1553,12 @@
         1348,
         1183,
         1221
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_extratrees_21",
@@ -882,8 +1574,11 @@
       "insample_precision": 0.18873959045741642,
       "oos_signals": 9626,
       "oos_precision": 0.10731352586744235,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 4.019809449669809,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02704167103522185,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0005541716130468798,
+      "oos_lift": 4.0514781768187955,
       "per_fold_oos": [
         0.09640924741760945,
         0.11858190709046455,
@@ -896,6 +1591,12 @@
         1264,
         1842
       ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
       "folds_above_base": 4,
       "config": "wide_hgb_5",
       "model": "hgb",
@@ -907,11 +1608,96 @@
     {
       "n_folds": 4,
       "insample_signals": 49714,
+      "insample_precision": 0.263084845315203,
+      "oos_signals": 11441,
+      "oos_precision": 0.10663403548640853,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04426488828431538,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0033868787048653287,
+      "oos_lift": 2.608591675168425,
+      "per_fold_oos": [
+        0.0802020202020202,
+        0.14021393466319745,
+        0.0920479302832244,
+        0.14130434782608695
+      ],
+      "per_fold_signals": [
+        4950,
+        3459,
+        1836,
+        1196
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_grp_volume_limitup_market_0.05",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [
+        "volume",
+        "limitup",
+        "market"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.4812169977369877,
+      "oos_signals": 3265,
+      "oos_precision": 0.10597243491577335,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04469585139702488,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.0038178418175748297,
+      "oos_lift": 2.5924069201511997,
+      "per_fold_oos": [
+        0.09366076527698458,
+        0.15705765407554673,
+        0.020224719101123594,
+        0.23809523809523808
+      ],
+      "per_fold_signals": [
+        1751,
+        1006,
+        445,
+        63
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 3,
+      "config": "wide_grp_volume_limitup_market_0.02",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "volume",
+        "limitup",
+        "market"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 49714,
       "insample_precision": 0.2460272760188277,
       "oos_signals": 17740,
       "oos_precision": 0.10586245772266066,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.5668041249759526,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.04412516010475701,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.003247150525306962,
+      "oos_lift": 2.5897165447086543,
       "per_fold_oos": [
         0.11381392045454546,
         0.12320177056436739,
@@ -924,6 +1710,12 @@
         4798,
         1888
       ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
       "folds_above_base": 4,
       "config": "wide_rf_34",
       "model": "rf",
@@ -933,13 +1725,55 @@
       "params": {}
     },
     {
+      "n_folds": 4,
+      "insample_signals": 49714,
+      "insample_precision": 0.14899223558756086,
+      "oos_signals": 6321,
+      "oos_precision": 0.10520487264673312,
+      "oos_base_rate": 0.04087800957945005,
+      "oos_base_rate_by_signals": 0.03799413852814595,
+      "oos_base_rate_unweighted": 0.041242904627034,
+      "oos_base_rate_max_abs_diff": 0.002883871051304103,
+      "oos_lift": 2.573630020861414,
+      "per_fold_oos": [
+        0.08789329685362517,
+        0.12478485370051635,
+        0.09736680955296999,
+        0.17275747508305647
+      ],
+      "per_fold_signals": [
+        2924,
+        1162,
+        1633,
+        602
+      ],
+      "per_fold_base": [
+        0.02947299547941946,
+        0.08016014494871271,
+        0.02669452824444383,
+        0.028643949835559984
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_46",
+      "model": "logistic",
+      "label": "label_high",
+      "target_rate": 0.05,
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
+    },
+    {
       "n_folds": 2,
       "insample_signals": 1798,
       "insample_precision": 0.43770856507230255,
       "oos_signals": 297,
       "oos_precision": 0.10437710437710437,
-      "oos_base_rate": 0.03453791316643965,
-      "oos_lift": 3.022102229341615,
+      "oos_base_rate": 0.0346682782306207,
+      "oos_base_rate_by_signals": 0.020374129418973333,
+      "oos_base_rate_unweighted": 0.03453791316643965,
+      "oos_base_rate_max_abs_diff": 0.014294148811647367,
+      "oos_lift": 3.010738049428525,
       "per_fold_oos": [
         0.09655172413793103,
         0.42857142857142855
@@ -947,6 +1781,10 @@
       "per_fold_signals": [
         290,
         7
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064
       ],
       "folds_above_base": 2,
       "config": "wide_hgb_7",
@@ -966,8 +1804,11 @@
       "insample_precision": 0.1799895401697711,
       "oos_signals": 12066,
       "oos_precision": 0.10119343610144207,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 3.790559739762932,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.027204086080437017,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0007165866582620473,
+      "oos_lift": 3.82042239958387,
       "per_fold_oos": [
         0.09083681176704432,
         0.11436672967863894,
@@ -979,6 +1820,12 @@
         3174,
         2117,
         1744
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_11",
@@ -998,8 +1845,11 @@
       "insample_precision": 0.4738598442714127,
       "oos_signals": 221,
       "oos_precision": 0.09954751131221719,
-      "oos_base_rate": 0.03453791316643965,
-      "oos_lift": 2.8822676932591023,
+      "oos_base_rate": 0.0346682782306207,
+      "oos_base_rate_by_signals": 0.02061508789405934,
+      "oos_base_rate_unweighted": 0.03453791316643965,
+      "oos_base_rate_max_abs_diff": 0.014053190336561359,
+      "oos_lift": 2.871429340967156,
       "per_fold_oos": [
         0.08411214953271028,
         0.5714285714285714
@@ -1007,6 +1857,10 @@
       "per_fold_signals": [
         214,
         7
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064
       ],
       "folds_above_base": 2,
       "config": "wide_hgb_1",
@@ -1018,12 +1872,54 @@
     },
     {
       "n_folds": 4,
+      "insample_signals": 19885,
+      "insample_precision": 0.16907216494845362,
+      "oos_signals": 1805,
+      "oos_precision": 0.09584487534626039,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.024993302802494823,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0014941966196801472,
+      "oos_lift": 3.6184946649218377,
+      "per_fold_oos": [
+        0.07407407407407407,
+        0.10256410256410256,
+        0.10344827586206896,
+        0.17218543046357615
+      ],
+      "per_fold_signals": [
+        810,
+        351,
+        493,
+        151
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_45",
+      "model": "logistic",
+      "label": "label_close",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
+    },
+    {
+      "n_folds": 4,
       "insample_signals": 49714,
       "insample_precision": 0.18173955022730015,
       "oos_signals": 13885,
       "oos_precision": 0.09535469931580842,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 3.5718491055226904,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02932012769473592,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0028326282725609497,
+      "oos_lift": 3.5999887266058335,
       "per_fold_oos": [
         0.08579881656804733,
         0.10004330879168472,
@@ -1035,6 +1931,12 @@
         4618,
         2060,
         2475
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_extratrees_29",
@@ -1050,67 +1952,42 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 64161,
-      "insample_precision": 0.08162279266220913,
-      "oos_signals": 25610,
-      "oos_precision": 0.08937914877001171,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.1671400105856087,
+      "insample_signals": 49714,
+      "insample_precision": 0.10719314478818844,
+      "oos_signals": 5911,
+      "oos_precision": 0.09000169176112333,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02686217587125887,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0003746764490838994,
+      "oos_lift": 3.3978931089952247,
       "per_fold_oos": [
-        0.07157615112160566,
-        0.11659634317862166,
-        0.07807002848048249,
-        0.08844483058210252
+        0.09219534459151073,
+        0.08965062623599208,
+        0.07156673114119923,
+        0.1273006134969325
       ],
       "per_fold_signals": [
-        6776,
-        7110,
-        5969,
-        5755
+        2191,
+        1517,
+        1551,
+        652
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
-      "config": "wide_grp_momentum_volume_limitup_0.05",
-      "model": "hgb",
-      "label": "label_high",
+      "config": "wide_logistic_41",
+      "model": "logistic",
+      "label": "label_close",
       "target_rate": 0.05,
-      "feature_groups": [
-        "momentum",
-        "volume",
-        "limitup"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 64161,
-      "insample_precision": 0.08162279266220913,
-      "oos_signals": 25610,
-      "oos_precision": 0.08937914877001171,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 2.1671400105856087,
-      "per_fold_oos": [
-        0.07157615112160566,
-        0.11659634317862166,
-        0.07807002848048249,
-        0.08844483058210252
-      ],
-      "per_fold_signals": [
-        6776,
-        7110,
-        5969,
-        5755
-      ],
-      "folds_above_base": 4,
-      "config": "wide_grp_volume_limitup_market_0.05",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.05,
-      "feature_groups": [
-        "volume",
-        "limitup",
-        "market"
-      ],
-      "params": {}
+      "feature_groups": [],
+      "params": {
+        "C": 0.03
+      }
     },
     {
       "n_folds": 4,
@@ -1118,8 +1995,11 @@
       "insample_precision": 0.2785332099609768,
       "oos_signals": 7556,
       "oos_precision": 0.08800952885124405,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 3.296709644730364,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.028446170718196193,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.0019586712960212235,
+      "oos_lift": 3.3226816713986858,
       "per_fold_oos": [
         0.044516509433962265,
         0.11938325991189427,
@@ -1131,6 +2011,12 @@
         2270,
         749,
         1145
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
       "folds_above_base": 4,
       "config": "wide_hgb_17",
@@ -1152,8 +2038,11 @@
       "insample_precision": 0.15846642796797683,
       "oos_signals": 16622,
       "oos_precision": 0.08729394778005053,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 3.2699050128935374,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.029940247177748604,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.003452747755573634,
+      "oos_lift": 3.295665868215904,
       "per_fold_oos": [
         0.0863197794624397,
         0.08712635869565218,
@@ -1166,6 +2055,12 @@
         2662,
         2268
       ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
       "folds_above_base": 4,
       "config": "wide_rf_35",
       "model": "rf",
@@ -1177,11 +2072,53 @@
     {
       "n_folds": 4,
       "insample_signals": 49714,
+      "insample_precision": 0.10729372007885103,
+      "oos_signals": 5641,
+      "oos_precision": 0.0829640134727885,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.02633699995649343,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.00020867292406824903,
+      "oos_lift": 3.1321950083114367,
+      "per_fold_oos": [
+        0.0730310262529833,
+        0.08586232420429311,
+        0.07436399217221135,
+        0.1283987915407855
+      ],
+      "per_fold_signals": [
+        2095,
+        1351,
+        1533,
+        662
+      ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
+      "folds_above_base": 4,
+      "config": "wide_logistic_47",
+      "model": "logistic",
+      "label": "label_close",
+      "target_rate": 0.05,
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 49714,
       "insample_precision": 0.12402944844510601,
       "oos_signals": 15176,
       "oos_precision": 0.08249868212967844,
-      "oos_base_rate": 0.02669617234624322,
-      "oos_lift": 3.0902812979961882,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.028925513732174155,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.002438014309999185,
+      "oos_lift": 3.114627047829652,
       "per_fold_oos": [
         0.05308529945553539,
         0.09608686744519565,
@@ -1194,6 +2131,12 @@
         2874,
         3013
       ],
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
+      ],
       "folds_above_base": 4,
       "config": "wide_extratrees_23",
       "model": "extratrees",
@@ -1204,211 +2147,52 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 19888,
-      "insample_precision": 0.12183226065969428,
-      "oos_signals": 4654,
-      "oos_precision": 0.07692307692307693,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 1.8651226827669942,
+      "insample_signals": 4973,
+      "insample_precision": 0.3519002614116228,
+      "oos_signals": 288,
+      "oos_precision": 0.0798611111111111,
+      "oos_base_rate": 0.02648749942217497,
+      "oos_base_rate_by_signals": 0.021754380814991873,
+      "oos_base_rate_unweighted": 0.02669617234624322,
+      "oos_base_rate_max_abs_diff": 0.004733118607183097,
+      "oos_lift": 3.0150490930922866,
       "per_fold_oos": [
-        0.028445006321112517,
-        0.12201154163231658,
-        0.0872093023255814,
-        0.09009009009009009
+        0.065,
+        0.13043478260869565,
+        0.08,
+        0.2
       ],
       "per_fold_signals": [
-        1582,
-        1213,
-        860,
-        999
+        200,
+        23,
+        50,
+        15
       ],
-      "folds_above_base": 3,
-      "config": "wide_grp_kdj_candle_drawdown_0.02",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "kdj",
-        "candle",
-        "drawdown"
+      "per_fold_base": [
+        0.019673447537473233,
+        0.049402378795406064,
+        0.017962414547064848,
+        0.019746448505028727
       ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19888,
-      "insample_precision": 0.12183226065969428,
-      "oos_signals": 4654,
-      "oos_precision": 0.07692307692307693,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 1.8651226827669942,
-      "per_fold_oos": [
-        0.028445006321112517,
-        0.12201154163231658,
-        0.0872093023255814,
-        0.09009009009009009
-      ],
-      "per_fold_signals": [
-        1582,
-        1213,
-        860,
-        999
-      ],
-      "folds_above_base": 3,
-      "config": "wide_grp_momentum_volatility_candle_kdj_0.02",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "candle",
-        "kdj"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 49715,
-      "insample_precision": 0.08494418183646786,
-      "oos_signals": 12799,
-      "oos_precision": 0.05844206578638956,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 1.4170210928374287,
-      "per_fold_oos": [
-        0.029442148760330578,
-        0.09649923896499239,
-        0.05649303008070433,
-        0.05589849108367627
-      ],
-      "per_fold_signals": [
-        3872,
-        3285,
-        2726,
-        2916
-      ],
-      "folds_above_base": 3,
-      "config": "wide_grp_kdj_candle_drawdown_0.05",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.05,
-      "feature_groups": [
-        "kdj",
-        "candle",
-        "drawdown"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 49715,
-      "insample_precision": 0.08494418183646786,
-      "oos_signals": 12799,
-      "oos_precision": 0.05844206578638956,
-      "oos_base_rate": 0.041242904627034,
-      "oos_lift": 1.4170210928374287,
-      "per_fold_oos": [
-        0.029442148760330578,
-        0.09649923896499239,
-        0.05649303008070433,
-        0.05589849108367627
-      ],
-      "per_fold_signals": [
-        3872,
-        3285,
-        2726,
-        2916
-      ],
-      "folds_above_base": 3,
-      "config": "wide_grp_momentum_volatility_candle_kdj_0.05",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.05,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "candle",
-        "kdj"
-      ],
-      "params": {}
+      "folds_above_base": 4,
+      "config": "wide_logistic_43",
+      "model": "logistic",
+      "label": "label_close",
+      "target_rate": 0.005,
+      "feature_groups": [],
+      "params": {
+        "C": 0.3
+      }
     }
   ],
   "failed": [
     {
-      "config": "wide_logistic_36",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
+      "config": "wide_grp_kdj_candle_drawdown_0.02",
+      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 163, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 354, in evaluate_fold\n    cols = select_features(feature_columns(train), cfg.feature_groups)\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 300, in select_features\n    raise KeyError(f\"unknown feature group {group!r}\")\nKeyError: \"unknown feature group 'drawdown'\"\n"
     },
     {
-      "config": "wide_logistic_37",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_38",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_39",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_40",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_41",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_42",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_43",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_44",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_45",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_46",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "config": "wide_logistic_47",
-      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 173, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 271, in evaluate_fold\n    model.fit(x_tr, y_tr)\n    ~~~~~~~~~^^^^^^^^^^^^\n  File \"C:\\Users\\30834\\miniconda3\\Lib\\site-packages\\sklearn\\base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\nValueError: Input X contains NaN.\nLogisticRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values\n"
-    },
-    {
-      "error": "no usable folds",
-      "n_folds": 4,
-      "config": "wide_grp_momentum_market_cross_0.02",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "error": "no usable folds",
-      "n_folds": 4,
-      "config": "wide_grp_momentum_market_cross_0.05",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.05,
-      "feature_groups": [
-        "momentum",
-        "market",
-        "cross"
-      ],
-      "params": {}
+      "config": "wide_grp_kdj_candle_drawdown_0.05",
+      "error": "Traceback (most recent call last):\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\search.py\", line 163, in _run_one\n    results.append(wf.evaluate_fold(train, test, cfg, seed))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 354, in evaluate_fold\n    cols = select_features(feature_columns(train), cfg.feature_groups)\n  File \"D:\\ccc\\pro-web-60d-strategy\\src\\ml\\walkforward.py\", line 300, in select_features\n    raise KeyError(f\"unknown feature group {group!r}\")\nKeyError: \"unknown feature group 'drawdown'\"\n"
     }
   ]
 }

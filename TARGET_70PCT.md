@@ -143,14 +143,39 @@ Three things stand out.
 Feature-group ablations were also run, with the group table corrected after an
 initial bug (prefix matching made seven "different" ablations resolve to the same
 ten columns — they are now exact, disjoint sets covering all 82 features, with a
-`check_groups` guard). Dropping `position` gives 17.10% at 1,661 signals, dropping
-`kdj` 16.05%, dropping `volume` 16.00%, versus 15.98% for all features. Single
-groups: `cross` alone 14.93%, `volatility` alone 14.79%, `market` alone 13.67%,
-`candle` alone 12.83%, `momentum` alone 12.65%, `kdj` alone 7.69%.
+`check_groups` guard).
 
-Two conclusions: the raw-volatility and cross-sectional families carry the most
-standalone information, and **the KDJ/expert-style indicator family is the
-weakest single group** — the opposite of what the original expert library
+| Feature set | OOS precision | Signals | Lift | Per-fold precision |
+| --- | ---: | ---: | ---: | --- |
+| **all 82 features** (baseline) | 15.98% | 1,790 | 3.91× | 10.8 / 23.2 / 31.1 / 33.3% |
+| drop `position` | **17.10%** | 1,661 | 4.18× | 11.7 / 23.7 / 32.5 / 33.3% |
+| drop `kdj` | 16.05% | 1,863 | 3.93× | 11.1 / 23.5 / 27.9 / 33.3% |
+| drop `volume` | 16.00% | 1,887 | 3.92× | 10.5 / 22.9 / 34.8 / 33.8% |
+| drop `volatility` | 15.72% | 1,539 | 3.85× | — |
+| drop `candle` | 15.33% | 1,768 | 3.75× | — |
+| drop `limitup` | 15.26% | 1,736 | 3.73× | — |
+
+Single groups, alone: `cross` 14.93% (4,213 signals), `volatility` 14.79%
+(8,153), `market` 13.67% (3,102), `candle` 12.83% (8,404), `momentum` 12.65%
+(4,143), `limitup` 12.01% (9,581), `position` 9.21% (6,099), `kdj` 7.69% (4,654).
+
+The two weakest single families are `kdj` and `position` — and `position` is
+weakest-but-one even though "low position in the 60-day range" is the central
+premise of the original low-zone strategies.
+
+**The best single change found anywhere in this project is dropping the
+`position` family, and it is a real improvement rather than noise**: it raises
+precision in *all four folds* (10.8→11.7, 23.2→23.7, 31.1→32.5, 33.3→33.3) on
+comparable signal counts, so it is not an operating-point artifact or a
+lucky-fold effect. That the 60/120/250-session position, drawdown and
+distance-to-high features *hurt* is notable, because "low position in the
+60-day range" is the central premise of the original low-zone strategies. The
+model does better without it.
+
+Even so, 17.10% is 4.09× short of 70%, and it does not change the conclusion.
+Two other conclusions hold: the cross-sectional and raw-volatility families carry
+the most standalone information, and **the KDJ/expert-style indicator family is
+the weakest single group** — the opposite of what the original expert library
 assumed. No group or combination approaches the target.
 
 ---
@@ -243,7 +268,7 @@ controls** that prove the harness *can* detect a real signal when one is planted
 
 | Variant | OOS precision | Base rate | Lift | Folds above base |
 | --- | ---: | ---: | ---: | ---: |
-| **real (control)** | **15.98%** | 4.46% | **3.58×** | **4/4** |
+| **real (control)** | **15.98%** | 4.09% | **3.91×** | **4/4** |
 | permuted labels, global (3 seeds) | 2.99–3.32% | ~3.1% | 0.98–1.08× | 1–3/4 |
 | permuted within each session | 6.28% | 5.48% | 1.15× | 1/2 |
 | i.i.d. Bernoulli labels | 3.38% | 3.06% | 1.10× | 4/4 |
@@ -274,18 +299,35 @@ conclusion by different means: permuted labels 3.00% vs 3.09% base, noise featur
 4.55% vs 4.12%, and no feature exceeding AUC 0.68. **Both verdicts:
 trustworthy.**
 
-> **Two corrections the audit forced, both now applied.** First, the pooled base
-> rate was an unweighted mean of per-fold rates while precision was
-> signal-weighted, so the reported lift mixed two weightings: the true figure is
-> **3.58×, not 3.87×**. `summarise()` now weights both consistently and reports
-> the unweighted value alongside. Second, `label_close` was censored on "saw at
-> least one future bar" instead of "has a full 10-bar window", so 5,747 rows at
-> the very end of the panel carried a label computed from a partial window.
-> Censoring is now on the full window, and the label ratio is compared in float64
-> to remove 3 rows where a float32 round-trip flipped the comparison. Neither
-> defect touches `label_high`, and a full rebuild confirms `entry_open`,
-> `fwd_max_high`, `label_high`, `resolved` and all 85 feature columns are
-> **bit-identical** (max absolute difference 0.000e+00).
+> **Corrections the audit forced, all now applied.** The pooled base rate was
+> computed three different ways at three different times, and the first two were
+> wrong:
+>
+> | Pooling of the base rate | Value | Lift reported |
+> | --- | ---: | ---: |
+> | Unweighted mean of per-fold rates | 4.1243% | 3.87× (original) |
+> | Weighted by signal count | 4.4631% | 3.58× (first "fix") |
+> | **Total positives / total test rows** | **4.0878%** | **3.91× (correct)** |
+>
+> The correct pooling is the ratio of sums — the value you would get by
+> concatenating every out-of-sample row into one frame — because the folds are
+> not the same size (67,248 / 68,438 / 72,262 / 73,279 rows) and the per-fold
+> base rates differ threefold (2.67%–8.02%). Averaging is wrong under either
+> weighting. As an independent check, the corrected 4.0878% equals
+> `ml_precision_ceiling.json`'s own 11,496 / 281,227 exactly, and that figure is
+> produced by a different module that shares only the fold definitions — so the
+> two agree not by construction but by agreement about which rows are
+> out-of-sample. `summarise()` now reports the exact value plus both
+> approximations, so the spread (0.38 pp) is visible rather than hidden.
+>
+> Second, `label_close` was censored on "saw at least one future bar" instead of
+> "has a full 10-bar window", so 5,747 rows at the very end of the panel carried
+> a label computed from a partial window. Censoring is now on the full window,
+> and the label ratio is compared in float64 to remove 3 rows where a float32
+> round-trip flipped the comparison. Neither defect touches `label_high`, and a
+> full rebuild confirms `entry_open`, `fwd_max_high`, `label_high`, `resolved`
+> and all 85 feature columns are **bit-identical** (max absolute difference
+> 0.000e+00).
 
 ---
 
@@ -344,7 +386,8 @@ the document.
   *on* the frontier.
 - **The headline is conservative, not flattering.** 63% of walk-forward signals
   sit in the fold with the *lowest* precision (10.79%); removing that fold raises
-  the pooled figure to 24.89%. Lift is 3.58×, not the 3.87× first reported.
+  the pooled figure to 24.89%. Lift is 3.91×, computed against an exactly pooled
+  base rate.
 - **It is not 60%, and cannot be.** At a useful recall (≥ 10%) the ceiling is
   13.08%, and the achieved holdout figure of 12.14% sits essentially on it.
 - **The 70–80% figures in the source material are in-sample or tiny-sample

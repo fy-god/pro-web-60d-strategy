@@ -240,6 +240,7 @@ python -m src.ml.build_matrix --stride 5         # ML feature matrix (82 causal 
 python -m src.ml.precision_ceiling               # the 70% bound (§10)
 python -m src.ml.null_tests                      # validate the harness cannot cheat
 python -m src.ml.final_holdout                   # one-shot 2026 evaluation
+python scripts/audit_reports.py                  # check every published number
 ```
 
 Requires `pandas`, `numpy`, `scikit-learn`, `pyarrow`, `matplotlib`.
@@ -401,7 +402,15 @@ an operating-point effect, exactly as the bound predicts.
 
 **The 15.98% is conservative.** 63% of its signals sit in the fold with the
 *lowest* precision (10.79%), so removing that fold raises the pooled figure to
-24.89%. Its lift is 3.58× against a consistently-weighted base rate.
+24.89%. Its lift is **3.91×**, against a base rate pooled as a ratio of sums
+(total positives over total test rows).
+
+**The best single change found anywhere: drop the `position` feature family**,
+which lifts precision to 17.10% on 1,661 signals — and it improves *all four
+folds*, so it is not an operating-point artifact. The 60/120/250-session
+position, drawdown and distance-to-high features therefore actively hurt, even
+though "low position in the 60-day range" is the central premise of the original
+low-zone strategies. It is still 4.09× short of 70%.
 
 **The harness was validated before any of this was believed**
 (`src/ml/null_tests.py`, plus a 14-variant battery in `outputs/ml/audit/`): ten
