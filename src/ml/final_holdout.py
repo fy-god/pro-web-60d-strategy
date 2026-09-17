@@ -34,6 +34,11 @@ from src.ml import walkforward as wf
 REPORT_DIR = Path(__file__).resolve().parents[2] / "reports"
 HOLDOUT_START = "2026-01-01"
 
+# The matrix this evaluation reads. Kept explicit so the purge length and the
+# label definition cannot silently disagree with the file on disk.
+HORIZON = 10
+TARGET_PCT = 30
+
 # Pre-committed configuration: the walk-forward baseline, fixed before the
 # holdout was touched. Changing this after seeing holdout output would invalidate
 # the holdout; if it must change, say so explicitly in the report.
@@ -89,20 +94,92 @@ def date_clustered_ci(
     return float(np.nanpercentile(stats, 2.5)), float(np.nanpercentile(stats, 97.5))
 
 
-def main() -> None:
-    frame = wf.load_matrix()
+def purge_by_label_end(
+    frame: pd.DataFrame, cutoff: np.datetime64, horizon: int
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split the panel so no training label can have seen a holdout session.
+
+    Filtering training on ``date < cutoff`` alone is NOT sufficient and was a real
+    defect in this file. A row's label looks forward ``horizon`` sessions, so the
+    last ``horizon`` pre-cutoff sessions carry labels whose outcome window
+    extends *into* the holdout. Training on those rows leaks holdout prices into
+    the fitted model. Measured on this panel: 6,333 of 434,383 training rows
+    (1.46%) were in that zone and all of them were being fitted on.
+
+    The purge is expressed in **market sessions**, not rows: the last ``horizon``
+    distinct sessions strictly before the cutoff are removed in full, so the
+    boundary is correct regardless of how many stocks traded on a given day or
+    how the matrix was resampled by ``stride``. (Dropping "the last N rows" would
+    be wrong for exactly those reasons.)
+
+    Returns ``(train, purged, test)``.
+    """
     sessions = np.sort(frame["date"].unique())
+    pre = sessions[sessions < cutoff]
+    if len(pre) <= horizon:
+        raise ValueError(
+            f"only {len(pre)} pre-cutoff sessions for a {horizon}-session purge"
+        )
+    # Sessions strictly before the purge zone. Everything at or after
+    # `safe_last` has a label window that can reach into the holdout.
+    safe_last = pre[-(horizon + 1)]
+    train = frame[frame["date"] <= safe_last]
+    purged = frame[(frame["date"] > safe_last) & (frame["date"] < cutoff)]
+    test = frame[frame["date"] >= cutoff]
+    return train, purged, test
+
+
+def main() -> None:
+    # The horizon is a property of the matrix (its filename and its label
+    # definition), not of the model config, so read it from the same constant
+    # load_matrix uses rather than guessing.
+    horizon = HORIZON
+    # Use the DENSE grid. The one-shot holdout is the headline number, and at
+    # stride 5 each retained session carries only ~604 of ~3,022 names, so the
+    # holdout would be scored on a partial cross-section. Fall back to stride 5
+    # only if the dense matrix has not been built, and say so loudly in the
+    # payload, because a silent fallback is precisely how this report once
+    # regressed a grid without anyone noticing.
+    dense = wf.matrix_path(horizon=horizon, target=TARGET_PCT, stride=1)
+    stride_used = 1 if dense.exists() else 5
+    if stride_used == 5:
+        print(f"WARNING: dense matrix {dense.name} not found; falling back to "
+              f"stride 5. Build it with "
+              f"`python -m src.ml.build_matrix --stride 1` for the headline "
+              f"number to be scored on full cross-sections.")
+    frame = wf.load_matrix(horizon=horizon, target=TARGET_PCT, stride=stride_used)
+    print(f"matrix: stride {stride_used}, {len(frame):,} rows, "
+          f"{frame['date'].nunique():,} sessions")
     cutoff = np.datetime64(pd.Timestamp(HOLDOUT_START))
 
-    train = frame[frame["date"] < cutoff]
-    test = frame[frame["date"] >= cutoff]
+    train, purged, test = purge_by_label_end(frame, cutoff, horizon)
 
     tr = train[train["label_high"].notna() & train["resolved"].fillna(0).astype(bool)]
     te = test[test["label_high"].notna()]
-    print(f"train sessions < {HOLDOUT_START}: {train['date'].nunique():,} "
-          f"({len(tr):,} usable rows)")
+    print(f"purge: {horizon} sessions before {HOLDOUT_START} "
+          f"({purged['date'].nunique()} sessions, {len(purged):,} rows) removed "
+          f"from training so no training label window reaches the holdout")
+    print(f"train sessions <= {pd.Timestamp(train['date'].max()).date()}: "
+          f"{train['date'].nunique():,} ({len(tr):,} usable rows)")
     print(f"holdout sessions >= {HOLDOUT_START}: {test['date'].nunique():,} "
           f"({len(te):,} usable rows)")
+
+    # Hard guard: the purge must be verifiable, not merely intended. Recompute
+    # the last session any training label could touch and assert it is strictly
+    # before the cutoff.
+    train_sessions = np.sort(train["date"].unique())
+    last_train_idx = int(np.searchsorted(np.sort(frame["date"].unique()),
+                                         train_sessions[-1]))
+    label_end_idx = last_train_idx + horizon
+    all_sessions = np.sort(frame["date"].unique())
+    label_end = all_sessions[min(label_end_idx, len(all_sessions) - 1)]
+    assert label_end < cutoff, (
+        f"leak: last training session {pd.Timestamp(train_sessions[-1]).date()} "
+        f"has a {horizon}-session label window ending {pd.Timestamp(label_end).date()}"
+        f", which is not before the cutoff"
+    )
+    print(f"guard: last training label window ends "
+          f"{pd.Timestamp(label_end).date()} < {HOLDOUT_START}  OK")
 
     cols = wf.feature_columns(frame)
     model = wf.make_model(COMMITTED, 0)
@@ -148,13 +225,23 @@ def main() -> None:
             print(f"precision excluding busiest date        : "
                   f"{y_te[keep].mean()*100:.2f}% ({int(keep.sum())} signals)")
 
+    # Provenance. Without these, a report cannot be tied back to the matrix it
+    # came from, and the scheduled audit cannot verify it. The audit found the
+    # report silently regressed one grid (stride 1 -> stride 5) and nothing
+    # detected it, because the payload did not record which matrix it read, and
+    # date HHI / busiest-date-excluded precision were printed to stdout only and
+    # never persisted, so documents citing them had no artifact to check against.
     payload = {
         "holdout_start": HOLDOUT_START,
+        "stride": stride_used,
+        "horizon": HORIZON,
+        "target_pct": TARGET_PCT,
         "config": {"model": COMMITTED.model, "params": COMMITTED.params,
                    "label": COMMITTED.label, "target_rate": COMMITTED.target_rate},
         "threshold": float(thr),
         "n_train_rows": int(len(tr)),
         "n_holdout_rows": int(len(te)),
+        "n_purged_rows": int(len(purged)),
         "base_rate": base,
         "signals": n,
         "hits": hits,
@@ -170,6 +257,18 @@ def main() -> None:
             "by design."
         ),
     }
+    if n:
+        share = pd.Series(te["date"].to_numpy()[pred]).value_counts()
+        hhi = float((share / n).pow(2).sum())
+        payload["date_hhi"] = hhi
+        payload["effective_dates"] = float(1.0 / hhi) if hhi else None
+        top = share.index[0]
+        keep = pred & (te["date"].to_numpy() != np.datetime64(top))
+        if keep.sum():
+            payload["busiest_date"] = str(top)[:10]
+            payload["busiest_date_signals"] = int(share.iloc[0])
+            payload["precision_ex_busiest_date"] = float(y_te[keep].mean())
+            payload["signals_ex_busiest_date"] = int(keep.sum())
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = REPORT_DIR / "ml_final_holdout.json"
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

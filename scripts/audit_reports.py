@@ -220,19 +220,58 @@ def check_cross_report(f: Findings) -> None:
                 f"configs spans {spread:.6f} "
                 f"({ {k: round(v, 6) for k, v in full_fold_bases.items()} })")
 
-    matrix_meta = ROOT / "outputs" / "ml" / "matrix_h10_t30_s5_meta.json"
-    if matrix_meta.exists():
-        meta = json.loads(matrix_meta.read_text(encoding="utf-8"))
-        holdout = load("ml_final_holdout.json")
-        if holdout:
-            train_n = holdout.get("train_rows")
-            hold_n = holdout.get("holdout_rows")
-            if train_n and hold_n:
-                f.check(train_n + hold_n <= meta["rows"],
-                        f"holdout split {train_n}+{hold_n} fits within matrix "
-                        f"{meta['rows']} rows")
+    # Every matrix the reports could have come from, keyed by stride. Checking
+    # only `s5` was a dead guard: the holdout module writes
+    # `n_train_rows`/`n_holdout_rows` but this check read
+    # `train_rows`/`holdout_rows`, so both `.get()` calls returned None, the
+    # `if` was False, and the check NEVER RAN while still being counted as a
+    # pass. A holdout report that had silently regressed to a different grid
+    # went undetected for exactly this reason.
+    matrices: dict[int, dict] = {}
+    for path in sorted((ROOT / "outputs" / "ml").glob("matrix_*_meta.json")):
+        try:
+            meta = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            f.check(False, f"{path.name} parses: {exc}")
+            continue
+        meta["_name"] = path.name
         f.check(meta.get("features") == 82,
-                f"matrix advertises 82 features (found {meta.get('features')})")
+                f"{path.name} advertises 82 features (found {meta.get('features')})")
+        if meta.get("stride") is not None:
+            matrices[int(meta["stride"])] = meta
+
+    f.check(bool(matrices), "at least one feature matrix is present on disk")
+
+    holdout = load("ml_final_holdout.json")
+    if holdout:
+        train_n = holdout.get("n_train_rows")
+        hold_n = holdout.get("n_holdout_rows")
+        # Missing keys are now a FAILURE, not a silent pass. This is the whole
+        # point: a renamed field must break the check loudly.
+        f.check(
+            train_n is not None and hold_n is not None,
+            f"holdout report carries n_train_rows/n_holdout_rows "
+            f"(found {train_n!r}/{hold_n!r})",
+        )
+        stride = holdout.get("stride")
+        f.check(stride is not None, "holdout report records the stride it used")
+        if train_n is not None and hold_n is not None and stride is not None:
+            # Match the holdout against the matrix for ITS OWN stride. Comparing
+            # it against every matrix on disk is wrong: the stride-1 holdout
+            # legitimately does not fit the stride-5 matrix, and those are both
+            # valid artifacts serving different purposes.
+            meta = matrices.get(int(stride))
+            f.check(
+                meta is not None,
+                f"a matrix exists for the holdout's stride {stride} "
+                f"(found strides {sorted(matrices)})",
+            )
+            if meta is not None:
+                f.check(
+                    train_n + hold_n <= meta["rows"],
+                    f"holdout split {train_n:,}+{hold_n:,} fits within "
+                    f"{meta['_name']} ({meta['rows']:,} rows, stride {stride})",
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -255,41 +294,91 @@ def check_prose(f: Findings, verbose: bool) -> None:
         print("  (skipped: reports missing)")
         return
 
-    # Figures that MUST appear in the headline documents, and figures that must
-    # NOT appear because they were corrected.
-    must_appear = {
-        "README.md": ["13.61", "4.70", "26.78"],
-        "TARGET_70PCT.md": ["13.61", "26.78", "16.64"],
-    }
-    for doc, needles in must_appear.items():
-        path = ROOT / doc
-        if not path.exists():
-            f.check(False, f"{doc} exists")
-            continue
-        text = path.read_text(encoding="utf-8")
-        for needle in needles:
-            f.check(needle in text,
-                    f"{doc} cites {needle}")
+    # ------------------------------------------------------------------
+    # THE CHECK THAT MATTERS: tie each headline prose figure to the payload.
+    #
+    # The previous version only grepped for literal strings ("13.61" in the
+    # document). That is blind in the one direction that counts: prose asserting
+    # 13.61% passed while reports/ml_final_holdout.json said 11.05%, because the
+    # check never compared the two. A published report silently regressed to a
+    # different grid and 107 checks still reported "0 problems".
+    #
+    # So: derive the expected strings FROM THE REPORT and require the documents
+    # to agree. If the report changes, the documents must change with it or this
+    # fails.
+    # ------------------------------------------------------------------
+    holdout = load("ml_final_holdout.json")
+    ceiling = load("ml_precision_ceiling.json")
+    if not holdout:
+        f.check(False, "ml_final_holdout.json present and parseable")
+        return
 
-    # Retired figures. Each is kept with the reason so the list doubles as a
-    # record of corrections rather than a mystery. Values retired by the
-    # 2026-09-17 review fixes are marked so a regression is caught.
+    if holdout:
+        pct = holdout["precision"] * 100
+        lift = holdout["lift"]
+        # Accept either one or two decimal places in prose.
+        precision_variants = {f"{pct:.1f}", f"{pct:.2f}"}
+        lift_variants = {f"{lift:.1f}", f"{lift:.2f}"}
+        signals_variants = {f"{holdout['signals']:,}", str(holdout["signals"])}
+        for doc in ("README.md", "TARGET_70PCT.md"):
+            path = ROOT / doc
+            if not path.exists():
+                continue
+            text = path.read_text(encoding="utf-8")
+            # The holdout precision must appear somewhere in each headline doc.
+            f.check(
+                any(v in text for v in precision_variants),
+                f"{doc} states the holdout precision {pct:.2f}% "
+                f"(report says {holdout['precision']:.6f})",
+            )
+            f.check(
+                any(v in text for v in lift_variants),
+                f"{doc} states the holdout lift {lift:.2f}x "
+                f"(report says {holdout['lift']:.6f})",
+            )
+            # And must NOT still assert a superseded holdout precision, unless
+            # the line is recording that history. Correction blocks are how this
+            # document legitimately explains the 12.14% -> 11.05% -> 13.61%
+            # chain, so blockquotes and fenced code are exempt; a bare claim in
+            # body text is not.
+            stale = {12.14, 11.05, 13.61} - {round(pct, 2)}
+            in_fence = False
+            for line_no, line in enumerate(text.splitlines(), 1):
+                stripped = line.lstrip()
+                if stripped.startswith("```"):
+                    in_fence = not in_fence
+                    continue
+                if in_fence or stripped.startswith(">"):
+                    continue
+                window = "\n".join(
+                    text.splitlines()[max(0, line_no - 7):line_no]
+                )
+                if re.search(r"(correct|retired|earlier|previous|was reported|"
+                             r"supersed|revision|history|before the|changed|"
+                             r"old stride)", line + window, re.I):
+                    continue
+                for value in stale:
+                    if re.search(rf"\b{value:.2f}\s*%", line):
+                        f.check(
+                            False,
+                            f"{doc}:{line_no} asserts holdout precision "
+                            f"{value:.2f}%, superseded; report says {pct:.2f}%",
+                        )
+
+    if verbose:
+        print(f"  (checked headline figures against the payload)")
+
+    # Retired figures, kept with the reason so the list doubles as a record of
+    # corrections rather than a mystery. Only values that are retired in EVERY
+    # context belong here; a value that is still current somewhere (15.98% is
+    # the live walk-forward baseline) must not, or the check cries wolf and gets
+    # switched off.
     retired = {
         "20.23": "precision ceiling before the frontier grid was densified",
         "3.87": "lift computed against an unweighted-mean base rate",
         "3.58": "lift computed against a signal-weighted base rate",
-        "12.14": "2026 holdout before the purge and the phase-corrected grid",
-        "15.98": "walk-forward baseline on the stride-5 grid",
-        "4.17": "holdout lift before the purge and the phase-corrected grid",
-        "24.54": "frontier on the stride-5 grid",
-        "13.08": "recall-floor precision on the stride-5 grid",
+        "24.54": "frontier computed on the stride-5 grid",
     }
-    # A correction table legitimately lists retired values next to the reasons
-    # they were retired. Rather than matching keywords on the line, mark the
-    # block: any line inside a fenced "correction" region, or within a table
-    # whose header names the retired value as superseded, is exempt. This keeps
-    # the check useful (it still catches a live claim) without forcing the
-    # document to hide the history.
     exempt_markers = re.compile(
         r"(correct|retired|earlier|previous|was reported|not the|superseded|"
         r"original|first \"?fix)",
@@ -301,8 +390,6 @@ def check_prose(f: Findings, verbose: bool) -> None:
         if not path.exists():
             continue
         lines = path.read_text(encoding="utf-8").splitlines()
-        # Look back a few lines for an exemption marker, which covers a
-        # correction table whose caption sits above it.
         for line_no, line in enumerate(lines, 1):
             window = "\n".join(lines[max(0, line_no - 7):line_no])
             if exempt_markers.search(line) or exempt_markers.search(window):

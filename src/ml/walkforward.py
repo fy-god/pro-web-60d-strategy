@@ -478,8 +478,71 @@ def summarise(fold_results: list[dict]) -> dict:
     }
 
 
-def load_matrix(horizon: int = 10, target: int = 30, stride: int = 5) -> pd.DataFrame:
-    path = OUT_DIR / f"matrix_h{horizon}_t{target}_s{stride}.parquet"
+def matrix_path(horizon: int = 10, target: int = 30, stride: int = 5) -> Path:
+    """Path of the feature matrix for a given (horizon, target, stride).
+
+    Kept separate from ``load_matrix`` so callers can test whether a grid exists
+    before reading it, which is how modules avoid silently falling back to a
+    different sample of the panel.
+    """
+    return OUT_DIR / f"matrix_h{horizon}_t{target}_s{stride}.parquet"
+
+
+def resolve_stride(preferred: int = 1, fallback: int = 5) -> int:
+    """Pick the densest matrix that exists, preferring ``preferred``.
+
+    Every report under ``reports/`` records which grid it came from in its
+    ``stride`` field, and the numbers differ between grids (the walk-forward
+    out-of-sample base rate is 0.04089445 on the full cross-section versus
+    0.04087801 on the row-strided subset). So a module that reads whichever
+    matrix happens to be the default will silently overwrite a report produced
+    on a different grid — the numbers change and nothing says so.
+
+    Four modules hit exactly that: they called ``load_matrix()`` with no stride
+    after the default was pinned to 5, while the reports on disk held stride-1
+    numbers. Resolving explicitly, and printing the choice, makes the grid an
+    explicit part of every run instead of an invisible default.
+    """
+    if matrix_path(stride=preferred).exists():
+        return preferred
+    if matrix_path(stride=fallback).exists():
+        print(f"note: stride-{preferred} matrix absent; using stride {fallback}. "
+              f"Build the dense grid with "
+              f"`python -m src.ml.build_matrix --stride {preferred}` to reproduce "
+              f"the published reports.")
+        return fallback
+    raise FileNotFoundError(
+        f"no feature matrix found at {matrix_path(stride=preferred)} or "
+        f"{matrix_path(stride=fallback)}; build one with "
+        f"`python -m src.ml.build_matrix --stride 1`"
+    )
+
+
+def load_matrix(
+    horizon: int = 10,
+    target: int = 30,
+    stride: int | None = None,
+) -> pd.DataFrame:
+    """Load the feature matrix.
+
+    ``stride=None`` (the default) resolves to the densest available grid and
+    prints which one it chose. Passing an explicit stride pins it.
+
+    On grids: ``stride`` subsamples by ROW (every stride-th row of the
+    code/date-sorted frame), not by session. All 887 sessions survive, but each
+    stock lands on a different date phase, so a retained session carries about
+    604 of ~3,022 names rather than a full cross-section. Features and labels
+    are computed on the full panel before subsampling, so this is a plain
+    thinning and the label distribution barely moves. The one thing it does
+    weaken is any per-session cross-sectional claim.
+
+    ``--stride-mode session`` in ``build_matrix`` is the alternative: it keeps
+    whole sessions with complete cross-sections but drops far more of the
+    timeline (178 sessions at stride 5, too few for the walk-forward).
+    """
+    if stride is None:
+        stride = resolve_stride()
+    path = matrix_path(horizon=horizon, target=target, stride=stride)
     if not path.exists():
         raise FileNotFoundError(
             f"{path} missing; run `python -m src.ml.build_matrix --stride {stride}` first"

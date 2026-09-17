@@ -19,6 +19,7 @@ import argparse
 import itertools
 import json
 import os
+import statistics
 import sys
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -108,11 +109,20 @@ def presets() -> dict[str, list[wf.Config]]:
                     name=f"wide_{model}_{len(wide)}", model=model, params=params,
                     label=label, target_rate=rate,
                 ))
-    # plus group subsets crossed with HGB
+    # plus group subsets crossed with HGB.
+    #
+    # "drawdown" is NOT a feature group: FEATURE_GROUPS has candle, cross, kdj,
+    # limitup, market, momentum, position, volatility, volume. The combo below
+    # used to name it, so `wide_grp_kdj_candle_drawdown_0.02` and `_0.05` failed
+    # with KeyError on every run and were reported only in the report's `failed`
+    # list — 2 of 58 configurations that could never produce a number. The
+    # drawdown-flavoured features live in the `position` group, which is what
+    # this now uses. `check_presets` below makes any future typo a hard error at
+    # startup rather than two silent failures per run.
     for combo in (
         ["momentum", "volume", "limitup"],
         ["momentum", "market", "cross"],
-        ["kdj", "candle", "drawdown"],
+        ["kdj", "candle", "position"],
         ["momentum", "volatility", "candle", "kdj"],
         ["volume", "limitup", "market"],
     ):
@@ -123,7 +133,26 @@ def presets() -> dict[str, list[wf.Config]]:
                 label="label_high", target_rate=rate,
             ))
     configs["wide"] = wide
+    check_presets(configs)
     return configs
+
+
+def check_presets(configs: dict[str, list]) -> None:
+    """Fail at startup if a preset names a feature group that does not exist.
+
+    A typo here costs two configurations per run and shows up only as an entry in
+    the report's `failed` list, where it reads like a runtime mishap rather than a
+    configuration error. Better to refuse to start.
+    """
+    known = set(wf.FEATURE_GROUPS)
+    for preset, items in configs.items():
+        for cfg in items:
+            unknown = [g for g in (cfg.feature_groups or []) if g not in known]
+            if unknown:
+                raise SystemExit(
+                    f"preset {preset!r} config {cfg.name!r} names unknown feature "
+                    f"group(s) {unknown}; known groups are {sorted(known)}"
+                )
 
 
 _MATRIX: pd.DataFrame | None = None
@@ -184,14 +213,21 @@ def main() -> None:
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--horizon", type=int, default=10)
     ap.add_argument("--target", type=int, default=30)
-    ap.add_argument("--stride", type=int, default=5)
+    ap.add_argument("--stride", type=int, default=None,
+                    help="matrix stride; default resolves to the densest grid "
+                         "that exists so reports are not silently mixed")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0, help="cap configs (0 = all)")
     args = ap.parse_args()
 
-    matrix = wf.OUT_DIR / f"matrix_h{args.horizon}_t{args.target}_s{args.stride}.parquet"
+    # Resolve the grid explicitly rather than defaulting to a number. Reports
+    # differ between grids, so an implicit default here can silently overwrite a
+    # report produced on a different sample of the panel.
+    stride = args.stride if args.stride is not None else wf.resolve_stride()
+    matrix = wf.matrix_path(horizon=args.horizon, target=args.target, stride=stride)
     if not matrix.exists():
         sys.exit(f"matrix not found: {matrix}")
+    print(f"matrix: {matrix.name} (stride {stride})", flush=True)
 
     # Fail loudly if the group table does not partition the real feature set.
     # A silent mismatch here once made seven ablations identical.
@@ -211,6 +247,25 @@ def main() -> None:
         configs = grid[args.preset]
     if args.limit:
         configs = configs[: args.limit]
+
+    # A partial run must not overwrite a complete published report. Testing with
+    # `--limit 1` once replaced the 58-configuration `ml_search_wide.json` with a
+    # single row, silently deleting 55 results and their evidence. The report is
+    # named after the preset, not after the subset, so the guard belongs here.
+    report_path = wf.REPORT_DIR / f"ml_search_{args.preset}.json"
+    full_run = len(configs) == len(grid.get(args.preset, []))
+    if report_path.exists() and not full_run:
+        try:
+            existing = json.loads(report_path.read_text(encoding="utf-8"))
+            prior = int(existing.get("n_configs") or 0)
+        except (json.JSONDecodeError, OSError):
+            prior = 0
+        if prior > len(configs):
+            sys.exit(
+                f"refusing to overwrite {report_path.name}, which holds {prior} "
+                f"configuration(s), with a partial run of {len(configs)}. "
+                f"Re-run without --limit, or set --out to a scratch name."
+            )
 
     print(f"preset={args.preset}  configs={len(configs)}  workers={args.workers}",
           flush=True)
@@ -246,13 +301,35 @@ def main() -> None:
     ok = [r for r in results if "error" not in r]
     ok.sort(key=lambda r: (r["oos_precision"] if np.isfinite(r["oos_precision"]) else -1),
             reverse=True)
+    # The pooled base rate is a property of the GRID and the fold split, so it is
+    # the same for every config that completed all folds. Earlier this field was
+    # `ok[0]["oos_base_rate"]` — the rank-1 row's OWN base rate. When that row
+    # happened to be a degenerate config that completed only 2 of 4 folds, the
+    # report-level field advertised a base rate belonging to two folds, and a
+    # reader pairing it with a 4-fold row overstated lift by up to 17.9%. Derive
+    # it from the full-fold rows so the name matches the meaning, and keep the
+    # per-row value where it belongs.
+    full_fold = [r for r in ok if r.get("n_folds", 0) >= args.folds - 1
+                 and r.get("oos_signals", 0) >= 100 and r.get("oos_base_rate")]
+    pooled_base = (
+        float(statistics.median([r["oos_base_rate"] for r in full_fold]))
+        if full_fold else None
+    )
     payload = {
         "preset": args.preset,
-        "folds": args.folds,
+        "stride": stride,
+        "matrix": matrix.name,
+        "folds_requested": args.folds,
         "final_holdout_start": FINAL_HOLDOUT_START,
         "n_configs": len(configs),
         "n_failed": len(results) - len(ok),
-        "oos_base_rate": ok[0]["oos_base_rate"] if ok else None,
+        # Report-level pooled base rate over configs that completed every fold.
+        "oos_base_rate": pooled_base,
+        "oos_base_rate_basis": (
+            f"median over {len(full_fold)} config(s) with n_folds >= "
+            f"{args.folds - 1} and >= 100 signals; per-row values differ by "
+            f"label and fold count"
+        ),
         "ranked": ok,
         "failed": [r for r in results if "error" in r],
     }

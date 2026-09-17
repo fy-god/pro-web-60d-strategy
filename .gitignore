@@ -21,6 +21,11 @@ outputs/ml/**/*.parquet
 outputs/ml/*.log
 # Per-fold training caches are rebuilt on demand; not evidence.
 outputs/ml/crosssec_cache/
+# Scratch artifacts from audit scripts ran ~1 GB of regenerable parquet here and
+# `git add -A` would have swept it in, so the path is ignored explicitly rather
+# than relying on the outputs/ml rule above.
+scripts/scratch/_artifacts/
+scripts/scratch/**/*.parquet
 
 # NOTE: outputs/charts_120d/ IS tracked on purpose. The 120-session K-line
 # charts with signal markers are a requested deliverable, not a disposable
