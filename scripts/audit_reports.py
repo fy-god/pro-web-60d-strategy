@@ -892,6 +892,19 @@ def check_cross_report(f: Findings) -> None:
     # ------------------------------------------------------------------
     tb = load("tradeability.json")
     if tb:
+        # The denominator rule, reported ONCE for the payload rather than once per
+        # strategy: `_check_tb` runs for the overall entry plus the ten worst, so
+        # testing the field inside it emitted the same "predates the fix" failure
+        # eleven times and buried the other findings.
+        overall_tb = tb.get("overall") or {}
+        has_ledger = (overall_tb.get("censored") is not None
+                      and overall_tb.get("signals_raw") is not None)
+        f.check(has_ledger,
+                "tradeability.json records its censored count, so `signals` can "
+                "be verified as the resolved denominator rather than a "
+                "censored-inclusive total (regenerate with "
+                "`python -m src.tradeability`)")
+
         def _check_tb(entry: dict, where: str) -> None:
             sig = entry.get("signals")
             if not sig:
@@ -905,6 +918,21 @@ def check_cross_report(f: Findings) -> None:
                     f"signals {sig} - unfillable {unf}",
                 )
             if hits is not None and entry.get("hit_rate") is not None:
+                # The denominator must EXCLUDE censored signals. The rule is
+                # stated in src/labels.py ("censored rows are excluded from every
+                # denominator, never counted as 0") and implemented by
+                # labels.score_signals; src/tradeability.py was the one module
+                # that violated it, scoring unresolved outcomes as misses while
+                # keeping them in `n`. This check previously asserted
+                # `hit_rate == hits / signals`, i.e. it enforced the violation --
+                # a self-consistency test cannot detect a rule breach.
+                if has_ledger:
+                    resolved = int(entry["signals_raw"]) - int(entry["censored"])
+                    f.check(int(sig) == resolved,
+                            f"tradeability {where}: `signals` ({sig}) is the "
+                            f"RESOLVED denominator, i.e. signals_raw "
+                            f"({entry['signals_raw']}) - censored "
+                            f"({entry['censored']})")
                 f.check(
                     abs(entry["hit_rate"] - hits / sig) < 1e-9,
                     f"tradeability {where}: hit_rate == hits / signals",

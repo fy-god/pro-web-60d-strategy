@@ -89,24 +89,51 @@ def audit(signals: pd.DataFrame, panel: pd.DataFrame) -> pd.DataFrame:
 
 
 def summarise(frame: pd.DataFrame, label: str) -> dict:
-    """Hit rate before and after removing unfillable entries."""
-    n = len(frame)
-    if n == 0:
+    """Hit rate before and after removing unfillable entries.
+
+    Censored signals are EXCLUDED from every denominator, never scored as 0.
+    This module used to compute `hits / len(frame)` with
+    `frame["label_bull"].fillna(0)`, which scored a signal whose forward window
+    has not finished yet as a failure while still counting it in the denominator.
+    src/labels.py states the rule ("censored rows are excluded from every
+    denominator, never counted as 0") and labels.score_signals implements it; this
+    was the one module that did not, so its rates were biased toward zero by
+    however many rows sit at the data edge.
+
+    `resolved` may be absent for a caller that trimmed its frame; when it is
+    absent the total is used, since a missing column must not silently drop every
+    row.
+    """
+    n_all = len(frame)
+    if n_all == 0:
         return {"label": label, "signals": 0}
-    hits = int(frame["label_bull"].fillna(0).sum())
-    blocked = int(frame["unfillable"].sum())
-    tradeable = frame[~frame["unfillable"]]
+    if "resolved" in frame.columns:
+        live = frame[frame["resolved"].astype(bool)]
+    else:
+        live = frame
+    censored = n_all - len(live)
+    n = len(live)
+    if n == 0:
+        return {"label": label, "signals": 0, "signals_raw": n_all,
+                "censored": censored}
+    hits = int(live["label_bull"].fillna(0).sum())
+    blocked = int(live["unfillable"].sum())
+    tradeable = live[~live["unfillable"]]
     t_hits = int(tradeable["label_bull"].fillna(0).sum())
     return {
         "label": label,
+        # `signals` is the RESOLVED denominator the rate divides by. The raw
+        # emitted count travels beside it so the censoring ledger reconciles.
         "signals": n,
+        "signals_raw": n_all,
+        "censored": censored,
         "hits": hits,
         "hit_rate": hits / n,
         "unfillable": blocked,
         "unfillable_pct": blocked / n,
-        "one_word_limit": int(frame["one_word_limit"].sum()),
-        "gapped_at_limit": int(frame["open_at_limit"].sum()),
-        "no_next_bar": int(frame["no_next_bar"].sum()),
+        "one_word_limit": int(live["one_word_limit"].sum()),
+        "gapped_at_limit": int(live["open_at_limit"].sum()),
+        "no_next_bar": int(live["no_next_bar"].sum()),
         "tradeable_signals": len(tradeable),
         "tradeable_hits": t_hits,
         "tradeable_hit_rate": (t_hits / len(tradeable)) if len(tradeable) else float("nan"),
@@ -119,11 +146,13 @@ def main() -> None:
     webpro = pd.read_csv(
         OUT_DIR / "webpro_signals.csv",
         dtype={"code": "string"},
-        usecols=["code", "date", "strategy_id", "label_bull__webpro"],
+        usecols=["code", "date", "strategy_id", "label_bull__webpro",
+                 "label_resolved__webpro"],
         parse_dates=["date"],
     )
     webpro["code"] = webpro["code"].str.zfill(6)
-    webpro = webpro.rename(columns={"label_bull__webpro": "label_bull"})
+    webpro = webpro.rename(columns={"label_bull__webpro": "label_bull",
+                                    "label_resolved__webpro": "resolved"})
 
     audited = audit(webpro, panel)
     per_strategy = pd.DataFrame(
@@ -155,7 +184,11 @@ def main() -> None:
             "limit at the open has no sellers, so the stated entry is not "
             "available. No next bar (suspension/delisting) is likewise unbuyable. "
             "ST status is unknown, so ST names are treated as 10% boards; their "
-            "true 5% limit means the unfillable count here is an underestimate."
+            "true 5% limit means the unfillable count here is an underestimate. "
+            "Censored signals -- those whose forward window has not finished at "
+            "the data edge -- are EXCLUDED from every denominator, never scored "
+            "as 0; `signals` is the resolved denominator, `signals_raw` the "
+            "emitted count, and `censored` the difference."
         ),
     }
     (REPORT_DIR / "tradeability.json").write_text(

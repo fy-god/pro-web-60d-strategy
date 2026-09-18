@@ -1,0 +1,254 @@
+{
+  "overall": {
+    "published_basis": 5.533,
+    "corrected_basis": 5.613,
+    "censored": 9219
+  },
+  "per_strategy": [
+    {
+      "strategy": "high_level_consensus",
+      "published_pct": 5.917,
+      "corrected_pct": 6.173,
+      "censored": 7,
+      "delta_pp": 0.256
+    },
+    {
+      "strategy": "washout_complete",
+      "published_pct": 6.457,
+      "corrected_pct": 6.638,
+      "censored": 161,
+      "delta_pp": 0.181
+    },
+    {
+      "strategy": "strict_washout_complete",
+      "published_pct": 6.091,
+      "corrected_pct": 6.263,
+      "censored": 546,
+      "delta_pp": 0.172
+    },
+    {
+      "strategy": "strict_washout_complete_v2",
+      "published_pct": 5.929,
+      "corrected_pct": 6.096,
+      "censored": 642,
+      "delta_pp": 0.167
+    },
+    {
+      "strategy": "strict_gap_follow_through",
+      "published_pct": 14.061,
+      "corrected_pct": 14.217,
+      "censored": 35,
+      "delta_pp": 0.157
+    },
+    {
+      "strategy": "reversal_engulf",
+      "published_pct": 9.524,
+      "corrected_pct": 9.677,
+      "censored": 1,
+      "delta_pp": 0.154
+    },
+    {
+      "strategy": "main_wave_acceleration",
+      "published_pct": 8.612,
+      "corrected_pct": 8.763,
+      "censored": 254,
+      "delta_pp": 0.151
+    },
+    {
+      "strategy": "strict_relative_strength_v2",
+      "published_pct": 15.095,
+      "corrected_pct": 15.243,
+      "censored": 32,
+      "delta_pp": 0.148
+    },
+    {
+      "strategy": "gap_follow_through",
+      "published_pct": 12.854,
+      "corrected_pct": 12.996,
+      "censored": 44,
+      "delta_pp": 0.142
+    },
+    {
+      "strategy": "turnover_regime_switch",
+      "published_pct": 8.578,
+      "corrected_pct": 8.72,
+      "censored": 47,
+      "delta_pp": 0.142
+    },
+    {
+      "strategy": "limit_up_retest",
+      "published_pct": 10.545,
+      "corrected_pct": 10.686,
+      "censored": 160,
+      "delta_pp": 0.14
+    },
+    {
+      "strategy": "relative_strength_rank",
+      "published_pct": 10.974,
+      "corrected_pct": 11.113,
+      "censored": 254,
+      "delta_pp": 0.139
+    },
+    {
+      "strategy": "strict_relative_strength",
+      "published_pct": 15.611,
+      "corrected_pct": 15.747,
+      "censored": 25,
+      "delta_pp": 0.136
+    },
+    {
+      "strategy": "strict_obv_volume_price_v2",
+      "published_pct": 12.213,
+      "corrected_pct": 12.344,
+      "censored": 31,
+      "delta_pp": 0.131
+    },
+    {
+      "strategy": "strict_obv_volume_price",
+      "published_pct": 12.158,
+      "corrected_pct": 12.286,
+      "censored": 30,
+      "delta_pp": 0.128
+    },
+    {
+      "strategy": "strict_gap_follow_through_v2",
+      "published_pct": 11.556,
+      "corrected_pct": 11.67,
+      "censored": 59,
+      "delta_pp": 0.114
+    },
+    {
+      "strategy": "atr_trend_follow",
+      "published_pct": 6.458,
+      "corrected_pct": 6.571,
+      "censored": 663,
+      "delta_pp": 0.113
+    },
+    {
+      "strategy": "pullback_retest",
+      "published_pct": 4.042,
+      "corrected_pct": 4.152,
+      "censored": 217,
+      "delta_pp": 0.11
+    },
+    {
+      "strategy": "strict_leader_momentum_v2",
+      "published_pct": 15.854,
+      "corrected_pct": 15.962,
+      "censored": 22,
+      "delta_pp": 0.108
+    },
+    {
+      "strategy": "donchian_turtle",
+      "published_pct": 7.902,
+      "corrected_pct": 8.007,
+      "censored": 322,
+      "delta_pp": 0.105
+    },
+    {
+      "strategy": "leader_momentum",
+      "published_pct": 20.517,
+      "corrected_pct": 20.617,
+      "censored": 3,
+      "delta_pp": 0.1
+    },
+    {
+      "strategy": "obv_volume_price",
+      "published_pct": 5.748,
+      "corrected_pct": 5.844,
+      "censored": 1285,
+      "delta_pp": 0.096
+    },
+    {
+      "strategy": "platform_breakout",
+      "published_pct": 5.66,
+      "corrected_pct": 5.746,
+      "censored": 23,
+      "delta_pp": 0.086
+    },
+    {
+      "strategy": "oversold_rebound",
+      "published_pct": 12.202,
+      "corrected_pct": 12.275,
+      "censored": 2,
+      "delta_pp": 0.073
+    },
+    {
+      "strategy": "strict_bollinger_release_v2",
+      "published_pct": 6.245,
+      "corrected_pct": 6.314,
+      "censored": 41,
+      "delta_pp": 0.069
+    },
+    {
+      "strategy": "strict_accumulation_base_v2",
+      "published_pct": 3.402,
+      "corrected_pct": 3.466,
+      "censored": 1463,
+      "delta_pp": 0.065
+    },
+    {
+      "strategy": "strict_turnover_weak_to_strong_v2",
+      "published_pct": 10.111,
+      "corrected_pct": 10.174,
+      "censored": 42,
+      "delta_pp": 0.063
+    },
+    {
+      "strategy": "strict_first_board_breakout_v2",
+      "published_pct": 4.603,
+      "corrected_pct": 4.665,
+      "censored": 223,
+      "delta_pp": 0.063
+    },
+    {
+      "strategy": "bollinger_squeeze",
+      "published_pct": 4.596,
+      "corrected_pct": 4.653,
+      "censored": 598,
+      "delta_pp": 0.057
+    },
+    {
+      "strategy": "strict_platform_breakout",
+      "published_pct": 4.195,
+      "corrected_pct": 4.25,
+      "censored": 172,
+      "delta_pp": 0.055
+    },
+    {
+      "strategy": "strict_platform_breakout_v2",
+      "published_pct": 4.075,
+      "corrected_pct": 4.125,
+      "censored": 239,
+      "delta_pp": 0.05
+    },
+    {
+      "strategy": "first_board_breakout",
+      "published_pct": 4.239,
+      "corrected_pct": 4.279,
+      "censored": 54,
+      "delta_pp": 0.04
+    },
+    {
+      "strategy": "strict_oversold_rebound_v2",
+      "published_pct": 3.478,
+      "corrected_pct": 3.511,
+      "censored": 1384,
+      "delta_pp": 0.033
+    },
+    {
+      "strategy": "rsi_mean_reversion",
+      "published_pct": 4.08,
+      "corrected_pct": 4.102,
+      "censored": 138,
+      "delta_pp": 0.022
+    },
+    {
+      "strategy": "turnover_weak_to_strong",
+      "published_pct": 11.152,
+      "corrected_pct": 11.152,
+      "censored": 0,
+      "delta_pp": 0.0
+    }
+  ]
+}
