@@ -468,6 +468,102 @@ def check_prose(f: Findings, verbose: bool) -> None:
     if verbose:
         print(f"  (checked headline figures against the payload)")
 
+    # ------------------------------------------------------------------
+    # Tie the headline tables to their reports.
+    #
+    # Grepping a document for a literal ("13.61") only proves the document
+    # contains that string; it cannot prove the string is still TRUE. These
+    # checks parse the table rows and require each configuration's numbers to
+    # exist in the report the prose says they came from. When ml_search_wide.json
+    # is regenerated on a different grid, its cited table must be updated with it
+    # or this fails.
+    # ------------------------------------------------------------------
+    def table_rows(doc: str, header_needle: str) -> list[list[str]]:
+        """Data rows of the first Markdown table under a header line."""
+        path = ROOT / doc
+        if not path.exists():
+            return []
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for i, line in enumerate(lines):
+            if header_needle not in line:
+                continue
+            rows: list[list[str]] = []
+            for follow in lines[i + 1:]:
+                if follow.strip().startswith("|"):
+                    cells = [c.strip() for c in follow.strip().strip("|").split("|")]
+                    if cells and not set("".join(cells)) <= set("-: "):
+                        rows.append(cells)
+                elif rows:
+                    break
+            if rows:
+                return rows
+        return []
+
+    def pct(cell: str) -> float | None:
+        m = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", cell)
+        return float(m.group(1)) if m else None
+
+    def count(cell: str) -> int | None:
+        m = re.search(r"([0-9][0-9,]*)\s*$", cell.replace("**", "").strip())
+        return int(m.group(1).replace(",", "")) if m else None
+
+    wide = load("ml_search_wide.json")
+    if wide:
+        ranked = wide.get("ranked") or []
+        by_sig = {r.get("oos_signals"): r for r in ranked}
+        # Column layout: Configuration | In-sample | Out-of-sample | Signals | Folds
+        for cells in table_rows("TARGET_70PCT.md", "showing **both** numbers"):
+            if len(cells) < 4:
+                continue
+            ins, oos, sig = pct(cells[1]), pct(cells[2]), count(cells[3])
+            if oos is None or sig is None:
+                continue
+            row = by_sig.get(sig)
+            if row is None:
+                f.check(False,
+                        f"TARGET_70PCT.md §4 cites {sig:,} signals, which is in no "
+                        f"ml_search_wide.json row")
+                continue
+            f.check(
+                abs(row["oos_precision"] * 100 - oos) < 0.005,
+                f"TARGET_70PCT.md §4 says {sig:,} signals score {oos:.2f}% OOS; "
+                f"the report says {row['oos_precision']*100:.2f}%",
+            )
+            if ins is not None:
+                f.check(
+                    abs(row["insample_precision"] * 100 - ins) < 0.005,
+                    f"TARGET_70PCT.md §4 says {sig:,} signals were {ins:.2f}% "
+                    f"in-sample; the report says "
+                    f"{row['insample_precision']*100:.2f}%",
+                )
+
+    models = load("ml_search_models.json")
+    if models:
+        by_name = {r["config"]: r for r in (models.get("ranked") or [])}
+        # README's table mixes the four fitted families with rows sourced from
+        # other reports (the per-fold oracle, the top-1-per-session experiment,
+        # the one-shot holdout). Only the family rows belong to this report, so
+        # scope the check to rows that actually name a family.
+        family_words = ("Random Forest", "HGB", "ExtraTrees", "Logistic",
+                        "Gradient Boosting")
+        for cells in table_rows("README.md", "| Configuration | In-sample |"):
+            if len(cells) < 4:
+                continue
+            if not any(w.lower() in cells[0].lower() for w in family_words):
+                continue
+            ins, oos, sig = pct(cells[1]), pct(cells[2]), count(cells[3])
+            if None in (ins, oos, sig):
+                continue
+            match = [r for r in by_name.values()
+                     if r.get("oos_signals") == sig
+                     and abs(r["oos_precision"] * 100 - oos) < 0.005]
+            f.check(bool(match),
+                    f"README.md family row '{cells[0]}' ({ins}% in / {oos}% OOS "
+                    f"/ {sig:,} signals) exists in ml_search_models.json")
+
+    if verbose:
+        print("  (tied headline tables to their source reports)")
+
     # Retired figures, kept with the reason so the list doubles as a record of
     # corrections rather than a mystery. Only values that are retired in EVERY
     # context belong here; a value that is still current somewhere (15.98% is
