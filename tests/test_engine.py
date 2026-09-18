@@ -47,12 +47,43 @@ def test_strict_greater_than_4x():
 
 
 def test_right_censoring_not_negative():
-    """A truncated future window yields NaN, never 0."""
+    """A truncated future window yields NaN, never 0.
+
+    The subtlety that made the old version of this test weaker than it looked: it
+    asserted only on ``df.iloc[-1]``, the final bar. That bar has *zero* future bars,
+    so ``forward_high`` stays NaN by initialisation and the label is NaN however the
+    code behaves -- including with the censoring mask at ``labels.py:199-200``
+    deleted. Verified by direct comparison: removing the mask leaves
+    ``label_bull``/``label_strict_low``/``label_joint`` finite (0.0/1.0) on every
+    PARTIALLY-resolved row, and the old test still passed.
+
+    The rows the mask actually governs are the ones with a *partial* window -- some
+    future bars but fewer than ``horizon`` -- where ``forward_high`` IS finite and
+    only the mask makes the label NaN. Those are asserted here.
+    """
     rows = _flat("000001", 20, price=10.0)
     df = labels.forward_outcomes(_frame(rows), horizon=60)
     tail = df.iloc[-1]
     assert pd.isna(tail["label_bull"]), "censored row must be NaN"
     assert tail["label_resolved"] == False  # noqa: E712
+
+    # EVERY row here is unresolved (20 bars, horizon 60), so every label must be
+    # NaN -- including the partially-resolved rows that have a finite forward
+    # window. This is what pins the mask.
+    unresolved = df[~df["label_resolved"]]
+    assert len(unresolved) == len(df), "fixture should be entirely unresolved"
+    for col in ("label_bull", "label_strict_low", "label_joint"):
+        assert unresolved[col].isna().all(), (
+            f"{col} must be NaN on every unresolved row, not 0; "
+            f"{int(unresolved[col].notna().sum())} resolved-looking value(s) "
+            f"found")
+    # At least one of them must have had a FINITE forward window, or this test
+    # could not distinguish the mask from the NaN initialisation.
+    partial = unresolved[unresolved["future_bars"] > 0]
+    assert len(partial) > 0, "need partially-resolved rows to pin the mask"
+    assert partial["forward_max_return"].notna().any(), (
+        "a partially-resolved row must have a finite forward return, which is "
+        "exactly the value the mask must suppress")
     print("ok  right_censoring_not_negative")
 
 
@@ -108,7 +139,170 @@ def test_cooldown_dedupes_clusters():
     print("ok  cooldown_dedupes_clusters")
 
 
-def test_kdj_continuous_across_year_boundary():
+def test_strict_greater_than_on_target_return():
+    """Exactly +30% must NOT be a bull label on the ML ``target_return`` path.
+
+    This is the *production* path: ``src/ml/build_matrix.py`` calls
+    ``forward_outcomes(..., target_return=target)``, and the labels it produces are
+    the target of every ML report. An adversarial review mutated the comparison at
+    ``labels.py:186`` from ``>`` to ``>=`` -- making a bar that lands exactly on
+    the threshold a bull -- and **all ten tests still passed**, because
+    ``test_strict_greater_than_4x`` pins only the other branch (the ``target``
+    multiple path at ``labels.py:188``). So the strict-inequality guarantee was
+    enforced for the low-zone family and entirely unenforced for the ML family.
+
+    The test compares against the SOURCE threshold, not the derived return. That
+    matters: ``EPS = 1e-12`` in the denominator makes an exactly-4x bar report
+    ``2.9999999999996``, so a probe written on ``forward_max_return`` would pass
+    under either operator and could never catch this.
+    """
+    # Entry open is bar 0's next open, i.e. rows[1]["open"] = 10.0.
+    rows = _flat("000001", 40, price=10.0)
+    # Land exactly on +30%: 10.0 * 1.30 = 13.0.
+    rows[5]["high"] = 13.0
+    df = labels.forward_outcomes(_frame(rows), horizon=30, target_return=0.30)
+    assert df.iloc[0]["label_bull"] == 0.0, (
+        "a bar landing exactly on +30% must not be a bull label on the "
+        "target_return path")
+
+    # A hair above must be a bull.
+    rows[5]["high"] = 13.0 + 1e-6
+    df2 = labels.forward_outcomes(_frame(rows), horizon=30, target_return=0.30)
+    assert df2.iloc[0]["label_bull"] == 1.0, "above +30% must be a bull label"
+
+    # And a hair below must not be.
+    rows[5]["high"] = 13.0 - 1e-6
+    df3 = labels.forward_outcomes(_frame(rows), horizon=30, target_return=0.30)
+    assert df3.iloc[0]["label_bull"] == 0.0, "below +30% must not be a bull label"
+    print("ok  strict_greater_than_on_target_return")
+
+
+def test_dedupe_respects_per_stock_boundary():
+    """A cooldown cluster must never span two different stocks.
+
+    ``dedupe_signals`` walks the frame sorted by (code, date) and keeps the first
+    signal of each cluster, so it must start a NEW cluster when the code changes.
+    An adversarial review removed that per-stock check at ``labels.py:226``
+    (``if i == len(out) or codes[i] != codes[start]:`` -> ``if i == len(out):``)
+    and **nothing caught it**: the previous fixture was single-code, so it could
+    not distinguish "cluster per stock" from "one cluster for the whole frame".
+    That mutant collapses an entire multi-stock signal set to its first row -- and
+    ``dedupe_signals`` feeds ``score_signals``, i.e. every deduped hit rate in the
+    published ledger.
+    """
+    # Two stocks interleaved in the input; both must survive.
+    dates = pd.bdate_range("2024-01-01", periods=6)
+    rows = []
+    for i, d in enumerate(dates):
+        rows.append({"code": "000001" if i % 2 == 0 else "000002", "date": d,
+                     "label_resolved": True, "label_bull": 1, "label_joint": 1,
+                     "label_strict_low": 1})
+    sig = pd.DataFrame(rows)
+    ded = labels.dedupe_signals(sig, cooldown=60)
+    assert len(ded) == 2, (
+        f"each stock must keep its own first signal; got {len(ded)} row(s) "
+        f"for 2 stocks -- a single cluster can only mean the per-stock boundary "
+        f"was dropped")
+    assert sorted(ded["code"].unique()) == ["000001", "000002"]
+
+    # Three stocks, several signals each: exactly three survive.
+    rows = []
+    for i, d in enumerate(pd.bdate_range("2024-01-01", periods=9)):
+        rows.append({"code": f"{i % 3:06d}", "date": d,
+                     "label_resolved": True, "label_bull": 1, "label_joint": 1,
+                     "label_strict_low": 1})
+    ded3 = labels.dedupe_signals(pd.DataFrame(rows), cooldown=60)
+    assert len(ded3) == 3, f"expected 3 rows for 3 stocks, got {len(ded3)}"
+    print("ok  dedupe_respects_per_stock_boundary")
+
+
+def test_dedupe_cooldown_boundary_is_inclusive():
+    """A signal exactly ``cooldown`` sessions after the kept one is itself KEPT.
+
+    ``dedupe_signals`` keeps a row when ``positions[j] - last >= cooldown``, so the
+    boundary is inclusive: exactly 60 sessions later starts a new cluster, 59 does
+    not. The previous fixture spaced its dates one session apart against
+    ``cooldown=60``, so the exact boundary was never exercised and ``>=`` -> ``>``
+    at ``labels.py:229`` was caught by nothing.
+
+    Note the distance is measured over the dates OBSERVED in the signal frame
+    (``session_index`` is built from ``sorted(out["date"].unique())``), not over
+    the exchange calendar. A frame whose only dates are day 0 and day 60 would
+    therefore measure a distance of 1, not 60 -- which is exactly why this fixture
+    plants a filler stock on every intervening session to make the grid dense.
+    """
+    dates = pd.bdate_range("2024-01-01", periods=400)
+
+    def frame(second_offset: int) -> pd.DataFrame:
+        rows = [{"code": "000001", "date": dates[0],
+                 "label_resolved": True, "label_bull": 1, "label_joint": 1,
+                 "label_strict_low": 1},
+                {"code": "000001", "date": dates[second_offset],
+                 "label_resolved": True, "label_bull": 1, "label_joint": 1,
+                 "label_strict_low": 1}]
+        # A filler stock on every session up to the second signal, so that the
+        # observed-date grid is dense and `positions` counts real sessions.
+        for d in dates[:second_offset]:
+            rows.append({"code": "000002", "date": d,
+                         "label_resolved": True, "label_bull": 1,
+                         "label_joint": 1, "label_strict_low": 1})
+        return pd.DataFrame(rows)
+
+    # Exactly 60 sessions later: >= cooldown, so it is KEPT.
+    ded = labels.dedupe_signals(frame(60), cooldown=60)
+    kept = ded[ded["code"] == "000001"]
+    assert len(kept) == 2, (
+        f"a signal exactly 60 sessions after the kept one is at the cooldown "
+        f"boundary and must be kept (>= is inclusive); got {len(kept)} of 2")
+
+    # 59 sessions later: inside the cooldown, so it is SUPPRESSED. This is the
+    # other side of the boundary and stops the test passing on an over-eager rule.
+    ded2 = labels.dedupe_signals(frame(59), cooldown=60)
+    kept2 = ded2[ded2["code"] == "000001"]
+    assert len(kept2) == 1, (
+        f"a signal 59 sessions later is inside the cooldown and must be "
+        f"suppressed; got {len(kept2)} of the first signal only")
+    print("ok  dedupe_cooldown_boundary_is_inclusive")
+
+
+def test_wilson_upper_bound_is_not_a_constant():
+    """The Wilson interval must actually respond to its inputs on BOTH ends.
+
+    ``test_wilson_interval_sane`` asserted only ``lo < 0.79 < hi``, so replacing
+    ``_wilson``'s upper return with the constant ``0.80`` passed. These assertions
+    pin the upper bound to its value and to its monotonicity, so a constant (or a
+    swapped/short-circuited bound) cannot pass.
+    """
+    lo, hi = labels._wilson(79, 100)
+    # The published 79/100 -> 70.02% figure is the LOWER bound; the upper is
+    # 0.8583. Asserting it against its real value is what makes this test bite:
+    # the old version only checked `lo < 0.79 < hi`, which a constant 0.80 passes.
+    assert 0.69 < lo < 0.71, lo
+    assert 0.855 < hi < 0.862, hi
+    assert hi > 0.79, hi
+
+    # A constant upper bound cannot be monotone in the sample size.
+    widths = []
+    for n in (10, 100, 1000, 10000):
+        lo_n, hi_n = labels._wilson(n // 2, n)
+        widths.append(hi_n - lo_n)
+    assert widths == sorted(widths, reverse=True), (
+        f"the Wilson width must shrink as n grows; got {widths}")
+    assert widths[0] > widths[-1] + 0.05, (
+        f"n=10 and n=10000 must differ substantially in width; got {widths}")
+
+    # Fully-predictive and fully-absent samples must not produce an inverted or
+    # degenerate interval. The endpoints clamp to ~0 / ~1, not exactly, because the
+    # clamp is `max(0.0, centre - half)` on a float that lands at 6.9e-18.
+    for k, n in ((0, 50), (50, 50)):
+        lo_k, hi_k = labels._wilson(k, n)
+        assert 0.0 <= lo_k <= hi_k <= 1.0, (k, n, lo_k, hi_k)
+    assert abs(labels._wilson(0, 50)[0]) < 1e-9
+    assert abs(labels._wilson(50, 50)[1] - 1.0) < 1e-9
+    print("ok  wilson_upper_bound_is_not_a_constant")
+
+
+
     """KDJ must not reset at a calendar boundary; a reset would be visible."""
     rows = []
     price = 10.0

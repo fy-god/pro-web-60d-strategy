@@ -108,7 +108,7 @@ therefore reported 3,193 "bad" rows that were simply the end of each series.
 
 **Confirmed.** `iloc[::stride]` on a stock-concatenated frame means each stock's
 sampling phase is determined by how many rows preceding stocks contributed.
-Reproduced exactly (`scripts/scratch/check_stride_phase.py`): stock A sampled on
+Reproduced exactly (`scripts/scratch/stride_verification.py`): stock A sampled on
 `[01-01, 01-06]` became `[01-05, 01-10]` after an unrelated stock gained a single
 row, with A's own prices untouched.
 
@@ -214,5 +214,5 @@ python -m src.ml.precision_ceiling            # scoped frontier
 python -m src.ml.final_holdout                # purged, one-shot 2026
 python -m src.ml.null_tests                   # harness validation
 python scripts/audit_reports.py               # consistency of published numbers
-python scripts/scratch/check_stride_phase.py  # the stride counterexample
+python scripts/scratch/stride_verification.py  # the stride counterexample
 ```

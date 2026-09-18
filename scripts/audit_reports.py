@@ -36,6 +36,8 @@ Usage
 from __future__ import annotations
 
 import argparse
+import ast
+import contextlib
 import csv as _csv
 import json
 import re
@@ -58,6 +60,17 @@ class Findings:
         self.checked = 0
         self.notes: list[str] = []
         self.verbose = verbose
+        # Per-section check counts, used by the census in main(). An adversarial
+        # review found ~18 places where a present-but-empty payload makes a block
+        # of checks vanish while the run stays green -- `worst_by_unfillable: []`
+        # silently dropped 60 checks, `matched_budget: {}` dropped 18. Each is a
+        # one-line guard (`if not x: return`, `for ... in (d.get(k) or [])`) and
+        # each is individually fixable, but the CLASS is not: any future guard
+        # reintroduces it. The census is the class-level defence -- if a section
+        # runs fewer checks than its recorded floor, the run fails and names the
+        # section, so a silently-skipped block can never be mistaken for a pass.
+        self.section_counts: dict[str, int] = {}
+        self.current_section: str | None = None
 
     def note(self, message: str) -> None:
         """Record something worth printing that is not a failure.
@@ -72,6 +85,9 @@ class Findings:
 
     def check(self, ok: bool, message: str) -> bool:
         self.checked += 1
+        if self.current_section is not None:
+            self.section_counts[self.current_section] = (
+                self.section_counts.get(self.current_section, 0) + 1)
         if ok:
             if self.verbose:
                 print(f"  ok    {message}")
@@ -85,6 +101,46 @@ class Findings:
             return False
         scale = max(abs(a), abs(b), 1e-12)
         return abs(a - b) / scale <= rtol
+
+    @contextlib.contextmanager
+    def section(self, name: str):
+        """Attribute every check inside to `name`, for the census in main()."""
+        previous = self.current_section
+        self.current_section = name
+        self.section_counts.setdefault(name, 0)
+        try:
+            yield
+        finally:
+            self.current_section = previous
+
+
+# The number of checks each section must run. This is the class-level defence
+# against the fail-open pattern an adversarial review demonstrated repeatedly: a
+# present-but-empty payload making a whole block of checks disappear while the
+# run stays green. Examples it found, each verified by injecting `{}`/`[]` and
+# watching the count fall with 0 problems:
+#
+#   worst_by_unfillable: []      -60 checks
+#   matched_budget: {}           -18 checks
+#   holdout: null                -12 checks
+#   practical_ceiling_by_min_signals: {}  -10 checks
+#   permuted_labels / noise_features / top: {}  -3 / -2 / -2 checks
+#
+# Those individual guards are also fixed, but the class cannot be fixed one guard
+# at a time: any future `if not x: return` reintroduces it. So this is a FLOOR,
+# not an equality -- adding checks is free, REMOVING them requires editing this
+# table in the same commit, which is a visible, reviewable act rather than a
+# silent one. When you legitimately change a section, update its number here; the
+# census will tell you the exact new value.
+SECTION_FLOORS: dict[str, int] = {
+    "arithmetic": 8,
+    "pooling": 84,
+    "cross_report": 327,
+    "prose": 33,
+    "frontier": 160,
+    "markdown_structure": 7,
+    "orphan_reports": 1,
+}
 
 
 # Load failures are recorded here rather than printed and forgotten. `load` and
@@ -714,7 +770,7 @@ def check_cross_report(f: Findings) -> None:
         # ------------------------------------------------------------------
         cited = set()
         for doc in ("README.md", "TARGET_70PCT.md", "RESULTS.md",
-                    "REPRODUCIBILITY.md"):
+                    "REPRODUCIBILITY.md", "docs/REVIEW_RESPONSE.md"):
             p = ROOT / doc
             if not p.exists():
                 continue
@@ -1351,7 +1407,14 @@ def check_cross_report(f: Findings) -> None:
 
     cards = load_csv("webpro_cards_100_reproduction.csv")
     if cards:
-        f.check(True, f"webpro_cards_100_reproduction.csv parses ({len(cards)} rows)")
+        # Not `f.check(True, ...)`. A parse failure already fails via load_csv, but
+        # asserting the row count here means the table cannot silently shrink and
+        # still report "parses". Measured: 36 rows (one per registered strategy for
+        # the `initial-10` batch tag). Floored at the measured count so truncation
+        # fails; 36 not 40, because 40 was my guess and the file has 36.
+        f.check(len(cards) >= 36,
+                f"webpro_cards_100_reproduction.csv carries its rows "
+                f"({len(cards)} >= 36)")
         bad = []
         for row in cards:
             pred, tp, fp = (_num(row.get("yes_predictions")), _num(row.get("tp")),
@@ -1387,7 +1450,11 @@ def check_cross_report(f: Findings) -> None:
         rows = load_csv(fname)
         if not rows:
             continue
-        f.check(True, f"{fname} parses ({len(rows)} operating points)")
+        # Not `f.check(True, ...)`: the frontier is the evidence for the central
+        # claim, so an empty or near-empty table must fail rather than print
+        # "parses (0 operating points)". A real frontier is hundreds of points.
+        f.check(len(rows) >= 10,
+                f"{fname} carries its operating points ({len(rows)} >= 10)")
         bad_p, bad_rate, bad_fpr = [], [], []
         by_fold: dict[str, int] = {}
         # publish_rate is n_published / n_rows, so n_published / publish_rate
@@ -1634,12 +1701,14 @@ def check_cross_report(f: Findings) -> None:
 # ---------------------------------------------------------------------------
 # 4. Prose drift: numbers in Markdown vs the reports they cite
 # ---------------------------------------------------------------------------
-def extract_table_cells(text: str) -> list[str]:
-    cells: list[str] = []
-    for line in text.splitlines():
-        if line.count("|") >= 2:
-            cells.extend(c.strip() for c in line.split("|") if c.strip())
-    return cells
+# `extract_table_cells(text)` used to live here: a generic "split every pipe row
+# into cells" helper. Every section has since grown a parser that understands its
+# OWN table (the README 9.2 row format, the low-zone version/regime columns, the
+# recall-floor rows), because a generic cell list cannot tell a signals column from
+# a percentage column and silently mis-bound numbers. Nothing called it, and the
+# new unused-function check in check_markdown_structure flagged it. Removed rather
+# than kept "in case": a helper nothing calls is a place a future reader may wire
+# up by mistake, and its whole design premise is what the specific parsers replaced.
 
 
 # Markers that a line is narrating a correction rather than asserting a current
@@ -2299,8 +2368,6 @@ def check_frontier(f: Findings) -> None:
     # largest documented data limitation: an understated radius makes the proxy
     # look safer than it is.
     # ------------------------------------------------------------------
-    engine_test = ROOT / "tests" / "test_engine.py"
-    _ = engine_test
     src_feat = ROOT / "src" / "features.py"
     if src_feat.exists():
         ftext = src_feat.read_text(encoding="utf-8")
@@ -2316,6 +2383,13 @@ def check_frontier(f: Findings) -> None:
                 or "four read only" in rtext,
                 "README.md states that four of the five turnover-consuming "
                 "strategies read scale-invariant ratios")
+    # `engine_test` is USED below (the test must agree with the document about how
+    # many strategies read only ratios). An adversarial review reported the
+    # `_ = engine_test` line as dead residue from a removed check; that reading was
+    # wrong, and deleting this assignment broke the run with a NameError. The `_ =`
+    # line was harmless but misleading, so it is gone and this comment records why
+    # the binding must stay.
+    engine_test = ROOT / "tests" / "test_engine.py"
     if engine_test.exists():
         etext = engine_test.read_text(encoding="utf-8")
         # The test must agree with the document: it enumerates the ratio readers.
@@ -2490,6 +2564,204 @@ def check_frontier(f: Findings) -> None:
         f.check(bool(report_names),
                 f"the ML audit toolkit's artifacts are present "
                 f"({len(report_names)} found)")
+        # ------------------------------------------------------------------
+        # The four leakage/causality artifacts were only checked for PRESENCE.
+        # An adversarial review confirmed the hole: replacing any of
+        # causality_audit.json, leakage_audit.json, null_ceiling.json or
+        # feature_auc_scan.json with `{}` left the audit at 0 problems. These are
+        # the ADVERSARIAL AUDIT 1/4-4/4 evidence -- the artifacts that are
+        # supposed to establish the matrix has no look-ahead and is reconstructed
+        # from source -- so a reader was trusting a claim nothing verified.
+        #
+        # Each check below is a VALUE, not a shape: it asserts the specific
+        # measurement that makes the claim true. They are deliberately written as
+        # exact comparisons against the shipped numbers so a re-run that changes
+        # the verdict fails loudly rather than quietly widening.
+        # ------------------------------------------------------------------
+        def _ml_audit_json(name: str):
+            p = audit_dir / name
+            if not p.exists():
+                LOAD_ERRORS.append(f"outputs/ml/audit/{name} is missing")
+                return None
+            try:
+                d = json.loads(p.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+                LOAD_ERRORS.append(f"outputs/ml/audit/{name} unreadable: {exc}")
+                return None
+            if not isinstance(d, dict):
+                LOAD_ERRORS.append(
+                    f"outputs/ml/audit/{name} is a {type(d).__name__}, not an "
+                    f"object")
+                return None
+            LOADED.add(f"outputs/ml/audit/{name}")
+            return d
+
+        # --- causality_audit.json: feature reconstruction and window direction ---
+        ca = _ml_audit_json("causality_audit.json")
+        if ca is not None:
+            f.check(ca.get("matrix_rows") == 536143,
+                    "causality_audit was measured on the shipped 536,143-row "
+                    f"matrix (says {ca.get('matrix_rows')})")
+            f.check(ca.get("panel_rows") == 2680715,
+                    f"causality_audit's panel is the 2,680,715-row panel "
+                    f"(says {ca.get('panel_rows')})")
+            # T_A: the production frame order is aligned; the UNSORTED frame is
+            # not, which is the latent fragility the audit documents. If the
+            # unsorted case ever starts reporting 0 mismatches the audit has
+            # stopped testing what it claims to test.
+            ta = ca.get("T_A_beta") or {}
+            prod = ta.get("production_order_alignment") or {}
+            uns = ta.get("unsorted_frame_divergence") or {}
+            f.check(prod.get("aligned") is True
+                    and prod.get("mismatches") == 0,
+                    "causality_audit T_A finds production frame order aligned "
+                    "with 0 mismatches")
+            f.check(uns.get("aligned") is False
+                    and (uns.get("mismatches") or 0) > 1000000,
+                    "causality_audit T_A still exhibits the unsorted-frame "
+                    "divergence it warns about (it stopped detecting it)")
+            # T_B: the shipped features reconstruct from source. This is the
+            # load-bearing claim -- 82 of 82 matching, nothing mismatching.
+            tb = ca.get("T_B_artifact_vs_source") or {}
+            f.check(tb.get("features_compared") == 82
+                    and tb.get("features_matching") == 82
+                    and not tb.get("mismatching"),
+                    "causality_audit T_B reconstructs all 82 features from "
+                    f"source with no mismatches (compared "
+                    f"{tb.get('features_compared')}, matched "
+                    f"{tb.get('features_matching')}, mismatching "
+                    f"{tb.get('mismatching')})")
+            f.check(tb.get("rows_compared") == 281306,
+                    f"causality_audit T_B compared its 281,306 rows "
+                    f"(says {tb.get('rows_compared')})")
+            # T_E: every rolling window is backward-looking. An 18-site census
+            # with no site requiring the future is the actual look-ahead proof.
+            te = ca.get("T_E_rolling_windows") or {}
+            sites = te.get("sites") or []
+            f.check(len(sites) == 18,
+                    f"causality_audit T_E censuses all 18 rolling sites "
+                    f"(found {len(sites)})")
+            future = [s for s in sites if s.get("requires_future")]
+            f.check(not future,
+                    f"no rolling site in causality_audit T_E requires the future "
+                    f"({len(future)} do: {future[:2]})")
+            f.check(all(s.get("direction") == "backward" for s in sites),
+                    "every rolling site in causality_audit T_E is backward")
+            f.check(bool(str(te.get("verdict") or "").strip()),
+                    "causality_audit T_E carries its verdict")
+
+        # --- leakage_audit.json: the truncation test and the LEAK controls ---
+        la = _ml_audit_json("leakage_audit.json")
+        if la is not None:
+            # The truncation test only means anything if the two POSITIVE
+            # CONTROLS are detected as leaking. If `leaking_features` were empty,
+            # the test would prove nothing -- it would be a scan that finds
+            # nothing, which is indistinguishable from a scan that cannot find
+            # anything.
+            t1 = la.get("T1_verdict") or {}
+            leaking = t1.get("leaking_features") or []
+            f.check(t1.get("features_checked") == 84,
+                    f"leakage_audit truncated 84 features "
+                    f"(says {t1.get('features_checked')})")
+            f.check(sorted(leaking) == ["LEAK_control_future", "LEAK_control_lead3"],
+                    f"leakage_audit's truncation test catches exactly its two "
+                    f"planted leak controls and no real feature (found {leaking})")
+            f.check(t1.get("causal_features") == 82,
+                    f"leakage_audit finds all 82 real features causal "
+                    f"(says {t1.get('causal_features')})")
+            # The controls must actually MOVE under truncation, or the test
+            # cannot have detected them.
+            trunc = {r.get("feature"): r for r in (la.get("T1_truncation") or [])}
+            for ctrl in ("LEAK_control_future", "LEAK_control_lead3"):
+                row = trunc.get(ctrl) or {}
+                f.check((row.get("max_abs_diff") or 0) > 1e-6,
+                        f"leakage_audit's {ctrl} control moves under truncation "
+                        f"(max_abs_diff {row.get('max_abs_diff')})")
+            # T2: aligned on the production frame, misaligned on a shuffled one.
+            t2 = la.get("T2_alignment") or {}
+            f.check(t2.get("positional_match_on_group_sorted_frame") is True
+                    and t2.get("n_mismatch_full_history") == 0,
+                    "leakage_audit T2 finds the production frame order aligned")
+            naive = (t2.get("naive_positions_vs_reset_index_on_shuffled_frame")
+                     or {})
+            f.check(naive.get("positional_match_on_shuffled_frame") is False
+                    and (naive.get("n_position_mismatches") or 0) > 0,
+                    "leakage_audit T2 still reproduces the shuffled-frame "
+                    "misalignment it warns about")
+            f.check(la.get("universe_rows") == 335227
+                    and la.get("truncated_rows") == 221015,
+                    "leakage_audit's truncated universe is 221,015 of 335,227 "
+                    f"rows (says {la.get('truncated_rows')} of "
+                    f"{la.get('universe_rows')})")
+
+        # --- null_ceiling.json: chance cannot manufacture the result ---
+        ncl = _ml_audit_json("null_ceiling.json")
+        if ncl is not None:
+            obs = ncl.get("chance_at_observed_publication") or {}
+            real = ncl.get("real_baseline") or {}
+            # The load-bearing claim: the observed precision sits far above what
+            # chance over the same number of signals would give.
+            f.check(obs.get("k_signals") == 1790
+                    and obs.get("of_rows") == 281227,
+                    "null_ceiling's chance calculation uses the observed "
+                    f"1,790 signals on 281,227 rows (says "
+                    f"{obs.get('k_signals')} on {obs.get('of_rows')})")
+            f.check(bool(real.get("oos_precision"))
+                    and bool(obs.get("p999"))
+                    and float(real["oos_precision"]) > float(obs["p999"]),
+                    "null_ceiling: the real 15.98% beats the p99.9 chance "
+                    f"ceiling ({float(real.get('oos_precision') or 0)*100:.2f}% "
+                    f"vs {float(obs.get('p999') or 0)*100:.2f}%)")
+            f.check(real.get("folds_above_base") == 4,
+                    f"null_ceiling: all 4 real folds beat the base rate "
+                    f"(says {real.get('folds_above_base')})")
+            # The empirical null must sit AT the base rate, not above it. If a
+            # null ever scored near the real result, the result would be void.
+            emp = ncl.get("empirical_null") or {}
+            nul = ncl.get("real_vs_null") or {}
+            f.check((nul.get("null_precision_mean") or 0)
+                    < float(real.get("oos_precision") or 0) / 2,
+                    "null_ceiling: the null mean is well below the real result "
+                    f"({float(nul.get('null_precision_mean') or 0)*100:.2f}% vs "
+                    f"{float(real.get('oos_precision') or 0)*100:.2f}%)")
+            f.check(bool(str(nul.get("caveat") or "").strip()),
+                    "null_ceiling states its 6-draw caveat rather than "
+                    "presenting the normal approximation as calibrated")
+
+        # --- feature_auc_scan.json: no single feature leaks the label ---
+        fa = _ml_audit_json("feature_auc_scan.json")
+        if fa is not None:
+            f.check(fa.get("n_features") == 82 and fa.get("n_rows") == 536143,
+                    "feature_auc_scan covers all 82 features on the 536,143-row "
+                    f"matrix (says {fa.get('n_features')} features, "
+                    f"{fa.get('n_rows')} rows)")
+            # The actual leakage test: the two flagged lists are the alarm. Empty
+            # is the PASSING state, and it must be empty because a single feature
+            # with AUC > 0.75 would be a label proxy.
+            f.check(not fa.get("flagged_auc_gt_0.75"),
+                    f"feature_auc_scan flags no feature above AUC 0.75 "
+                    f"(flagged {fa.get('flagged_auc_gt_0.75')})")
+            f.check(not fa.get("flagged_auc_lt_0.25"),
+                    f"feature_auc_scan flags no feature below AUC 0.25 "
+                    f"(flagged {fa.get('flagged_auc_lt_0.25')})")
+            f.check(len(fa.get("top25") or []) == 25,
+                    f"feature_auc_scan publishes its top 25 "
+                    f"(found {len(fa.get('top25') or [])})")
+            # The best single feature must be BELOW the flags -- if the scan ever
+            # stops producing a top25 the leakage signal would vanish silently.
+            top = (fa.get("top25") or [{}])[0]
+            f.check(0.25 < float(top.get("auc") or 0) < 0.75,
+                    "feature_auc_scan's best single feature sits between the "
+                    f"alarm bounds (auc={top.get('auc')})")
+            # The permutation null must centre on 0.5, which is what makes the
+            # real top-feature AUC meaningful.
+            pn = fa.get("permutation_null") or {}
+            f.check(abs(float(pn.get("mean") or 0) - 0.5) < 0.01,
+                    f"feature_auc_scan's permutation null is centred on 0.5 "
+                    f"(mean {pn.get('mean')})")
+            f.check((pn.get("n_values") or 0) > 0,
+                    "feature_auc_scan's permutation null records its draws")
+
         # The one artifact known to carry a superseded measurement must say so.
         lp = audit_dir / "label_pairs_audit.json"
         if lp.exists():
@@ -2645,6 +2917,50 @@ def check_frontier(f: Findings) -> None:
                 "REPRODUCIBILITY.md names the correctness gate")
         f.check("3.13" in rtxt,
                 "REPRODUCIBILITY.md states the Python version used")
+
+    # ------------------------------------------------------------------
+    # This audit must not carry dead scaffolding. An adversarial review found
+    # `engine_test = ROOT / "tests" / "test_engine.py"` followed by `_ =
+    # engine_test` -- the residue of a check that had been removed, where the name
+    # was then re-bound further down. Harmless at runtime, but it is a marker that
+    # a check was deleted without the scaffolding following, and the next reader
+    # cannot tell whether it is live. Scan this file's own AST.
+    # ------------------------------------------------------------------
+    self_path = ROOT / "scripts" / "audit_reports.py"
+    if self_path.exists():
+        try:
+            tree = ast.parse(self_path.read_text(encoding="utf-8"))
+        except SyntaxError as exc:
+            f.check(False, f"scripts/audit_reports.py parses ({exc})")
+            tree = None
+        if tree is not None:
+            # A name assigned and then immediately discarded via `_ = name`.
+            discarded = set()
+            for node in ast.walk(tree):
+                if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                        and isinstance(node.targets[0], ast.Name)
+                        and node.targets[0].id == "_"
+                        and isinstance(node.value, ast.Name)):
+                    discarded.add(node.value.id)
+            f.check(not discarded,
+                    f"scripts/audit_reports.py carries no discarded dead local "
+                    f"(found {sorted(discarded)})")
+            # A module-level function that nothing calls. `main` is the entry
+            # point, so exclude it; anything else must be referenced somewhere.
+            defined = {n.name for n in tree.body
+                       if isinstance(n, ast.FunctionDef)}
+            called: set[str] = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    fn = node.func
+                    if isinstance(fn, ast.Name):
+                        called.add(fn.id)
+                    elif isinstance(fn, ast.Attribute):
+                        called.add(fn.attr)
+            unused = sorted(defined - called - {"main"})
+            f.check(not unused,
+                    f"every top-level function in scripts/audit_reports.py is "
+                    f"called somewhere (unused: {unused})")
 
     # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
@@ -3012,13 +3328,20 @@ def main() -> int:
 
     print(f"auditing reports in {REPORTS}")
     f = Findings(verbose=args.verbose)
-    check_arithmetic(f)
-    check_pooling(f)
-    check_cross_report(f)
-    check_prose(f, args.verbose)
-    check_frontier(f)
-    check_markdown_structure(f)
-    check_no_orphan_reports(f)
+    with f.section("arithmetic"):
+        check_arithmetic(f)
+    with f.section("pooling"):
+        check_pooling(f)
+    with f.section("cross_report"):
+        check_cross_report(f)
+    with f.section("prose"):
+        check_prose(f, args.verbose)
+    with f.section("frontier"):
+        check_frontier(f)
+    with f.section("markdown_structure"):
+        check_markdown_structure(f)
+    with f.section("orphan_reports"):
+        check_no_orphan_reports(f)
 
     # Fold in anything load()/load_csv() could not read. These are recorded, not
     # printed-and-forgotten, so an unreadable report fails the run instead of
@@ -3026,14 +3349,44 @@ def main() -> int:
     for msg in dict.fromkeys(LOAD_ERRORS):
         f.check(False, msg)
 
+    # The census. Any section that ran fewer checks than its recorded floor means
+    # a block was skipped -- almost always because a payload was present but
+    # empty, so the guard around it short-circuited while the run stayed green.
+    # Name the section AND print its actual count so the fix is a one-line edit.
+    for name, floor in sorted(SECTION_FLOORS.items()):
+        got = f.section_counts.get(name, 0)
+        f.check(got >= floor,
+                f"section '{name}' ran at least {floor} checks (ran {got})"
+                + ("" if got >= floor else
+                   f" -- if the reduction is legitimate, set "
+                   f'SECTION_FLOORS["{name}"] = {got}'))
+
     print("\n" + "=" * 70)
     print(f"{f.checked} checks run, {len(f.problems)} problem(s)")
+    if args.verbose:
+        print("checks per section: "
+              + ", ".join(f"{k}={v}" for k, v in sorted(f.section_counts.items())))
     for p in f.problems:
-        print(f"  - {p}")
+        print(f"  FAIL  {p}")
     if f.notes:
         print(f"\n{len(f.notes)} known gap(s), reported but not failures:")
         for n in f.notes:
-            print(f"  - {n}")
+            print(f"  NOTE  {n}")
+
+    # A machine-readable one-line summary, and separate line prefixes for
+    # failures and notes. `scheduled_report_audit.py` used to scrape the problem
+    # list with `startswith(("- ", "FAIL"))`, which also matched the notes because
+    # both were printed as `  - <text>`: a fully GREEN run published 12 known gaps
+    # under "## Failures" in the committed reports/AUDIT_STATUS.md. Notes now print
+    # as `NOTE` and failures as `FAIL`, and this JSON line means the publisher
+    # never has to parse prose at all.
+    print("AUDIT_SUMMARY_JSON " + json.dumps({
+        "checks": f.checked,
+        "problems": len(f.problems),
+        "notes": len(f.notes),
+        "problem_list": f.problems,
+        "note_list": f.notes,
+    }, ensure_ascii=False))
     return 1 if f.problems else 0
 
 

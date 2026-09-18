@@ -1,0 +1,85 @@
+{
+  "threshold": 0.9,
+  "global_max": 0.889054371124188,
+  "argmax": {
+    "code": "002613",
+    "date": "2026-08-07 00:00:00"
+  },
+  "n_targets": 499624,
+  "n_at_or_above": 0,
+  "headroom": 0.010945628875812075,
+  "shards": [
+    {
+      "shard": "data/shards\\shard_00.parquet",
+      "n": 62652,
+      "max": 0.8351666933274682,
+      "mean": 0.30830440297787876,
+      "at_or_above": 0,
+      "argmax_code": "600483",
+      "argmax_date": "2024-03-18 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_01.parquet",
+      "n": 62364,
+      "max": 0.889054371124188,
+      "mean": 0.3077628375517377,
+      "at_or_above": 0,
+      "argmax_code": "002613",
+      "argmax_date": "2026-08-07 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_02.parquet",
+      "n": 62655,
+      "max": 0.8647216029233072,
+      "mean": 0.3083364427160733,
+      "at_or_above": 0,
+      "argmax_code": "002883",
+      "argmax_date": "2025-11-11 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_03.parquet",
+      "n": 63031,
+      "max": 0.8477440417961021,
+      "mean": 0.3075909686085265,
+      "at_or_above": 0,
+      "argmax_code": "002685",
+      "argmax_date": "2026-08-07 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_04.parquet",
+      "n": 62286,
+      "max": 0.8696056664323184,
+      "mean": 0.3089555927273325,
+      "at_or_above": 0,
+      "argmax_code": "600420",
+      "argmax_date": "2025-05-16 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_05.parquet",
+      "n": 62461,
+      "max": 0.8836506196163324,
+      "mean": 0.30864316509872103,
+      "at_or_above": 0,
+      "argmax_code": "000955",
+      "argmax_date": "2026-08-07 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_06.parquet",
+      "n": 62426,
+      "max": 0.8622436651728532,
+      "mean": 0.30870691199264755,
+      "at_or_above": 0,
+      "argmax_code": "002845",
+      "argmax_date": "2026-08-07 00:00:00"
+    },
+    {
+      "shard": "data/shards\\shard_07.parquet",
+      "n": 61749,
+      "max": 0.8766822392598901,
+      "mean": 0.30877532474929464,
+      "at_or_above": 0,
+      "argmax_code": "603321",
+      "argmax_date": "2024-03-18 00:00:00"
+    }
+  ]
+}

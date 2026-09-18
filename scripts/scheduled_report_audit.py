@@ -107,6 +107,19 @@ def write_status(
     """Publish a compact, committed status file for GitHub readers."""
     ok = code == 0 and not unstable
     verdict = "PASS" if ok else "ATTENTION"
+    # Read the machine-readable summary `audit_reports.py` prints. It used to be
+    # scraped with `startswith(("- ", "FAIL"))`, which ALSO matched the note
+    # bullets -- both were printed as `  - <text>` -- so a fully green run (exit 0,
+    # "590 checks run, 0 problem(s)") published 12 known gaps under "## Failures"
+    # in the committed file. Prose-scraping cannot be made reliable; a structured
+    # line can.
+    summary: dict = {}
+    for line in audit_out.splitlines():
+        if line.startswith("AUDIT_SUMMARY_JSON "):
+            try:
+                summary = json.loads(line[len("AUDIT_SUMMARY_JSON "):])
+            except ValueError:
+                summary = {}
     n_checks = ""
     for line in audit_out.splitlines():
         if "checks run" in line:
@@ -158,12 +171,33 @@ def write_status(
                 f"{probe.get('hits', 0):,} hits",
             ]
         lines += ["", "All consistency checks passed.", ""]
+        # Known gaps are printed on a PASS too, so a reader can see what is
+        # deliberately unverified rather than assuming "PASS" means "everything
+        # is checked". They are labelled as gaps, never as failures.
+        notes = list(summary.get("note_list") or [])
+        if notes:
+            lines += [f"## Known gaps ({len(notes)})",
+                      "", "_Reported, not failures._", ""]
+            lines += [f"- {n}" for n in notes[:40]]
+            lines.append("")
     else:
         lines += ["## Failures", "", "```"]
-        fails = [ln for ln in audit_out.splitlines()
-                 if ln.strip().startswith(("- ", "FAIL"))]
+        # Prefer the structured list. Fall back to scraping `FAIL`-prefixed lines
+        # only -- never the bare `- ` prefix, which also matched the notes.
+        fails = list(summary.get("problem_list") or [])
+        if not fails:
+            fails = [ln.strip() for ln in audit_out.splitlines()
+                     if ln.strip().startswith("FAIL")]
         lines += (fails[:40] or ["(no structured failures parsed; see log)"])
         lines += ["```", ""]
+        # Known gaps are not failures. Publishing them under "## Failures" is what
+        # made a green run look red for as long as the parser was substring-based.
+        notes = list(summary.get("note_list") or [])
+        if notes:
+            lines += [f"## Known gaps ({len(notes)})",
+                      "", "_Reported, not failures._", ""]
+            lines += [f"- {n}" for n in notes[:40]]
+            lines.append("")
 
     STATUS.write_text("\n".join(lines), encoding="utf-8")
 
