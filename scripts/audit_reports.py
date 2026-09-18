@@ -215,10 +215,45 @@ def check_cross_report(f: Findings) -> None:
     if len(full_fold_bases) > 1:
         vals = list(full_fold_bases.values())
         spread = max(vals) - min(vals)
-        f.check(spread < 5e-4,
+        # The tolerance has to be tighter than the difference it is meant to
+        # detect. On one matrix the same label and fold count give a base rate
+        # that is bit-identical across configurations, so the only reason two
+        # full-fold rows differ is that they came from different matrices -- and
+        # the two grids in play differ by 1.644e-05 (0.040894451 dense vs
+        # 0.040878010 stride-5). The previous 5e-4 tolerance was 30x too loose
+        # and would have accepted a report mixing the two.
+        f.check(spread < 1e-8,
                 f"search reports share one grid: median base rate over full-fold "
-                f"configs spans {spread:.6f} "
-                f"({ {k: round(v, 6) for k, v in full_fold_bases.items()} })")
+                f"configs spans {spread:.3e} "
+                f"({ {k: round(v, 11) for k, v in full_fold_bases.items()} })")
+
+    # A single report must not MIX grids. The check above compares reports to
+    # each other via a median, which is blind to one report containing rows from
+    # two grids: ml_search_wide.json carried 21 rows at 0.0264875 (label_close)
+    # and 29 at 0.04087801 (label_high on the stride-5 matrix) at the same time,
+    # and the median simply picked one. Rows with the same label and the same
+    # completed-fold count on one matrix must share a base rate exactly; a
+    # spread within such a group means the report was assembled from different
+    # runs or different matrices.
+    for name in ("ml_search_models.json", "ml_search_wide.json",
+                 "ml_search_ablation.json"):
+        report = load(name)
+        if not report:
+            continue
+        groups: dict[tuple, set[float]] = {}
+        for r in (report.get("ranked") or []):
+            base = r.get("oos_base_rate")
+            if not base or r.get("n_folds", 0) < 4 or r.get("oos_signals", 0) < 100:
+                continue
+            groups.setdefault((r.get("label"), r.get("n_folds")), set()).add(
+                round(float(base), 8)
+            )
+        for (label, n_folds), bases in sorted(groups.items(), key=str):
+            f.check(
+                len(bases) == 1,
+                f"{name}: rows with label={label} and {n_folds} completed folds "
+                f"share one base rate (found {sorted(bases)})",
+            )
 
     # ------------------------------------------------------------------
     # Baseline provenance.
