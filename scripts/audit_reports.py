@@ -1399,6 +1399,56 @@ def check_prose(f: Findings, verbose: bool) -> None:
                     f"{float(tr)} ({float(tr)*100:g}%)",
                 )
 
+    # ------------------------------------------------------------------
+    # The 2026 holdout's EXPOSURE claim (EML-P1-HOLDOUT-EXPOSURE).
+    #
+    # The project accepted, in docs/REVIEW_RESPONSE.md, that "the script runs once"
+    # does not mean 2026 was never observed: rule backtests, charts and expectancy
+    # tables already covered it. The block was therefore relabelled
+    # `historical_holdout_with_prior_project_exposure` and is "no longer described
+    # as pristine". That relabel lived in the document while the source docstring
+    # and the JSON note still said the sessions "were never used" -- and nothing
+    # checked the claim at all. An exposure claim is exactly the kind that decays,
+    # so it is bound here.
+    # ------------------------------------------------------------------
+    fh_src = ROOT / "src" / "ml" / "final_holdout.py"
+    if fh_src.exists():
+        fsrc = fh_src.read_text(encoding="utf-8")
+        head = fsrc.split('"""')[1] if fsrc.count('"""') >= 2 else ""
+        f.check("historical_holdout_with_prior_project_exposure" in fsrc,
+                "final_holdout.py carries the accepted exposure label")
+        f.check("not a pristine lockbox" in head.lower()
+                or "no longer call" in head.lower(),
+                "final_holdout.py's docstring states the block is not pristine")
+        # Only the DOCSTRING is scanned for the retracted phrasing. A raw
+        # substring search over the whole file would flag the very comment that
+        # records WHY the claim was withdrawn ("was read as 'this period was never
+        # observed by the project', which is false") -- the first version of this
+        # check did exactly that and failed on correct code.
+        for bad in ("pristine one-shot", "never observed", "untouched by any prior"):
+            f.check(bad not in head.lower(),
+                    f"final_holdout.py's docstring does not assert {bad!r} of "
+                    f"the 2026 block")
+    holdout_doc = ROOT / "TARGET_70PCT.md"
+    if holdout_doc.exists():
+        htext = holdout_doc.read_text(encoding="utf-8")
+        f.check("historical_holdout_with_prior_project_exposure" in htext,
+                "TARGET_70PCT.md states the accepted exposure label")
+        f.check("not pristine" in htext or "Exposure" in htext,
+                "TARGET_70PCT.md states the holdout's exposure caveat")
+    holdout_report = load("ml_final_holdout.json")
+    if holdout_report:
+        f.check(holdout_report.get("holdout_label")
+                == "historical_holdout_with_prior_project_exposure",
+                "ml_final_holdout.json records the exposure label "
+                f"(found {holdout_report.get('holdout_label')!r})")
+        exp = holdout_report.get("exposure")
+        f.check(isinstance(exp, dict) and exp.get("prior_project_observation"),
+                "ml_final_holdout.json records which exposures apply")
+        note = str(holdout_report.get("note") or "").lower()
+        f.check("not a pristine" in note or "not pristine" in note,
+                "ml_final_holdout.json's note does not claim a pristine lockbox")
+
     models = load("ml_search_models.json")
     if models:
         by_name = {r["config"]: r for r in (models.get("ranked") or [])}

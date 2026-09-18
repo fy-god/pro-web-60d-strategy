@@ -1,9 +1,17 @@
-"""Single, one-shot evaluation on the reserved 2026 holdout.
+"""One evaluation on the reserved 2026 holdout: a historical OOS diagnostic.
 
 Every other script in `src/ml` excludes sessions from 2026-01-01 onward. Those 160
 sessions were never used for feature design, model selection, threshold choice or
 hyperparameter tuning, so this is the only script whose output constitutes
 out-of-sample evidence rather than development feedback.
+
+**This is not a pristine lockbox, and the project no longer calls it one.** The
+absence of MODEL exposure is real; the absence of ANY prior observation is not.
+Other analyses in this repository -- rule backtests, charts, expectancy tables --
+covered 2026 before this script existed, so the block is labelled
+`historical_holdout_with_prior_project_exposure` in the payload (see
+`docs/REVIEW_RESPONSE.md`). A genuine final block would have to be untouched by
+model, feature and threshold choice alike until it is frozen.
 
 Discipline this file enforces:
 
@@ -313,10 +321,29 @@ def main() -> None:
         "holdout_calendar_sessions": int(len(universe)),
         "distinct_stocks": int(te.loc[pred, "code"].nunique()) if n else 0,
         "distinct_dates": int(te.loc[pred, "date"].nunique()) if n else 0,
+        # The label the project accepted after review. "Sessions never used for
+        # any selection" is true of MODEL selection but was read as "this period
+        # was never observed by the project", which is false: rule backtests,
+        # charts and expectancy tables already covered 2026 before this script
+        # existed. docs/REVIEW_RESPONSE.md records the relabel and says the block
+        # is "no longer described as pristine"; the code had kept the old wording.
+        "holdout_label": "historical_holdout_with_prior_project_exposure",
+        "exposure": {
+            "model_selection": "none -- this block was excluded from every search",
+            "feature_design": "none",
+            "threshold_choice": "none",
+            "prior_project_observation": (
+                "yes -- rule backtests, charts and expectancy tables already "
+                "covered 2026 before this script existed"
+            ),
+        },
         "note": (
             "Single pre-committed configuration, evaluated once on sessions never "
             "used for any selection. No maximum is taken over configurations here "
-            "by design."
+            "by design. This is a historical out-of-sample diagnostic, NOT a "
+            "pristine final lockbox: the 2026 period had prior project exposure "
+            "(see `exposure`). A genuine final block would have to be untouched by "
+            "model, feature and threshold choice alike until frozen."
         ),
     }
     if n:

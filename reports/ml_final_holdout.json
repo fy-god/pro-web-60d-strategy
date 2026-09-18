@@ -35,11 +35,18 @@
   ],
   "distinct_stocks": 1194,
   "distinct_dates": 150,
-  "note": "Single pre-committed configuration, evaluated once on sessions never used for any selection. No maximum is taken over configurations here by design.",
+  "note": "Single pre-committed configuration, evaluated once on sessions never used for any selection. No maximum is taken over configurations here by design. This is a historical out-of-sample diagnostic, NOT a pristine final lockbox: the 2026 period had prior project exposure (see `exposure`). A genuine final block would have to be untouched by model, feature and threshold choice alike until frozen.",
   "date_hhi": 0.026392023211661234,
   "effective_dates": 37.890236454405404,
   "busiest_date": "2026-07-20",
   "busiest_date_signals": 421,
   "precision_ex_busiest_date": 0.1413250302715793,
-  "signals_ex_busiest_date": 5781
+  "signals_ex_busiest_date": 5781,
+  "holdout_label": "historical_holdout_with_prior_project_exposure",
+  "exposure": {
+    "model_selection": "none -- this block was excluded from every search",
+    "feature_design": "none",
+    "threshold_choice": "none",
+    "prior_project_observation": "yes -- rule backtests, charts and expectancy tables already covered 2026 before this script existed"
+  }
 }
