@@ -705,6 +705,48 @@ def check_cross_report(f: Findings) -> None:
     readme_path = ROOT / "README.md"
     if readme_path.exists() and trade:
         rtext = readme_path.read_text(encoding="utf-8")
+        # ------------------------------------------------------------------
+        # Every script a document tells the reader to RUN must exist. A review
+        # found README and TARGET_70PCT both instructing the reader to run
+        # `scripts/scratch/check_stride_phase.py`, which has never existed (the
+        # real file is `stride_verification.py`). A reproducer that is absent is
+        # worse than no reproducer: it reads as verified.
+        # ------------------------------------------------------------------
+        cited = set()
+        for doc in ("README.md", "TARGET_70PCT.md", "RESULTS.md",
+                    "REPRODUCIBILITY.md"):
+            p = ROOT / doc
+            if not p.exists():
+                continue
+            for m in re.finditer(r"(?:python|python -m)?\s*"
+                                 r"((?:scripts|src|tests)/[A-Za-z0-9_/\-]+\.py)",
+                                 p.read_text(encoding="utf-8")):
+                cited.add((doc, m.group(1)))
+        missing_scripts = sorted({(d, s) for d, s in cited
+                                  if not (ROOT / s).exists()})
+        f.check(not missing_scripts,
+                f"every Python script the documents tell a reader to run exists "
+                f"({len(missing_scripts)} missing: {missing_scripts[:4]})")
+        # ------------------------------------------------------------------
+        # The header callout's "N% of the highest-hit-rate strategy's signals"
+        # must equal the same strategy's unfillable share in the report. It said
+        # 15.8% while section 9.2 and the artifact both said 15.91% -- a
+        # document contradicting itself eleven lines above its own table.
+        # ------------------------------------------------------------------
+        m = re.search(r">[^>]*?([\d.]+)% of the highest-hit-rate strategy", rtext)
+        if m:
+            stated = float(m.group(1))
+            lm = trade.get("leader_momentum") or {}
+            actual = round(float(lm.get("unfillable_pct", 0)) * 100, 2)
+            if actual:
+                f.check(abs(stated - actual) < 0.005,
+                        f"README's header callout quotes the highest-hit-rate "
+                        f"strategy's unfillable share exactly as the report has it "
+                        f"(says {stated}%, report {actual}%)")
+        else:
+            f.check(False,
+                    "README's header callout states the highest-hit-rate "
+                    "strategy's unfillable share")
         # Each published row is (label, signals, unfillable, share%, one_word,
         # hit_rate%, excluding%). Parsed out of the markdown so a wrong cell fails
         # rather than being restated. The bold markers are OPTIONAL: only the

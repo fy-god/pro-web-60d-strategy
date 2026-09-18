@@ -584,7 +584,7 @@ python -m src.ml.null_tests                 # §7: validate the harness cannot c
 python -m src.ml.concentration              # §8: how much one period carries
 python -m src.ml.final_holdout              # §6: purged one-shot 2026 evaluation
 python scripts/audit_reports.py             # consistency of every published number
-python scripts/scratch/check_stride_phase.py  # the stride counterexample
+python scripts/scratch/stride_verification.py  # the stride counterexample
 ```
 
 Machine-readable output: `reports/ml_precision_ceiling.json`,

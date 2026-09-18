@@ -11,7 +11,7 @@ reported for them do not support the claims attached to them.
 
 > **Can this be traded intraday? No — see §9.** Three findings make that
 > conclusive: the signal needs the daily *close* (so the earliest possible fill
-> is the next session's open), 15.8% of the highest-hit-rate strategy's signals
+> is the next session's open), 15.91% of the highest-hit-rate strategy's signals
 > are unbuyable limit-up opens, and **the hit-rate ranking is inverted against
 > realised return** (Spearman −0.511) — the strategies with the best hit rates
 > lose the most money.
@@ -566,7 +566,7 @@ python -m src.ml.null_tests                    # prove the harness cannot cheat
 python -m src.ml.final_holdout                 # purged one-shot 2026 evaluation
 python -m src.ml.concentration                 # how much one period carries
 python scripts/audit_reports.py                # check every published number
-python scripts/scratch/check_stride_phase.py   # the stride counterexample
+python scripts/scratch/stride_verification.py  # the stride counterexample
 ```
 
 ---

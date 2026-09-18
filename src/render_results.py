@@ -182,31 +182,73 @@ def baselines() -> str:
         if blk.get("date_max"):
             spans.append(str(blk["date_max"]))
     if pop is None:
+        # No `population` block, so this file predates it. The stride must not be
+        # guessed: `webpro_scan_summary.json` is written by the same scan and
+        # records the stride it actually ran with, so read it there rather than
+        # hardcoding 5. A hardcoded 5 would silently mislabel a stride-1 scan.
+        scan_stride, scan_min_history = None, None
+        try:
+            import json as _json
+
+            summary_path = REPORTS / "webpro_scan_summary.json"
+            if summary_path.exists():
+                summary = _json.loads(summary_path.read_text(encoding="utf-8"))
+                scan_stride = summary.get("stride")
+                scan_min_history = summary.get("min_history")
+        except (OSError, ValueError):
+            pass
         pop = {
             "population": "scanned",
-            "stride": 5,
-            "min_history": 60,
+            "stride": scan_stride,
+            "min_history": scan_min_history,
             "date_min": None,
             "date_max": None,
         }
-        note = (" (This file predates the `population` block now emitted by "
-                "`src.scan_all`; the row set is inferred from the fact that "
-                "`webpro_baselines.json` is written by `population_baselines`. "
-                "Re-run `python -m src.scan_all --stride 5` to record it "
-                "explicitly.)")
+        # `webpro_scan_summary.json` records `stride` but predates `min_history`
+        # and `population`, so recover min_history from the constant the scan
+        # itself uses (`src/scan_all.py: MIN_HISTORY = runner.VISIBLE_BARS`)
+        # rather than printing "None" or re-hardcoding 60 here.
+        if pop["min_history"] is None:
+            try:
+                from src import runner as _runner
+
+                pop["min_history"] = _runner.VISIBLE_BARS
+            except Exception:
+                pass
+        if scan_stride is not None:
+            note = (" (This file predates the `population` block now emitted by "
+                    "`src.scan_all`; its stride and min_history are read from "
+                    "`webpro_scan_summary.json`, which the same scan wrote. "
+                    "Re-run `python -m src.scan_all` to record them here "
+                    "explicitly.)")
+        else:
+            note = (" (This file predates the `population` block, and "
+                    "`webpro_scan_summary.json` is missing or unreadable, so the "
+                    "grid it was measured on cannot be stated. Re-run "
+                    "`python -m src.scan_all`.)")
     else:
         note = ""
     span = ""
     if spans:
         span = f" over {min(spans)} .. {max(spans)}"
     lines.append("")
+    # If the stride could not be recovered, say so rather than printing "every
+    # Noneth bar".
+    if pop.get("stride") is not None:
+        grid_line = (
+            f"These are measured on the **scanned evaluation grid**: per-stock bar "
+            f"index `_seq >= {pop['min_history']}` and then every "
+            f"{pop['stride']}th bar{span}.")
+    else:
+        grid_line = (
+            f"These are measured on the **scanned evaluation grid** (per-stock bar "
+            f"index `_seq >= {pop.get('min_history')}` and then every Nth "
+            f"bar{span}), whose stride this file cannot state.")
     lines.append(
-        f"These are measured on the **scanned evaluation grid**: per-stock bar "
-        f"index `_seq >= {pop['min_history']}` and then every "
-        f"{pop['stride']}th bar{span}. That is the population the strategies "
+        f"{grid_line} That is the population the strategies "
         f"were actually scored on, so it is the correct denominator for every "
         f"lift below. It is *not* the whole panel — because almost every stock "
-        f"is present on the first session, the `_seq >= {pop['min_history']}` "
+        f"is present on the first session, the `_seq >= {pop.get('min_history')}` "
         f"filter also drops the 2023-Q1 warm-up window, which is why the "
         f"scanned rate sits above the full-panel rate for `low504`. "
         f"`reports/lowzone_baselines.json` publishes the full-panel figures "

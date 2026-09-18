@@ -47,6 +47,14 @@ scripts/scratch/**/*.parquet
 /scratch/
 *.tmp
 
+# Long commit messages are passed to `git commit -F <file>` and then deleted, but
+# `git add -A` in the same command stages the file while it still exists -- it got
+# committed once (da81d74, removed in b23d1e6). These are throwaway prose, not
+# evidence.
+_cmsg_*.txt
+_commitmsg.txt
+_commit_*.txt
+
 # NOTE: outputs/charts_120d/ IS tracked on purpose. The 120-session K-line
 # charts with signal markers are a requested deliverable, not a disposable
 # artifact. They are ~86 KB each. Regenerate with `python -m src.make_charts`.
