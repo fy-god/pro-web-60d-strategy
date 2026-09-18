@@ -271,17 +271,38 @@ def check_concentration() -> None:
         bound(hw, "first_half_precision", ho.get("first_half_precision"))
         bound(hw, "second_half_precision", ho.get("second_half_precision"))
         drops = sorted(((int(k), v) for k, v in (ho.get("drop_top_dates") or {}).items()))
+
+        def _prec(entry: object) -> float:
+            """drop_top_dates values are {precision, signals}; older reports
+            stored a bare float. Accept both so this checker can still read a
+            report written before the counts were persisted."""
+            if isinstance(entry, dict):
+                return float(entry["precision"])
+            return float(entry)  # type: ignore[arg-type]
+
         if drops:
             # dropping zero dates must reproduce the headline precision
             ident("A", hw, "drop_top_dates[0] == precision",
-                  drops[0][1] if drops[0][0] == 0 else None, ho.get("precision"))
+                  _prec(drops[0][1]) if drops[0][0] == 0 else None, ho.get("precision"))
             bad = [(drops[i], drops[i + 1]) for i in range(len(drops) - 1)
-                   if drops[i + 1][1] < drops[i][1] - 1e-12]
+                   if _prec(drops[i + 1][1]) < _prec(drops[i][1]) - 1e-12]
             if bad:
                 finding("D", hw,
                         "precision is not monotone in the number of dropped dates "
                         f"({bad}); expected only if the dates removed are not the "
                         "most concentrated ones")
+            # The surviving signal count must fall as dates are removed, and never
+            # exceed the headline count.
+            counts = [(n, e["signals"]) for n, e in drops
+                      if isinstance(e, dict) and "signals" in e]
+            for n, k in counts:
+                if k > ho.get("signals", k):
+                    finding("D", hw,
+                            f"drop_top_dates[{n}] keeps {k:,} signals, more than "
+                            f"the headline {ho.get('signals'):,}")
+            seq = [k for _, k in counts]
+            if seq != sorted(seq, reverse=True):
+                finding("D", hw, f"surviving signal counts are not decreasing: {seq}")
 
 
 def check_search_failures_and_fold_bases() -> None:

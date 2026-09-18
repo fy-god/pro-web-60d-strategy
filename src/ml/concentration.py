@@ -165,16 +165,23 @@ def main() -> None:
         "precision": float(y_h.mean()),
         "base_rate": float(te["label_high"].mean()),
         "busiest_date_share": float(counts.iloc[0] / len(y_h)),
+        # Persist the surviving signal count next to each precision. The prose
+        # table quotes both columns, and with only the precision stored there was
+        # nothing to check the counts against -- an earlier version of that table
+        # sat on a superseded run (8,352 signals) for exactly this reason.
         "drop_top_dates": {
-            n: drop_top_dates(d_h, y_h, n)[0] for n in (0, 1, 3, 5, 10, 20, 40)
+            str(n): {"precision": float(p), "signals": int(k)}
+            for n, (p, k) in (
+                (n, drop_top_dates(d_h, y_h, n)) for n in (0, 1, 3, 5, 10, 20, 40)
+            )
         },
         "first_half_precision": float(y_h[first].mean()),
         "second_half_precision": float(y_h[second].mean()),
+        "first_half_signals": int(len(first)),
+        "second_half_signals": int(len(second)),
     }
 
-    (REPORT_DIR / "ml_concentration.json").write_text(
-        json.dumps(summary, indent=2), encoding="utf-8"
-    )
+    wf.save_report("ml_concentration.json", summary)
     print(f"\nwrote {REPORT_DIR / 'ml_concentration.json'}")
 
 
