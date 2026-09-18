@@ -333,11 +333,27 @@ It is also **13.61%, not 70%.**
 > records that matrix explicitly; `null_ceiling.json`, `selection_ceiling.json`,
 > `feature_auc_scan.json` and `leakage_audit.json` carry no provenance field but
 > their row counts and per-fold test sizes (67,248 / 68,438 / 72,262 / 73,279) are
-> the stride-5 fold totals. Sections 5 and 6 use the **dense stride-1** grid
-> (2,680,715 rows). Both grids are valid and their base rates differ by 0.04%
-> relative (4.0878% stride-5 vs 4.0894% dense), so no conclusion here turns on the
-> choice — but a reader comparing this section's 281,227 rows against section 5's
-> dense framing should know they are different populations.
+> the stride-5 fold totals. Both grids are valid and their base rates differ by
+> 0.04% relative (4.0878% stride-5 vs 4.0894% dense), so no conclusion here turns
+> on the choice — but a reader comparing this section's 281,227 rows against a
+> dense-grid figure should know they are different populations.
+>
+> **Which sections are on which grid.** This is stated per section, because an
+> earlier version of this note assigned §5 and §6 to the dense grid and §5 is not
+> dense:
+>
+> | Section | Grid | Rows | How to tell |
+> | --- | --- | ---: | --- |
+> | §4, the 58-config search table | **stride-5** | 281,227 OOS | `ml_search_wide.json`; the 1,790-signal baseline row |
+> | §4, the feature-group ablation table | **dense stride-1** | 2,680,715 | `ml_search_ablation.json`; `fam_hgb_0` at 16.44%/12,143 signals |
+> | §5, cross-sectional top-K | **stride-5** | 281,227 OOS | `ml_crosssec_final.json` `n_rows` = 281,227, `n_test_sessions` = 462 |
+> | §6, the 2026 holdout | **dense stride-1** | 2,680,715 | `ml_final_holdout.json` `stride` = 1 |
+>
+> §5's baseline (1,790 signals / 15.98%) and §4's wide-table baseline are the same
+> stride-5 row, so §5's comparison is like-for-like. §4 contains both grids: its
+> search table is stride-5 and its ablation table is dense, which is why the two
+> tables' `fam_hgb_0`-equivalent rows read 15.98%/1,790 and 16.44%/12,143
+> respectively without either being wrong.
 
 Two independent null batteries were run. The larger one
 (`outputs/ml/audit/nulls_audit.json`, 2,906 s, 1 real control + 11 null variants +

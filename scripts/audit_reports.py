@@ -1980,6 +1980,81 @@ def check_frontier(f: Findings) -> None:
                     f"ratio readers (found {n_ratio})")
 
     # ------------------------------------------------------------------
+    # Per-section grid provenance (EML-HIGH-3).
+    #
+    # §7's provenance blockquote assigned §5 and §6 to the dense stride-1 grid.
+    # §5 is NOT dense: its 1,790-signal / 15.98% baseline is `wide_hgb_2` from
+    # ml_search_wide.json, which is the stride-5 run. §4 is mixed -- its search
+    # table is stride-5 and its ablation table is dense -- so a single
+    # "sections 5 and 6" sentence could not be right. The blockquote now states
+    # the grid per section, and each claim is bound here to the report it cites.
+    # ------------------------------------------------------------------
+    t70 = (ROOT / "TARGET_70PCT.md")
+    if t70.exists():
+        dtext = t70.read_text(encoding="utf-8")
+        # The two grids must be distinguishable in the reports themselves.
+        wide_rep = load("ml_search_wide.json")
+        abl_rep = load("ml_search_ablation.json")
+        # §4's search table is stride-5: it must be the report whose baseline row
+        # is 1,790 signals, and §5's baseline must be the SAME number.
+        wide_1790 = None
+        if wide_rep:
+            for r in wide_rep.get("ranked") or []:
+                if int(r.get("oos_signals") or 0) == 1790:
+                    wide_1790 = r
+        f.check(wide_1790 is not None,
+                "ml_search_wide.json contains the 1,790-signal baseline row that "
+                "§4's search table and §5 report")
+        if wide_1790 is not None:
+            pct = float(wide_1790["oos_precision"]) * 100
+            f.check(abs(pct - 15.98) < 0.01,
+                    f"the 1,790-signal row is 15.98% ({pct:.2f}%)")
+        # The ablation table is dense: its `all 82 features` row is 16.44% /
+        # 12,143. In the ablation report that row is named `abl_all` (the preset
+        # prefixes every config with `abl_`), NOT `fam_hgb_0` -- the earlier
+        # version of this check looked for the search preset's name and failed on
+        # correct data.
+        fam0 = None
+        if abl_rep:
+            for r in abl_rep.get("ranked") or []:
+                if r.get("config") in ("abl_all", "fam_hgb_0"):
+                    fam0 = r
+                    break
+        f.check(fam0 is not None,
+                "ml_search_ablation.json carries the all-features row §4's "
+                "ablation table reports (abl_all)")
+        if fam0 is not None:
+            apct = float(fam0["oos_precision"]) * 100
+            f.check(abs(apct - 16.44) < 0.01,
+                    f"the ablation all-features row is 16.44% ({apct:.2f}%)")
+            f.check(int(fam0.get("oos_signals") or 0) == 12143,
+                    "the ablation all-features row publishes 12,143 signals")
+            # And the document must print that row under its ablation label.
+            f.check("all 82 features" in dtext,
+                    "TARGET_70PCT.md labels the ablation all-features row")
+        # §5's report must be stride-5, by row count, and must agree with the
+        # 1,790 baseline it prints. A crosssec report on the dense grid would
+        # carry 2,680,715 rows and cannot be compared to the stride-5 baseline.
+        xs_rep = load("ml_crosssec_final.json")
+        if xs_rep:
+            res0 = (xs_rep.get("results") or {}).get("fam_hgb_0") or {}
+            n_rows = int(res0.get("n_rows") or 0)
+            f.check(n_rows == 281227,
+                    f"ml_crosssec_final.json (§5) is the stride-5 population "
+                    f"({n_rows:,} rows, expected 281,227) so it shares a grid with "
+                    f"§4's search table")
+            gt = res0.get("global_threshold") or {}
+            if gt.get("n_signals") is not None and wide_1790 is not None:
+                f.check(int(gt["n_signals"]) == 1790,
+                        f"§5's baseline signal count ({gt['n_signals']}) equals "
+                        f"the 1,790 row §4's search table publishes")
+        # The document must not make the retracted global assignment.
+        f.check("Sections 5 and 6 use the **dense stride-1**" not in dtext,
+                "TARGET_70PCT.md does not assign §5 to the dense grid")
+        f.check("Which sections are on which grid" in dtext,
+                "TARGET_70PCT.md states the grid per section")
+
+    # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
     #
     # The review found the 23.81%-at-462 claim -- one of the document's two
