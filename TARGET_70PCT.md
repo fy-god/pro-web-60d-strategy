@@ -434,15 +434,15 @@ to **26.14%**.
 
 **2026 holdout, same treatment:**
 
-| Treatment | Precision |
-| --- | ---: |
-| As published | 13.61% |
-| Drop busiest date | 14.13% |
-| Drop 3 busiest dates | 15.23% |
-| Drop 5 busiest dates | 16.11% |
-| Drop 10 busiest dates | 16.20% |
-| First half of signal dates | 10.74% |
-| Second half of signal dates | 16.48% |
+| Treatment | Precision | Signals |
+| --- | ---: | ---: |
+| As published | 13.61% | 6,202 |
+| Drop busiest date | 14.13% | 5,781 |
+| Drop 3 busiest dates | 15.23% | 5,142 |
+| Drop 5 busiest dates | 16.11% | 4,550 |
+| Drop 10 busiest dates | 16.20% | 3,538 |
+| First half of signal dates | 10.74% | 3,101 |
+| Second half of signal dates | 16.48% | 3,101 |
 
 No single date carries it: the busiest date holds 6.8% of signals, and removing it
 *raises* precision. Both chronological halves are far above the 2.9% base rate,
@@ -452,11 +452,11 @@ threshold as the headline figure above, so the two modules agree exactly —
 deriving its own split, which previously left the last ten pre-holdout sessions in
 the training set and made the two report the same holdout on different rows.
 
-Surviving signal counts per treatment are recorded in `reports/ml_concentration.json`
-under `holdout.drop_top_dates` (each entry carries both `precision` and `signals`).
-They were previously printed to stdout only, which is why an earlier revision of
-this table could sit on a superseded run — 8,352 signals at 12.07% — with nothing
-on disk to contradict it. The halves are 3,101 signals each.
+An earlier revision of this table read 8,352 signals at 12.07% throughout, a run
+that predates the purge fix, and the counts were printed to stdout only so nothing
+on disk contradicted it. `reports/ml_concentration.json` now records both
+`precision` and `signals` per treatment, which is what the counts above are read
+from.
 
 ---
 

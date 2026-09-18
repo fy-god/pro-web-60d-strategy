@@ -561,6 +561,50 @@ def check_prose(f: Findings, verbose: bool) -> None:
                     f"README.md family row '{cells[0]}' ({ins}% in / {oos}% OOS "
                     f"/ {sig:,} signals) exists in ml_search_models.json")
 
+    # The 2026-holdout treatment table. It sat on a superseded run (8,352 signals
+    # at 12.07%) because the counts it quoted were printed to stdout and never
+    # stored. Now that the report carries {precision, signals} per treatment, the
+    # table can be verified cell by cell.
+    conc = load("ml_concentration.json")
+    if conc and (conc.get("holdout") or {}).get("drop_top_dates"):
+        ho = conc["holdout"]
+        wanted = {"As published": 0, "Drop busiest date": 1,
+                  "Drop 3 busiest dates": 3, "Drop 5 busiest dates": 5,
+                  "Drop 10 busiest dates": 10}
+        drops = {int(k): v for k, v in ho["drop_top_dates"].items()
+                 if isinstance(v, dict)}
+        for cells in table_rows("TARGET_70PCT.md", "**2026 holdout, same treatment"):
+            if len(cells) < 3:
+                continue
+            label = cells[0]
+            got_p, got_n = pct(cells[1]), count(cells[2])
+            n_drop = wanted.get(label)
+            if n_drop is None or n_drop not in drops or got_p is None:
+                # Half-sample rows are checked against the halves below.
+                if label.startswith("First half") and got_p is not None:
+                    f.check(
+                        abs(ho["first_half_precision"] * 100 - got_p) < 0.005,
+                        f"TARGET_70PCT.md says first half {got_p:.2f}%; report "
+                        f"says {ho['first_half_precision']*100:.2f}%")
+                elif label.startswith("Second half") and got_p is not None:
+                    f.check(
+                        abs(ho["second_half_precision"] * 100 - got_p) < 0.005,
+                        f"TARGET_70PCT.md says second half {got_p:.2f}%; report "
+                        f"says {ho['second_half_precision']*100:.2f}%")
+                continue
+            row = drops[n_drop]
+            f.check(
+                abs(row["precision"] * 100 - got_p) < 0.005,
+                f"TARGET_70PCT.md says '{label}' is {got_p:.2f}%; the report "
+                f"says {row['precision']*100:.2f}%",
+            )
+            if got_n is not None:
+                f.check(
+                    row["signals"] == got_n,
+                    f"TARGET_70PCT.md says '{label}' leaves {got_n:,} signals; "
+                    f"the report says {row['signals']:,}",
+                )
+
     if verbose:
         print("  (tied headline tables to their source reports)")
 
