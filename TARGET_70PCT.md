@@ -165,10 +165,10 @@ visible:
 
 | Configuration | In-sample | **Out-of-sample** | Signals | Folds above base |
 | --- | ---: | ---: | ---: | ---: |
-| ExtraTrees, 2% publication | 56.26% | **18.21%** | 368 | 3/4 |
-| ExtraTrees, 2% publication | 47.05% | **16.50%** | 515 | 3/4 |
+| ExtraTrees, 0.5% publication | 56.26% | **18.21%** | 368 | 3/4 |
+| ExtraTrees, 0.5% publication | 47.05% | **16.50%** | 515 | 3/4 |
 | HGB (baseline), 2% publication | 50.60% | **15.98%** | 1,790 | 4/4 |
-| ExtraTrees, 5% publication | 40.89% | **15.72%** | 3,913 | 4/4 |
+| ExtraTrees, 2% publication | 40.89% | **15.72%** | 3,913 | 4/4 |
 | HGB wide, 2% publication | 68.57% | 15.26% | 996 | 4/4 |
 | RF, 2% publication | 42.07% | 14.70% | 3,892 | 4/4 |
 
@@ -328,8 +328,9 @@ It is also **13.61%, not 70%.**
 ## 7. Is the measurement itself trustworthy?
 
 Two independent null batteries were run. The larger one
-(`outputs/ml/audit/nulls_audit.json`, 2,906 s, 14 variants) destroys the
-feature–label relationship in ten different ways and confirms the harness cannot
+(`outputs/ml/audit/nulls_audit.json`, 2,906 s, 1 real control + 11 null variants +
+2 positive controls) destroys the feature–label relationship in eleven different
+ways and confirms the harness cannot
 manufacture precision where none exists. It also includes two **positive
 controls** that prove the harness *can* detect a real signal when one is planted.
 

@@ -1079,6 +1079,23 @@ def check_prose(f: Findings, verbose: bool) -> None:
                     f"in-sample; the report says "
                     f"{row['insample_precision']*100:.2f}%",
                 )
+            # The ROW LABEL names a publication rate, and it must name the right
+            # one. Matching on the signal count alone is a valid but incomplete
+            # key: three ExtraTrees rows were labelled "2% publication" and "5%
+            # publication" while the report's own target_rate for those rows was
+            # 0.005 and 0.02. Every numeric cell was correct, so nothing looked
+            # wrong, and no check read the rate the label claimed. The label is
+            # compared against target_rate, which is the publication budget
+            # pick_threshold actually targets.
+            m = re.search(r"([\d.]+)\s*%\s*publication", cells[0])
+            tr = row.get("target_rate")
+            if m and tr is not None:
+                f.check(
+                    abs(float(m.group(1)) / 100 - float(tr)) < 1e-9,
+                    f"TARGET_70PCT.md §4 labels the {sig:,}-signal row "
+                    f"'{m.group(1)}% publication'; the report's target_rate is "
+                    f"{float(tr)} ({float(tr)*100:g}%)",
+                )
 
     models = load("ml_search_models.json")
     if models:

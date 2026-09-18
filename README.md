@@ -505,7 +505,8 @@ date-clustered intervals containing zero — statistically indistinguishable. It
 an operating-point effect.
 
 **The harness was validated before any of this was believed**
-(`src/ml/null_tests.py`, plus a 14-variant battery in `outputs/ml/audit/`): ten
+(`src/ml/null_tests.py`, plus a battery of 1 real control + 11 null variants +
+2 positive controls in `outputs/ml/audit/`): eleven
 different ways of destroying the feature–label relationship all collapse to
 2.99–6.28% (lift 0.88–1.21×), while two positive controls that plant a real
 signal recover 39.05% (9.47×) and 19.42% (4.71×), both on 4/4 folds. No feature
