@@ -298,8 +298,12 @@ def check_cross_report(f: Findings) -> None:
                 continue
             pop = entry.get("population")
             if pop is None:
-                # Not yet regenerated with the provenance fields. Report it as
-                # informational only while the reports predate the code.
+                # The reports predate the provenance fields; regeneration is
+                # pending. Skipping silently would hide that the guard is not yet
+                # doing anything, so the gap is counted and named.
+                f.note(f"{name}:{regime} carries no `population` block yet, so its "
+                       f"base rate is not labelled as the {expect_id!r} population; "
+                       f"regenerate to arm this check")
                 continue
             pid = pop.get("population_id") if isinstance(pop, dict) else pop
             f.check(
