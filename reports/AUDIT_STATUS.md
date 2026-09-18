@@ -4,23 +4,33 @@ _Written automatically every four hours by `scripts/scheduled_report_audit.py`. 
 
 | | |
 |---|---|
-| Last run (local) | 2026-09-18 21:22:02 |
-| Verdict | **ATTENTION** |
-| Consistency check | exit code 1 |
-| Checks | see log |
-| Remote drift | 3 path(s) differ from origin/main |
-| Detail log | `logs/report_audit/audit_2026-09-18_212202.log` (local, not committed) |
+| Last run (local) | 2026-09-18 21:49:32 |
+| Verdict | **PASS** |
+| Consistency check | exit code 0 |
+| Checks | 629 checks run, 0 problem(s) |
+| Remote drift | 0 path(s) differ from origin/main |
+| Detail log | `logs/report_audit/audit_2026-09-18_214932.log` (local, not committed) |
 
-## Remote drift
+## Headline
 
-3 path(s) differ from origin/main:
+- holdout precision **13.61%** against a base rate of 2.90% (4.70x lift)
+- 6,202 signals, 844 hits
 
-- `docs/audits/expert-ml/2026-09-18_18-59-36_JST.md`
-- `docs/audits/expert-ml/LATEST.md`
-- `reports/AUDIT_STATUS.md`
+All consistency checks passed.
 
-## Failures
+## Known gaps (12)
 
-```
-(no structured failures parsed; see log)
-```
+_Reported, not failures._
+
+- webpro_baselines.json:webpro carries no `population` block yet, so its base rate is not labelled as the 'scanned' population; regenerate to arm this check
+- webpro_baselines.json:low60 carries no `population` block yet, so its base rate is not labelled as the 'scanned' population; regenerate to arm this check
+- webpro_baselines.json:low504 carries no `population` block yet, so its base rate is not labelled as the 'scanned' population; regenerate to arm this check
+- lowzone_baselines.json:webpro carries no `population` block yet, so its base rate is not labelled as the 'panel' population; regenerate to arm this check
+- lowzone_baselines.json:low60 carries no `population` block yet, so its base rate is not labelled as the 'panel' population; regenerate to arm this check
+- lowzone_baselines.json:low504 carries no `population` block yet, so its base rate is not labelled as the 'panel' population; regenerate to arm this check
+- ml_search_models.json has no `stride` field but is stride-1 (median full-fold base=0.04089445); regenerate to stamp it
+- ml_search_ablation.json has no `stride` field but is stride-1 (median full-fold base=0.04089445); regenerate to stamp it
+- ml_crosssec_final.json has no `stride` field but is stride-5 (n_rows=281,227, base=0.04087801); regenerate to stamp it
+- ml_crosssec_hgb0.json has no `stride` field but is stride-5 (same run as ml_crosssec_final); regenerate to stamp it
+- ml_null_tests.json has no `stride` field but is stride-1 (n_rows=2,680,715 = the dense matrix); regenerate to stamp it
+- reports/ml_crosssec_hgb0.json is opened only for its provenance fields (stride); no number in it is verified
