@@ -27,6 +27,17 @@ outputs/ml/crosssec_cache/
 scripts/scratch/_artifacts/
 scripts/scratch/**/*.parquet
 
+# Agent scratch directories. These hold throwaway probe output, report
+# snapshots and UTF-16 console dumps -- no unique evidence. Kept out of the tree
+# so a `git add -A` cannot sweep a 2 MB report snapshot into the repository.
+#
+# Anchored with a leading slash on purpose: a bare `scratch/` also matches
+# `scripts/scratch/`, which holds the durable integrity checkers that ARE meant
+# to be tracked.
+/.audit_tmp/
+/scratch/
+*.tmp
+
 # NOTE: outputs/charts_120d/ IS tracked on purpose. The 120-session K-line
 # charts with signal markers are a requested deliverable, not a disposable
 # artifact. They are ~86 KB each. Regenerate with `python -m src.make_charts`.

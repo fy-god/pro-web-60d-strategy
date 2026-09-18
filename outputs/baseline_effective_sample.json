@@ -1,0 +1,275 @@
+{
+  "cut_date": "2023-04-04",
+  "regimes": {
+    "webpro": {
+      "full_census": {
+        "n": 2648785,
+        "hits": 81830,
+        "rate": 0.030893409619882323
+      },
+      "seq_ge_60": {
+        "n": 2457357,
+        "hits": 78712,
+        "rate": 0.032031161935363886
+      },
+      "date_ge_cut": {
+        "n": 2477032,
+        "hits": 79580,
+        "rate": 0.03212715863178191
+      },
+      "seq_keeps_but_date_excludes": {
+        "n": 0,
+        "hits": 0,
+        "rate": NaN
+      },
+      "date_keeps_but_seq_excludes": {
+        "n": 19675,
+        "hits": 868,
+        "rate": 0.04411689961880559
+      },
+      "seq_predicate_is_subset_of_date_predicate": true,
+      "contrasts": {
+        "scanned vs its complement (the published test)": {
+          "name": "scanned vs its complement (the published test)",
+          "a": {
+            "n": 493246,
+            "hits": 14969,
+            "rate": 0.03034793997315741
+          },
+          "b": {
+            "n": 2155539,
+            "hits": 66861,
+            "rate": 0.031018227923503124
+          },
+          "z_row_level": -2.4543081616688496,
+          "z_cluster_robust": -0.12809697513683813,
+          "z_date_equal_weight": 0.5545671149510949,
+          "shared_dates": 813,
+          "rate_a_date_equal_weight": 0.035276433324461884,
+          "rate_b_date_equal_weight": 0.03338912535210209,
+          "row_z_inflation_vs_cluster": 19.159766723976606
+        },
+        "scanned vs non-scanned, both _seq >= 60 (stride alone)": {
+          "name": "scanned vs non-scanned, both _seq >= 60 (stride alone)",
+          "a": {
+            "n": 493246,
+            "hits": 14969,
+            "rate": 0.03034793997315741
+          },
+          "b": {
+            "n": 1964111,
+            "hits": 63743,
+            "rate": 0.032453868442262175
+          },
+          "z_row_level": -7.509434848420542,
+          "z_cluster_robust": -0.39375296063986664,
+          "z_date_equal_weight": 0.6349720633390683,
+          "shared_dates": 812,
+          "rate_a_date_equal_weight": 0.035302458154208745,
+          "rate_b_date_equal_weight": 0.03314007330381209,
+          "row_z_inflation_vs_cluster": 19.071437167652952
+        },
+        "_seq >= 60 vs _seq < 60 (min_history alone)": {
+          "name": "_seq >= 60 vs _seq < 60 (min_history alone)",
+          "a": {
+            "n": 2457357,
+            "hits": 78712,
+            "rate": 0.032031161935363886
+          },
+          "b": {
+            "n": 191428,
+            "hits": 3118,
+            "rate": 0.016288108322711412
+          },
+          "z_row_level": 38.342796409762336,
+          "z_cluster_robust": 6.11314728402809,
+          "z_date_equal_weight": -2.5683893616087077,
+          "shared_dates": 817,
+          "rate_a_date_equal_weight": 0.032097639724000475,
+          "rate_b_date_equal_weight": 0.04408119845074126,
+          "row_z_inflation_vs_cluster": 6.272185934394404
+        }
+      }
+    },
+    "low60": {
+      "full_census": {
+        "n": 2489247,
+        "hits": 1805,
+        "rate": 0.0007251188813323868
+      },
+      "seq_ge_60": {
+        "n": 2298224,
+        "hits": 1709,
+        "rate": 0.0007436176804349793
+      },
+      "date_ge_cut": {
+        "n": 2317494,
+        "hits": 1709,
+        "rate": 0.0007374344874247786
+      },
+      "seq_keeps_but_date_excludes": {
+        "n": 0,
+        "hits": 0,
+        "rate": NaN
+      },
+      "date_keeps_but_seq_excludes": {
+        "n": 19270,
+        "hits": 0,
+        "rate": 0.0
+      },
+      "seq_predicate_is_subset_of_date_predicate": true,
+      "contrasts": {
+        "scanned vs its complement (the published test)": {
+          "name": "scanned vs its complement (the published test)",
+          "a": {
+            "n": 461416,
+            "hits": 347,
+            "rate": 0.0007520328727222289
+          },
+          "b": {
+            "n": 2027831,
+            "hits": 1458,
+            "rate": 0.0007189948274782267
+          },
+          "z_row_level": 0.7524808623542865,
+          "z_cluster_robust": 0.3668512233776952,
+          "z_date_equal_weight": -0.1396771984907463,
+          "shared_dates": 763,
+          "rate_a_date_equal_weight": 0.0007581015097586722,
+          "rate_b_date_equal_weight": 0.0007732481935562383,
+          "row_z_inflation_vs_cluster": 2.051188095888023
+        },
+        "scanned vs non-scanned, both _seq >= 60 (stride alone)": {
+          "name": "scanned vs non-scanned, both _seq >= 60 (stride alone)",
+          "a": {
+            "n": 461416,
+            "hits": 347,
+            "rate": 0.0007520328727222289
+          },
+          "b": {
+            "n": 1836808,
+            "hits": 1362,
+            "rate": 0.000741503739095213
+          },
+          "z_row_level": 0.23456399339011927,
+          "z_cluster_robust": 0.11491834906797738,
+          "z_date_equal_weight": -0.3326083030971113,
+          "shared_dates": 762,
+          "rate_a_date_equal_weight": 0.0007590963936297465,
+          "rate_b_date_equal_weight": 0.0007954054824414159,
+          "row_z_inflation_vs_cluster": 2.04113612223378
+        },
+        "_seq >= 60 vs _seq < 60 (min_history alone)": {
+          "name": "_seq >= 60 vs _seq < 60 (min_history alone)",
+          "a": {
+            "n": 2298224,
+            "hits": 1709,
+            "rate": 0.0007436176804349793
+          },
+          "b": {
+            "n": 191023,
+            "hits": 96,
+            "rate": 0.0005025572836778817
+          },
+          "z_row_level": 3.7608307318373546,
+          "z_cluster_robust": 3.9884107912075124,
+          "z_date_equal_weight": 19.208798541119574,
+          "shared_dates": 767,
+          "rate_a_date_equal_weight": 0.0007383361258473989,
+          "rate_b_date_equal_weight": 0.0,
+          "row_z_inflation_vs_cluster": 0.9429396641208925
+        }
+      }
+    },
+    "low504": {
+      "full_census": {
+        "n": 1108219,
+        "hits": 46655,
+        "rate": 0.04209907969453691
+      },
+      "seq_ge_60": {
+        "n": 932588,
+        "hits": 44392,
+        "rate": 0.0476008698374845
+      },
+      "date_ge_cut": {
+        "n": 936466,
+        "hits": 44548,
+        "rate": 0.047570333573242383
+      },
+      "seq_keeps_but_date_excludes": {
+        "n": 0,
+        "hits": 0,
+        "rate": NaN
+      },
+      "date_keeps_but_seq_excludes": {
+        "n": 3878,
+        "hits": 156,
+        "rate": 0.040226921093347086
+      },
+      "seq_predicate_is_subset_of_date_predicate": true,
+      "contrasts": {
+        "scanned vs its complement (the published test)": {
+          "name": "scanned vs its complement (the published test)",
+          "a": {
+            "n": 187729,
+            "hits": 8815,
+            "rate": 0.04695598442435639
+          },
+          "b": {
+            "n": 920490,
+            "hits": 37840,
+            "rate": 0.04110854001673022
+          },
+          "z_row_level": 11.498254850491685,
+          "z_cluster_robust": 1.2376163821947812,
+          "z_date_equal_weight": -0.21234873060380663,
+          "shared_dates": 319,
+          "rate_a_date_equal_weight": 0.04920811686512285,
+          "rate_b_date_equal_weight": 0.04988208303156489,
+          "row_z_inflation_vs_cluster": 9.290645321049121
+        },
+        "scanned vs non-scanned, both _seq >= 60 (stride alone)": {
+          "name": "scanned vs non-scanned, both _seq >= 60 (stride alone)",
+          "a": {
+            "n": 187729,
+            "hits": 8815,
+            "rate": 0.04695598442435639
+          },
+          "b": {
+            "n": 744859,
+            "hits": 35577,
+            "rate": 0.047763402200953466
+          },
+          "z_row_level": -1.4683824124945601,
+          "z_cluster_robust": -0.16655351639916988,
+          "z_date_equal_weight": -0.2829265897202026,
+          "shared_dates": 318,
+          "rate_a_date_equal_weight": 0.04932616432682053,
+          "rate_b_date_equal_weight": 0.05021925104337021,
+          "row_z_inflation_vs_cluster": 8.816279861515303
+        },
+        "_seq >= 60 vs _seq < 60 (min_history alone)": {
+          "name": "_seq >= 60 vs _seq < 60 (min_history alone)",
+          "a": {
+            "n": 932588,
+            "hits": 44392,
+            "rate": 0.0476008698374845
+          },
+          "b": {
+            "n": 175631,
+            "hits": 2263,
+            "rate": 0.012884969054437997
+          },
+          "z_row_level": 66.46064394066184,
+          "z_cluster_robust": 16.848519093181487,
+          "z_date_equal_weight": -6.1209729569309195,
+          "shared_dates": 323,
+          "rate_a_date_equal_weight": 0.04754968772853977,
+          "rate_b_date_equal_weight": 0.1201725347236183,
+          "row_z_inflation_vs_cluster": 3.9445985473915113
+        }
+      }
+    }
+  }
+}

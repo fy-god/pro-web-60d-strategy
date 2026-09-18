@@ -1,0 +1,398 @@
+{
+  "frame_rows": 2680715,
+  "regimes": {
+    "webpro": {
+      "horizon": 10,
+      "full_census": {
+        "n": 2648785,
+        "hits": 81830,
+        "rate": 0.030893409619882323,
+        "date_min": "2023-01-03",
+        "date_max": "2026-08-17",
+        "seq_min": 0,
+        "seq_max": 876
+      },
+      "scanned_census": {
+        "n": 493246,
+        "hits": 14969,
+        "rate": 0.03034793997315741,
+        "date_min": "2023-04-04",
+        "date_max": "2026-08-17",
+        "seq_min": 60,
+        "seq_max": 875
+      },
+      "complement_of_scanned": {
+        "n": 2155539,
+        "hits": 66861,
+        "rate": 0.031018227923503124
+      },
+      "early_seq_lt_60": {
+        "n": 191428,
+        "hits": 3118,
+        "rate": 0.016288108322711412,
+        "date_min": "2023-01-03",
+        "date_max": "2026-08-17",
+        "seq_min": 0,
+        "seq_max": 59
+      },
+      "min_history_seq_ge_60": {
+        "n": 2457357,
+        "hits": 78712,
+        "rate": 0.032031161935363886,
+        "date_min": "2023-04-04",
+        "date_max": "2026-08-17",
+        "seq_min": 60,
+        "seq_max": 876
+      },
+      "residue_0_all_seq": {
+        "n": 531533,
+        "hits": 15591,
+        "rate": 0.02933213930273379,
+        "date_min": "2023-01-03",
+        "date_max": "2026-08-17",
+        "seq_min": 0,
+        "seq_max": 875
+      },
+      "residue_0_early": {
+        "n": 38287,
+        "hits": 622,
+        "rate": 0.016245723091388723,
+        "date_min": "2023-01-03",
+        "date_max": "2026-08-14",
+        "seq_min": 0,
+        "seq_max": 55
+      },
+      "residue_0_min_history": {
+        "n": 493246,
+        "hits": 14969,
+        "rate": 0.03034793997315741,
+        "date_min": "2023-04-04",
+        "date_max": "2026-08-17",
+        "seq_min": 60,
+        "seq_max": 875
+      },
+      "residue_table_min_history": {
+        "0": {
+          "n": 493246,
+          "hits": 14969,
+          "rate": 0.03034793997315741,
+          "date_min": "2023-04-04",
+          "date_max": "2026-08-17",
+          "seq_min": 60,
+          "seq_max": 875
+        },
+        "1": {
+          "n": 493054,
+          "hits": 15758,
+          "rate": 0.03195998815545559,
+          "date_min": "2023-04-06",
+          "date_max": "2026-08-17",
+          "seq_min": 61,
+          "seq_max": 876
+        },
+        "2": {
+          "n": 490556,
+          "hits": 15371,
+          "rate": 0.03133383344613051,
+          "date_min": "2023-04-07",
+          "date_max": "2026-08-17",
+          "seq_min": 62,
+          "seq_max": 872
+        },
+        "3": {
+          "n": 490298,
+          "hits": 16608,
+          "rate": 0.033873277068231976,
+          "date_min": "2023-04-10",
+          "date_max": "2026-08-17",
+          "seq_min": 63,
+          "seq_max": 873
+        },
+        "4": {
+          "n": 490203,
+          "hits": 16006,
+          "rate": 0.03265177895688113,
+          "date_min": "2023-04-11",
+          "date_max": "2026-08-17",
+          "seq_min": 64,
+          "seq_max": 874
+        }
+      },
+      "z_scanned_vs_complement": -2.4543081616688496,
+      "z_residue0_vs_other_residues_in_min_history": -7.509434848420542,
+      "z_min_history_vs_early_within_residue0": 15.753335917678791,
+      "standardised_residue0_at_complement_mix": 0.029908831784798383,
+      "standardised_complement_at_residue0_mix": 0.03289696837778108,
+      "published_lowzone": {
+        "candidates": 2648785,
+        "bull_rate": 0.030893409619882323
+      },
+      "published_webpro": {
+        "evaluated_points": 493246,
+        "bull_rate": 0.03034793997315741
+      }
+    },
+    "low60": {
+      "horizon": 60,
+      "full_census": {
+        "n": 2489247,
+        "hits": 1805,
+        "rate": 0.0007251188813323868,
+        "date_min": "2023-01-03",
+        "date_max": "2026-06-05",
+        "seq_min": 0,
+        "seq_max": 826
+      },
+      "scanned_census": {
+        "n": 461416,
+        "hits": 347,
+        "rate": 0.0007520328727222289,
+        "date_min": "2023-04-04",
+        "date_max": "2026-06-05",
+        "seq_min": 60,
+        "seq_max": 825
+      },
+      "complement_of_scanned": {
+        "n": 2027831,
+        "hits": 1458,
+        "rate": 0.0007189948274782267
+      },
+      "early_seq_lt_60": {
+        "n": 191023,
+        "hits": 96,
+        "rate": 0.0005025572836778817,
+        "date_min": "2023-01-03",
+        "date_max": "2026-06-05",
+        "seq_min": 0,
+        "seq_max": 59
+      },
+      "min_history_seq_ge_60": {
+        "n": 2298224,
+        "hits": 1709,
+        "rate": 0.0007436176804349793,
+        "date_min": "2023-04-04",
+        "date_max": "2026-06-05",
+        "seq_min": 60,
+        "seq_max": 826
+      },
+      "residue_0_all_seq": {
+        "n": 499624,
+        "hits": 370,
+        "rate": 0.0007405568987878885,
+        "date_min": "2023-01-03",
+        "date_max": "2026-06-05",
+        "seq_min": 0,
+        "seq_max": 825
+      },
+      "residue_0_early": {
+        "n": 38208,
+        "hits": 23,
+        "rate": 0.0006019681742043551,
+        "date_min": "2023-01-03",
+        "date_max": "2026-06-05",
+        "seq_min": 0,
+        "seq_max": 55
+      },
+      "residue_0_min_history": {
+        "n": 461416,
+        "hits": 347,
+        "rate": 0.0007520328727222289,
+        "date_min": "2023-04-04",
+        "date_max": "2026-06-05",
+        "seq_min": 60,
+        "seq_max": 825
+      },
+      "residue_table_min_history": {
+        "0": {
+          "n": 461416,
+          "hits": 347,
+          "rate": 0.0007520328727222289,
+          "date_min": "2023-04-04",
+          "date_max": "2026-06-05",
+          "seq_min": 60,
+          "seq_max": 825
+        },
+        "1": {
+          "n": 461228,
+          "hits": 346,
+          "rate": 0.0007501712818822795,
+          "date_min": "2023-04-06",
+          "date_max": "2026-06-05",
+          "seq_min": 61,
+          "seq_max": 826
+        },
+        "2": {
+          "n": 458730,
+          "hits": 340,
+          "rate": 0.0007411767270507706,
+          "date_min": "2023-04-07",
+          "date_max": "2026-06-05",
+          "seq_min": 62,
+          "seq_max": 822
+        },
+        "3": {
+          "n": 458472,
+          "hits": 331,
+          "rate": 0.00072196339143939,
+          "date_min": "2023-04-10",
+          "date_max": "2026-06-05",
+          "seq_min": 63,
+          "seq_max": 823
+        },
+        "4": {
+          "n": 458378,
+          "hits": 345,
+          "rate": 0.0007526539231813046,
+          "date_min": "2023-04-11",
+          "date_max": "2026-06-05",
+          "seq_min": 64,
+          "seq_max": 824
+        }
+      },
+      "z_scanned_vs_complement": 0.7524808623542865,
+      "z_residue0_vs_other_residues_in_min_history": 0.23456399339011927,
+      "z_min_history_vs_early_within_residue0": 1.036243990699334,
+      "standardised_residue0_at_complement_mix": 0.0007561928460627126,
+      "standardised_complement_at_residue0_mix": 0.0007398127780267614,
+      "published_lowzone": {
+        "candidates": 2489247,
+        "bull_rate": 0.0007251188813323868
+      },
+      "published_webpro": {
+        "evaluated_points": 461416,
+        "bull_rate": 0.0007520328727222289
+      }
+    },
+    "low504": {
+      "horizon": 504,
+      "full_census": {
+        "n": 1108219,
+        "hits": 46655,
+        "rate": 0.04209907969453691,
+        "date_min": "2023-01-03",
+        "date_max": "2024-08-01",
+        "seq_min": 0,
+        "seq_max": 382
+      },
+      "scanned_census": {
+        "n": 187729,
+        "hits": 8815,
+        "rate": 0.04695598442435639,
+        "date_min": "2023-04-04",
+        "date_max": "2024-08-01",
+        "seq_min": 60,
+        "seq_max": 380
+      },
+      "complement_of_scanned": {
+        "n": 920490,
+        "hits": 37840,
+        "rate": 0.04110854001673022
+      },
+      "early_seq_lt_60": {
+        "n": 175631,
+        "hits": 2263,
+        "rate": 0.012884969054437997,
+        "date_min": "2023-01-03",
+        "date_max": "2024-08-01",
+        "seq_min": 0,
+        "seq_max": 59
+      },
+      "min_history_seq_ge_60": {
+        "n": 932588,
+        "hits": 44392,
+        "rate": 0.0476008698374845,
+        "date_min": "2023-04-04",
+        "date_max": "2024-08-01",
+        "seq_min": 60,
+        "seq_max": 382
+      },
+      "residue_0_all_seq": {
+        "n": 222857,
+        "hits": 9274,
+        "rate": 0.041614129239826436,
+        "date_min": "2023-01-03",
+        "date_max": "2024-08-01",
+        "seq_min": 0,
+        "seq_max": 380
+      },
+      "residue_0_early": {
+        "n": 35128,
+        "hits": 459,
+        "rate": 0.013066499658392166,
+        "date_min": "2023-01-03",
+        "date_max": "2024-07-31",
+        "seq_min": 0,
+        "seq_max": 55
+      },
+      "residue_0_min_history": {
+        "n": 187729,
+        "hits": 8815,
+        "rate": 0.04695598442435639,
+        "date_min": "2023-04-04",
+        "date_max": "2024-08-01",
+        "seq_min": 60,
+        "seq_max": 380
+      },
+      "residue_table_min_history": {
+        "0": {
+          "n": 187729,
+          "hits": 8815,
+          "rate": 0.04695598442435639,
+          "date_min": "2023-04-04",
+          "date_max": "2024-08-01",
+          "seq_min": 60,
+          "seq_max": 380
+        },
+        "1": {
+          "n": 187598,
+          "hits": 8963,
+          "rate": 0.04777769485815414,
+          "date_min": "2023-04-06",
+          "date_max": "2024-08-01",
+          "seq_min": 61,
+          "seq_max": 381
+        },
+        "2": {
+          "n": 187429,
+          "hits": 9034,
+          "rate": 0.048199584909485726,
+          "date_min": "2023-04-07",
+          "date_max": "2024-08-01",
+          "seq_min": 62,
+          "seq_max": 382
+        },
+        "3": {
+          "n": 184950,
+          "hits": 8793,
+          "rate": 0.04754257907542579,
+          "date_min": "2023-04-10",
+          "date_max": "2024-08-01",
+          "seq_min": 63,
+          "seq_max": 378
+        },
+        "4": {
+          "n": 184882,
+          "hits": 8787,
+          "rate": 0.04752761220670482,
+          "date_min": "2023-04-11",
+          "date_max": "2024-08-01",
+          "seq_min": 64,
+          "seq_max": 379
+        }
+      },
+      "z_scanned_vs_complement": 11.498254850491685,
+      "z_residue0_vs_other_residues_in_min_history": -1.4683824124945601,
+      "z_min_history_vs_early_within_residue0": 29.191311990186378,
+      "standardised_residue0_at_complement_mix": 0.04671723453908676,
+      "standardised_complement_at_residue0_mix": 0.04784599126051981,
+      "published_lowzone": {
+        "candidates": 1108219,
+        "bull_rate": 0.04209907969453691
+      },
+      "published_webpro": {
+        "evaluated_points": 187729,
+        "bull_rate": 0.04695598442435639
+      }
+    }
+  }
+}

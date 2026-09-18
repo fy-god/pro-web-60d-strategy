@@ -1,0 +1,98 @@
+{
+  "cut_date": "2023-04-04",
+  "regimes": {
+    "webpro": {
+      "full_census": {
+        "n": 2648785,
+        "hits": 81830,
+        "rate": 0.030893409619882323
+      },
+      "early_block": {
+        "n": 191428,
+        "hits": 3118,
+        "rate": 0.016288108322711412
+      },
+      "early_pre_cut": {
+        "n": 171753,
+        "hits": 2250,
+        "rate": 0.013100207856631326
+      },
+      "early_post_cut": {
+        "n": 19675,
+        "hits": 868,
+        "rate": 0.04411689961880559
+      },
+      "min_history": {
+        "n": 2457357,
+        "hits": 78712,
+        "rate": 0.032031161935363886
+      },
+      "excluded_window_share_of_early": 0.8972198424472909,
+      "z_early_post_cut_vs_min_history": 9.575325416367994,
+      "min_history_standardised_to_early_month_mix": 0.02593367579291335,
+      "early_actual_over_common_months": 0.04017560196887056
+    },
+    "low60": {
+      "full_census": {
+        "n": 2489247,
+        "hits": 1805,
+        "rate": 0.0007251188813323868
+      },
+      "early_block": {
+        "n": 191023,
+        "hits": 96,
+        "rate": 0.0005025572836778817
+      },
+      "early_pre_cut": {
+        "n": 171753,
+        "hits": 96,
+        "rate": 0.0005589422018829366
+      },
+      "early_post_cut": {
+        "n": 19270,
+        "hits": 0,
+        "rate": 0.0
+      },
+      "min_history": {
+        "n": 2298224,
+        "hits": 1709,
+        "rate": 0.0007436176804349793
+      },
+      "excluded_window_share_of_early": 0.8991220952450752,
+      "z_early_post_cut_vs_min_history": -3.786830809148212,
+      "min_history_standardised_to_early_month_mix": 0.00032456061953238703,
+      "early_actual_over_common_months": 0.0
+    },
+    "low504": {
+      "full_census": {
+        "n": 1108219,
+        "hits": 46655,
+        "rate": 0.04209907969453691
+      },
+      "early_block": {
+        "n": 175631,
+        "hits": 2263,
+        "rate": 0.012884969054437997
+      },
+      "early_pre_cut": {
+        "n": 171753,
+        "hits": 2107,
+        "rate": 0.012267616868409867
+      },
+      "early_post_cut": {
+        "n": 3878,
+        "hits": 156,
+        "rate": 0.040226921093347086
+      },
+      "min_history": {
+        "n": 932588,
+        "hits": 44392,
+        "rate": 0.0476008698374845
+      },
+      "excluded_window_share_of_early": 0.977919615557618,
+      "z_early_post_cut_vs_min_history": -2.1528727744920477,
+      "min_history_standardised_to_early_month_mix": 0.025178171289251032,
+      "early_actual_over_common_months": 0.027539236008291383
+    }
+  }
+}

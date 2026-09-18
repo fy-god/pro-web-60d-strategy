@@ -1,0 +1,212 @@
+{
+  "frame_rows": 2680715,
+  "codes": 3193,
+  "date_min": "2023-01-03",
+  "date_max": "2026-08-31",
+  "codes_present_on_first_date": 2853,
+  "codes_with_ge_60_bars": 3189,
+  "regimes": {
+    "webpro": {
+      "span": {
+        "early": {
+          "n": 191428,
+          "date_min": "2023-01-03",
+          "date_max": "2026-08-17",
+          "share_before_2023_04_04": 0.8972198424472909
+        },
+        "min_history": {
+          "n": 2457357,
+          "date_min": "2023-04-04",
+          "date_max": "2026-08-17",
+          "share_before_2023_04_04": 0.0
+        }
+      },
+      "by_year": {
+        "2023": {
+          "n": 698642,
+          "hits": 9799,
+          "rate": 0.014025781444573901,
+          "n_early": 174409,
+          "n_min_history": 524233
+        },
+        "2024": {
+          "n": 707980,
+          "hits": 37304,
+          "rate": 0.05269075397610102,
+          "n_early": 1762,
+          "n_min_history": 706218
+        },
+        "2025": {
+          "n": 765303,
+          "hits": 20918,
+          "rate": 0.027332964851829927,
+          "n_early": 13952,
+          "n_min_history": 751351
+        },
+        "2026": {
+          "n": 476860,
+          "hits": 13809,
+          "rate": 0.028958184792182193,
+          "n_early": 1305,
+          "n_min_history": 475555
+        }
+      },
+      "variants": {
+        "neither_filter (lowzone_baselines)": {
+          "n": 2648785,
+          "hits": 81830,
+          "rate": 0.030893409619882323
+        },
+        "min_history_only": {
+          "n": 2457357,
+          "hits": 78712,
+          "rate": 0.032031161935363886
+        },
+        "stride_only": {
+          "n": 531533,
+          "hits": 15591,
+          "rate": 0.02933213930273379
+        },
+        "min_history_and_stride (webpro_baselines)": {
+          "n": 493246,
+          "hits": 14969,
+          "rate": 0.03034793997315741
+        }
+      },
+      "effect_min_history_alone_pp": 0.11377523154815633,
+      "effect_stride_alone_pp": -0.15612703171485331,
+      "effect_stride_within_min_history_pp": -0.16832219622064765,
+      "effect_total_pp": -0.0545469646724913
+    },
+    "low60": {
+      "span": {
+        "early": {
+          "n": 191023,
+          "date_min": "2023-01-03",
+          "date_max": "2026-06-05",
+          "share_before_2023_04_04": 0.8991220952450752
+        },
+        "min_history": {
+          "n": 2298224,
+          "date_min": "2023-04-04",
+          "date_max": "2026-06-05",
+          "share_before_2023_04_04": 0.0
+        }
+      },
+      "by_year": {
+        "2023": {
+          "n": 698642,
+          "hits": 224,
+          "rate": 0.0003206220066929844,
+          "n_early": 174409,
+          "n_min_history": 524233
+        },
+        "2024": {
+          "n": 707980,
+          "hits": 777,
+          "rate": 0.0010974886296223057,
+          "n_early": 1762,
+          "n_min_history": 706218
+        },
+        "2025": {
+          "n": 765303,
+          "hits": 584,
+          "rate": 0.0007630964467668361,
+          "n_early": 13952,
+          "n_min_history": 751351
+        },
+        "2026": {
+          "n": 317322,
+          "hits": 220,
+          "rate": 0.0006933020717126452,
+          "n_early": 900,
+          "n_min_history": 316422
+        }
+      },
+      "variants": {
+        "neither_filter (lowzone_baselines)": {
+          "n": 2489247,
+          "hits": 1805,
+          "rate": 0.0007251188813323868
+        },
+        "min_history_only": {
+          "n": 2298224,
+          "hits": 1709,
+          "rate": 0.0007436176804349793
+        },
+        "stride_only": {
+          "n": 499624,
+          "hits": 370,
+          "rate": 0.0007405568987878885
+        },
+        "min_history_and_stride (webpro_baselines)": {
+          "n": 461416,
+          "hits": 347,
+          "rate": 0.0007520328727222289
+        }
+      },
+      "effect_min_history_alone_pp": 0.0018498799102592512,
+      "effect_stride_alone_pp": 0.0015438017455501668,
+      "effect_stride_within_min_history_pp": 0.0008415192287249606,
+      "effect_total_pp": 0.002691399138984212
+    },
+    "low504": {
+      "span": {
+        "early": {
+          "n": 175631,
+          "date_min": "2023-01-03",
+          "date_max": "2024-08-01",
+          "share_before_2023_04_04": 0.977919615557618
+        },
+        "min_history": {
+          "n": 932588,
+          "date_min": "2023-04-04",
+          "date_max": "2024-08-01",
+          "share_before_2023_04_04": 0.0
+        }
+      },
+      "by_year": {
+        "2023": {
+          "n": 698642,
+          "hits": 12118,
+          "rate": 0.01734507802279279,
+          "n_early": 174409,
+          "n_min_history": 524233
+        },
+        "2024": {
+          "n": 409577,
+          "hits": 34537,
+          "rate": 0.08432358262304768,
+          "n_early": 1222,
+          "n_min_history": 408355
+        }
+      },
+      "variants": {
+        "neither_filter (lowzone_baselines)": {
+          "n": 1108219,
+          "hits": 46655,
+          "rate": 0.04209907969453691
+        },
+        "min_history_only": {
+          "n": 932588,
+          "hits": 44392,
+          "rate": 0.0476008698374845
+        },
+        "stride_only": {
+          "n": 222857,
+          "hits": 9274,
+          "rate": 0.041614129239826436
+        },
+        "min_history_and_stride (webpro_baselines)": {
+          "n": 187729,
+          "hits": 8815,
+          "rate": 0.04695598442435639
+        }
+      },
+      "effect_min_history_alone_pp": 0.5501790142947591,
+      "effect_stride_alone_pp": -0.04849504547104755,
+      "effect_stride_within_min_history_pp": -0.06448854131281129,
+      "effect_total_pp": 0.4856904729819478
+    }
+  }
+}

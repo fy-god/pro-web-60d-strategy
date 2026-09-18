@@ -1,0 +1,327 @@
+{
+  "note": "Evidence for the stride-subsampling verification. Large parquet artifacts under scripts/scratch/_artifacts were removed after this file was written; regenerate with `python scripts/scratch/_run_head_build.py --stride N` for the committed rule and `python -m src.ml.build_matrix --stride N` for the working tree.",
+  "counterexample": {
+    "claim": "iloc[::stride] phase depends on other stocks' row counts",
+    "verdict": true,
+    "stride_5": {
+      "frame_A_B": [
+        "2024-01-01",
+        "2024-01-06"
+      ],
+      "frame_C_A_B": [
+        "2024-01-05",
+        "2024-01-10"
+      ],
+      "A_prices_unchanged": true
+    },
+    "stride_3": {
+      "frame_A_B": [
+        "2024-01-01",
+        "2024-01-04",
+        "2024-01-07",
+        "2024-01-10"
+      ],
+      "frame_C_A_B": [
+        "2024-01-03",
+        "2024-01-06",
+        "2024-01-09"
+      ]
+    },
+    "session_grid_rule_stable": true
+  },
+  "real_panel_structure": {
+    "full": {
+      "rows": 2680715,
+      "stocks": 3193,
+      "sessions": 887,
+      "base_rate_high": 0.030893409624695778
+    },
+    "old_iloc_stride5": {
+      "rows": 536143,
+      "sessions": 887,
+      "stocks_per_session_median": 605,
+      "min_stocks": 561,
+      "max_stocks": 663,
+      "distinct_per_stock_date_sets": 660,
+      "median_calendar_gap_days": 7.0,
+      "per_stock_sessions_median": 177,
+      "base_rate_high": 0.030916061252355576,
+      "weekday_share": {
+        "0": 0.1978,
+        "1": 0.202,
+        "2": 0.2018,
+        "3": 0.201,
+        "4": 0.1974
+      },
+      "P_kept_given_y1": 0.2001,
+      "P_kept_given_y0": 0.2,
+      "max_abs_smd_over_20_features": 0.00062
+    },
+    "new_session_grid_stride5": {
+      "rows": 537946,
+      "sessions": 178,
+      "stocks_per_session_median": 2929,
+      "distinct_per_stock_date_sets": 367,
+      "base_rate_high": 0.029315544292330742,
+      "weekday_share": {
+        "0": 0.2668,
+        "1": 0.2392,
+        "2": 0.1077,
+        "3": 0.2178,
+        "4": 0.1684
+      },
+      "P_kept_given_y1": 0.1904,
+      "P_kept_given_y0": 0.201,
+      "max_abs_smd_over_20_features": 0.0231
+    }
+  },
+  "label_distribution_unbiased": {
+    "walkforward_oos_462_sessions": {
+      "full_cross_section_base_rate_high": 0.04089445,
+      "old_retained_base_rate_high": 0.04087801,
+      "relative_diff": -0.000402
+    },
+    "holdout_2026_150_sessions": {
+      "full_cross_section_base_rate_high": 0.02895818,
+      "old_retained_base_rate_high": 0.02909598,
+      "relative_diff": 0.004758
+    },
+    "per_session_base_rate_old_minus_full": {
+      "n_sessions": 877,
+      "mean_diff": 5.41e-06,
+      "sd": 0.00555,
+      "t": 0.03,
+      "share_old_higher": 0.496
+    }
+  },
+  "folds": {
+    "protocol": {
+      "n_folds": 5,
+      "horizon": 10,
+      "embargo": 2,
+      "min_train_sessions": 150,
+      "final_holdout_start": "2026-01-01"
+    },
+    "table": [
+      {
+        "stride": 1,
+        "rule": "old",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 1,
+        "rule": "new",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 2,
+        "rule": "old",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 2,
+        "rule": "new",
+        "sessions": 444,
+        "folds": 4,
+        "test_sessions": 172,
+        "error": null
+      },
+      {
+        "stride": 3,
+        "rule": "old",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 3,
+        "rule": "new",
+        "sessions": 296,
+        "folds": 4,
+        "test_sessions": 75,
+        "error": null
+      },
+      {
+        "stride": 4,
+        "rule": "old",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 4,
+        "rule": "new",
+        "sessions": 222,
+        "folds": 3,
+        "test_sessions": 20,
+        "error": null
+      },
+      {
+        "stride": 5,
+        "rule": "old",
+        "sessions": 887,
+        "folds": 4,
+        "test_sessions": 462,
+        "error": null
+      },
+      {
+        "stride": 5,
+        "rule": "new",
+        "sessions": 178,
+        "folds": 0,
+        "test_sessions": 0,
+        "error": "ValueError: only 0 sessions after the 150-session warm-up; cannot build 5 folds"
+      }
+    ]
+  },
+  "model_bias": {
+    "design": "train the pre-committed HGB on each subsample of the pre-2026 pool, score on the IDENTICAL full-cross-section 2026 rows (476,860 rows, base 0.028958)",
+    "seed0": {
+      "R1_full": 0.1207,
+      "R2_random20": 0.1079,
+      "R3_old_iloc5": 0.1262,
+      "R4_new_grid5": 0.1103
+    },
+    "old_seeds": [
+      0.1262,
+      0.1235,
+      0.1197
+    ],
+    "new_seeds": [
+      0.1103,
+      0.11,
+      0.1129
+    ],
+    "full_seeds": [
+      0.1207,
+      0.1285,
+      0.1138
+    ],
+    "exact_size_random_draws": {
+      "n": 6,
+      "mean": 0.1181,
+      "sd": 0.0057,
+      "range": [
+        0.1114,
+        0.1244
+      ],
+      "verdict": "OLD sits INSIDE the random-draw range; NEW sits at/below its mean"
+    },
+    "topk_with_full_models_own_scores": {
+      "top1": {
+        "full_pool": 0.1667,
+        "old_partial_pool": 0.18,
+        "delta_pp": 1.33,
+        "z": 0.3,
+        "p": 0.761,
+        "n": 150
+      },
+      "top5": {
+        "full_pool": 0.168,
+        "old_partial_pool": 0.172,
+        "delta_pp": 0.4,
+        "z": 0.21,
+        "p": 0.837,
+        "n": 750
+      },
+      "top20": {
+        "full_pool": 0.169,
+        "old_partial_pool": 0.1543,
+        "delta_pp": -1.47,
+        "z": -1.55,
+        "p": 0.122,
+        "n": 3000
+      },
+      "verdict": "no significant degradation on a partial cross-section"
+    }
+  },
+  "bit_identity": {
+    "stride_1_head_vs_worktree": {
+      "rows": 2680715,
+      "columns_identical": true,
+      "bit_identical": false,
+      "columns_differing": [
+        "fwd_max_close",
+        "label_close"
+      ],
+      "fwd_max_close_rows_differing": 2463995,
+      "label_close_rows_differing": 17,
+      "label_high_identical": true,
+      "resolved_identical": true,
+      "entry_open_identical": true,
+      "cause": "NOT the stride rule (stride=1 skips the branch entirely): the working tree also changed label_close/fwd_max_close to use a full-precision float64 entry price instead of a float32 round trip"
+    },
+    "stride_5_head_vs_worktree_row_mode": {
+      "rows": 536143,
+      "key_identical": true,
+      "feature_columns_differing": [],
+      "label_high_identical": true,
+      "base_rate_high_identical": true,
+      "base_rate_high": 0.030916061252356,
+      "fwd_max_close_rows_differing": 492876,
+      "label_close_rows_differing": 3,
+      "label_close_flips_inside_walkforward_oos": 3,
+      "label_close_flips_inside_2026_holdout": 0,
+      "worst_case_precision_shift_on_a_label_close_config_pp": 0.018
+    },
+    "published_holdout_reproduced": {
+      "rule": "HEAD final_holdout.py + HEAD iloc[::5] matrix",
+      "threshold": 0.16596081773308322,
+      "base_rate": 0.02909598003648793,
+      "signals": 1614,
+      "hits": 196,
+      "precision": 0.12143742255266418,
+      "distinct_stocks": 802,
+      "distinct_dates": 146,
+      "matches_reports_ml_final_holdout_json_at_HEAD": true
+    }
+  },
+  "reproducibility_gap": {
+    "finding": "wf.load_matrix() defaults to stride=5 and reads the published 536,143-row matrix, but four consumers call it with no stride argument while the reports they write hold STRIDE-1 numbers. Re-running them silently overwrites a stride-1 report with stride-5 numbers.",
+    "load_matrix_default_reads": {
+      "rows": 536143,
+      "sessions": 887,
+      "resolution": "stride 5"
+    },
+    "modules_resolving_to_stride_5_with_stride_1_report_on_disk": [
+      {"module": "src/ml/null_tests.py", "report": "reports/ml_null_tests.json",
+       "report_marker": "n_rows=2,680,715"},
+      {"module": "src/ml/concentration.py",
+       "report": "reports/ml_concentration.json",
+       "report_marker": "holdout signals=8,352"},
+      {"module": "src/ml/precision_ceiling.py",
+       "report": "reports/ml_precision_ceiling.json",
+       "report_marker": "oos_base_rate=0.04089445"},
+      {"module": "src/ml/crosssec.py",
+       "report": "reports/ml_crosssec_final.json",
+       "report_marker": "oos_base_rate=0.04089445"},
+      {"module": "src/ml/validate_rf.py", "report": null, "report_marker": null},
+      {"module": "src/ml/profile_stages.py", "report": null, "report_marker": null}
+    ],
+    "modules_that_are_correct": [
+      {"module": "src/ml/final_holdout.py",
+       "resolution": "stride_used = 1 if dense.exists() else 5",
+       "report_marker": "n_train_rows=2,140,262 (stride 1)"}
+    ],
+    "stride_1_base_rate_marker": 0.04089445,
+    "stride_5_retained_base_rate_on_same_sessions": 0.04087801,
+    "recommended_fix": "Make the stride explicit at every call site, and have load_matrix raise when neither matrix exists rather than defaulting."
+  },
+  "artifacts": {
+    "script": "scripts/scratch/stride_verification.py",
+    "head_build_runner": "scripts/scratch/_run_head_build.py",
+    "head_holdout_runner": "scripts/scratch/_run_head_holdout.py",
+    "note": "Large parquet scratch under scripts/scratch/_artifacts was removed because that path is NOT covered by .gitignore (only outputs/ml/*.parquet is) and would be swept up by git add -A. Regenerate with `python scripts/scratch/_run_head_build.py --stride N` (committed rule) or `python -m src.ml.build_matrix --stride N` (working tree)."
+  }
+}
