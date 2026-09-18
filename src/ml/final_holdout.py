@@ -70,26 +70,56 @@ def wilson(hits: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def date_clustered_ci(
-    frame: pd.DataFrame, mask: np.ndarray, n_boot: int = 1000, seed: int = 0
+    frame: pd.DataFrame,
+    mask: np.ndarray,
+    universe_dates: np.ndarray | None = None,
+    block: int = 1,
+    n_boot: int = 1000,
+    seed: int = 0,
 ) -> tuple[float, float]:
     """Bootstrap CI resampling DATES, not rows.
 
     Signals on the same session share a market move, so treating them as
     independent Bernoulli draws understates the interval by a wide margin. This
     resamples whole sessions with replacement.
+
+    ``universe_dates`` is the set of dates resampled from; the default (only the
+    dates that produced a signal) drops zero-signal sessions from the universe and
+    understates the interval. Callers should pass the full test calendar.
+
+    ``block`` joins consecutive universe dates into one resampling unit, which is
+    the honest choice whenever adjacent dates share part of their forward label
+    window.
     """
     rng = np.random.default_rng(seed)
     sub = frame.loc[mask, ["date", "label_high"]]
     if sub.empty:
         return float("nan"), float("nan")
     groups = {d: g["label_high"].to_numpy("float64") for d, g in sub.groupby("date")}
-    keys = list(groups)
+    if universe_dates is None:
+        keys = list(groups)
+    else:
+        # Every date in the universe is a resampling unit, including those that
+        # carry no signal (an empty array contributes zero to both sums).
+        keys = [d for d in np.sort(np.asarray(universe_dates))]
     if len(keys) < 2:
         return float("nan"), float("nan")
+    empty = np.empty(0, dtype="float64")
+    blocks = [groups.get(k, empty) for k in keys]
+    n_units = len(blocks)
     stats = np.empty(n_boot)
     for i in range(n_boot):
-        pick = rng.choice(len(keys), size=len(keys), replace=True)
-        vals = np.concatenate([groups[keys[j]] for j in pick])
+        if block <= 1:
+            pick = rng.integers(0, n_units, size=n_units)
+            chunks = [blocks[j] for j in pick]
+        else:
+            n_blocks = int(np.ceil(n_units / block))
+            starts = rng.integers(0, n_units, size=n_blocks)
+            chunks = []
+            for s in starts:
+                for off in range(block):
+                    chunks.append(blocks[(s + off) % n_units])
+        vals = np.concatenate(chunks) if chunks else empty
         stats[i] = vals.mean() if len(vals) else np.nan
     return float(np.nanpercentile(stats, 2.5)), float(np.nanpercentile(stats, 97.5))
 
@@ -199,7 +229,24 @@ def main() -> None:
     base = float(y_te.mean())
     prec = hits / n if n else float("nan")
     lo, hi = wilson(hits, n)
-    clo, chi = date_clustered_ci(te, pred)
+    # Resample over the FULL holdout test calendar, not just the dates that
+    # happened to produce a signal. Passing only signal-bearing dates silently
+    # drops the zero-signal sessions from the resampling universe -- about 8 of
+    # ~158 holdout sessions -- and understates the interval. crosssec's
+    # implementation documents the full calendar as the conservative choice; this
+    # now does the same.
+    #
+    # block=5 because the label window is 10 sessions and consecutive sessions
+    # overlap it, so adjacent dates share forward information and are not
+    # independent clusters. Block 1 would understate the interval again.
+    universe = np.sort(te["date"].unique())
+    clo, chi = date_clustered_ci(te, pred, universe_dates=universe, block=5)
+    # Block 1 kept alongside for comparison, so the effect of the block choice is
+    # visible rather than asserted.
+    clo1, chi1 = date_clustered_ci(te, pred, universe_dates=universe, block=1)
+    # The previous definition, kept so the correction is measurable rather than
+    # asserted: universe = only the dates that carried a signal.
+    clo_sig, chi_sig = date_clustered_ci(te, pred, block=1)
 
     print("\n" + "=" * 74)
     print("FINAL HOLDOUT — evaluated once, no configuration search")
@@ -211,7 +258,12 @@ def main() -> None:
     print(f"PRECISION                              : {prec*100:.2f}%")
     print(f"lift over base rate                    : {prec/base:.2f}x")
     print(f"Wilson 95% interval                    : [{lo*100:.2f}%, {hi*100:.2f}%]")
-    print(f"date-clustered 95% interval            : [{clo*100:.2f}%, {chi*100:.2f}%]")
+    print(f"date-clustered 95% (full calendar, b=5): [{clo*100:.2f}%, {chi*100:.2f}%]")
+    print(f"date-clustered 95% (full calendar, b=1): [{clo1*100:.2f}%, {chi1*100:.2f}%]")
+    print(f"date-clustered 95% (signal dates only) : "
+          f"[{clo_sig*100:.2f}%, {chi_sig*100:.2f}%]  <- old definition")
+    print(f"holdout calendar sessions              : {len(universe):,} "
+          f"({len(universe) - te.loc[pred, 'date'].nunique():,} carry no signal)")
     print(f"distinct stocks                        : {te.loc[pred, 'code'].nunique():,}")
     print(f"distinct dates                         : {te.loc[pred, 'date'].nunique():,}")
     if n:
@@ -249,6 +301,16 @@ def main() -> None:
         "lift": float(prec / base) if base else None,
         "wilson_95": [lo, hi],
         "date_clustered_95": [clo, chi],
+        "date_clustered_method": (
+            "resampling units are ALL holdout calendar sessions "
+            f"({len(universe)}), including the "
+            f"{len(universe) - te.loc[pred, 'date'].nunique()} that carried no "
+            "signal; block=5 because the 10-session label window makes adjacent "
+            "sessions non-independent"
+        ),
+        "date_clustered_95_block1": [clo1, chi1],
+        "date_clustered_95_signal_dates_only": [clo_sig, chi_sig],
+        "holdout_calendar_sessions": int(len(universe)),
         "distinct_stocks": int(te.loc[pred, "code"].nunique()) if n else 0,
         "distinct_dates": int(te.loc[pred, "date"].nunique()) if n else 0,
         "note": (

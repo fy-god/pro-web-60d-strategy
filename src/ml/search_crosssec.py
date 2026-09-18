@@ -637,10 +637,12 @@ def pool_with_inference(folds: list[dict], n_boot: int, seed: int, block: int = 
         ),
         "note": (
             "Paired date-clustered test of top-K against the harness baseline's "
-            "OWN mask. Not a matched-budget comparison: top-K publishes fewer "
-            "signals than rate 0.02, so a positive delta here reflects both "
-            "ranking quality and the stricter operating point. The decisive "
-            "equal-budget comparison is paired_vs_oracle in matched_budget."
+            "OWN mask. Not a matched-budget comparison: the two masks publish "
+            f"{'more' if int(mask_eq.sum()) > int(n_base) else 'fewer'} signals "
+            f"at top-K ({int(mask_eq.sum()):,}) than the baseline "
+            f"({int(n_base):,}), so a positive delta here reflects both ranking "
+            "quality and the different operating point. The decisive equal-budget "
+            "comparison is paired_vs_oracle in matched_budget."
         ),
     }
     res["equal_budget_vs_baseline"]["topk_dates_ci"] = xs.date_clustered_bootstrap(
@@ -1037,6 +1039,22 @@ def main() -> None:
 
     if not args.no_save:
         tag = f"_{args.tag}" if args.tag else ""
+        # Derive the fold count from the results rather than asserting one. This
+        # was hard-coded to 5 while every result recorded n_folds = 4 (the fold
+        # list is built with n_folds=5 but a fold whose test block is too thin to
+        # train on is dropped), so a reader taking `folds` at face value
+        # overstated the count by one.
+        observed = [
+            r.get("n_folds") for r in payload["results"].values()
+            if isinstance(r, dict) and r.get("n_folds")
+        ]
+        payload["folds"] = max(observed) if observed else None
+        payload["folds_requested"] = 5
+        if observed and len(set(observed)) > 1:
+            payload["folds_note"] = (
+                f"configs completed differing fold counts {sorted(set(observed))}; "
+                f"`folds` is the maximum"
+            )
         path = wf.save_report(f"crosssec{tag}", payload)
         print(f"\nwrote {path}")
 

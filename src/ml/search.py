@@ -159,7 +159,7 @@ _MATRIX: pd.DataFrame | None = None
 _FOLDS: list | None = None
 
 
-def _init_worker(matrix_path: str, n_folds: int) -> None:
+def _init_worker(matrix_path: str, n_folds: int, horizon: int, embargo: int) -> None:
     """Load the matrix and build the fold list ONCE per worker process.
 
     Reading an 82-column, 2.68M-row parquet inside every task dominated the run:
@@ -170,8 +170,13 @@ def _init_worker(matrix_path: str, n_folds: int) -> None:
     global _MATRIX, _FOLDS
     frame = pd.read_parquet(matrix_path)
     sessions = np.sort(frame["date"].unique())
+    # horizon and embargo arrive through initargs rather than being hard-coded.
+    # They were literals here, so `--horizon 20` would have built folds purging 10
+    # sessions against a 20-session label window, quietly letting 10 sessions of
+    # holdout prices into training. The matrices on disk are all h10, so this was
+    # latent, but it is the same class of bug concentration.py guards against.
     _FOLDS = wf.folds(
-        sessions, n_folds=n_folds, horizon=10, embargo=2,
+        sessions, n_folds=n_folds, horizon=horizon, embargo=embargo,
         min_train_sessions=150, final_holdout_start=FINAL_HOLDOUT_START,
     )
     # Pre-split indices once: boolean masking a 2.68M-row frame per fold per
@@ -212,12 +217,21 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 1))
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--horizon", type=int, default=10)
+    ap.add_argument("--embargo", type=int, default=2,
+                    help="sessions of embargo after each fold boundary; must be "
+                         "passed with --horizon so the purge matches the label "
+                         "window actually used")
     ap.add_argument("--target", type=int, default=30)
     ap.add_argument("--stride", type=int, default=None,
                     help="matrix stride; default resolves to the densest grid "
                          "that exists so reports are not silently mixed")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0, help="cap configs (0 = all)")
+    ap.add_argument("--min-signals", type=int, default=250,
+                    help="out-of-sample signal floor a config must clear across "
+                         "every fold to be RANKED (the unfiltered list is kept "
+                         "under ranked_unfiltered). Guards against a few-signal "
+                         "config topping the table on noise.")
     args = ap.parse_args()
 
     # Resolve the grid explicitly rather than defaulting to a number. Reports
@@ -280,7 +294,7 @@ def main() -> None:
     with ProcessPoolExecutor(
         max_workers=args.workers,
         initializer=_init_worker,
-        initargs=(str(matrix), args.folds),
+        initargs=(str(matrix), args.folds, args.horizon, args.embargo),
     ) as pool:
         futures = {pool.submit(_run_one, job): job[0]["name"] for job in jobs}
         for i, future in enumerate(as_completed(futures), 1):
@@ -299,22 +313,79 @@ def main() -> None:
                 )
 
     ok = [r for r in results if "error" not in r]
+    # Rank on a row that could actually be traded.
+    #
+    # Ranking the raw list by precision alone put `wide_hgb_13` first in the wide
+    # grid: 33.33% precision on THREE signals, having completed only 2 of 4 folds.
+    # A binomial standard error at n=3, p=1/3 is 0.272, so that row is
+    # indistinguishable from noise and cannot support any claim. A minimum signal
+    # floor and a requirement that the config completed every fold are applied
+    # before the sort; the unfiltered list is kept under "ranked_unfiltered" so
+    # nothing is hidden.
+    # A config that completed only 2 of 5 folds cannot be rank 1 either. The
+    # threshold is `args.folds - 1`, matching the `full_fold` definition below:
+    # `n_folds` counts folds that produced at least one signal, and a fold with
+    # zero signals is dropped by summarise(), so requiring an exact match would
+    # exclude every config on a grid where any fold is thin.
+    min_signals = args.min_signals
+    min_folds = args.folds - 1
     ok.sort(key=lambda r: (r["oos_precision"] if np.isfinite(r["oos_precision"]) else -1),
             reverse=True)
+    ranked_unfiltered = list(ok)
+    eligible = [
+        r for r in ok
+        if r.get("oos_signals", 0) >= min_signals
+        and r.get("n_folds", 0) >= min_folds
+    ]
+    if eligible:
+        ok = eligible
+    else:
+        # Never silently produce an empty ranking: say why and fall back, so a
+        # threshold that is too high is visible rather than yielding a report
+        # with no ranked rows.
+        print(f"WARNING: no config reached {min_signals} signals across at least "
+              f"{min_folds} folds; ranking the unfiltered list instead",
+              flush=True)
     # The pooled base rate is a property of the GRID and the fold split, so it is
     # the same for every config that completed all folds. Earlier this field was
     # `ok[0]["oos_base_rate"]` — the rank-1 row's OWN base rate. When that row
     # happened to be a degenerate config that completed only 2 of 4 folds, the
     # report-level field advertised a base rate belonging to two folds, and a
-    # reader pairing it with a 4-fold row overstated lift by up to 17.9%. Derive
-    # it from the full-fold rows so the name matches the meaning, and keep the
-    # per-row value where it belongs.
+    # reader pairing it with a 4-fold row overstated lift by up to 17.9%.
+    #
+    # Filter to full-fold rows AND to a single label. The base rate is a property
+    # of the label as much as of the grid: in the wide grid `label_close` rows sit
+    # at 0.02649 and `label_high` rows at 0.04088, so a median across both is a
+    # number belonging to neither, while looking perfectly plausible because it
+    # lands on a real row's value. Grouping by label keeps each scalar meaningful;
+    # the per-label breakdown is published alongside it so a mixed grid is visible
+    # rather than averaged away.
     full_fold = [r for r in ok if r.get("n_folds", 0) >= args.folds - 1
                  and r.get("oos_signals", 0) >= 100 and r.get("oos_base_rate")]
-    pooled_base = (
-        float(statistics.median([r["oos_base_rate"] for r in full_fold]))
-        if full_fold else None
+    by_label: dict[str, list[float]] = {}
+    for r in full_fold:
+        by_label.setdefault(str(r.get("label")), []).append(float(r["oos_base_rate"]))
+    basis = (
+        f"median over {len(full_fold)} config(s) with n_folds >= "
+        f"{args.folds - 1} and >= 100 signals"
     )
+    if len(by_label) > 1:
+        # More than one label present: publish the breakdown and take the median
+        # of the largest group, so the top-level scalar still means something.
+        biggest = max(by_label, key=lambda k: len(by_label[k]))
+        pooled_base = float(statistics.median(by_label[biggest]))
+        basis += (
+            f"; the set spans {len(by_label)} labels "
+            f"({ {k: round(v[0], 8) for k, v in sorted(by_label.items())} }), so "
+            f"this is the median over '{biggest}' "
+            f"({len(by_label[biggest])} configs); per-label values live under "
+            f"oos_base_rate_by_label"
+        )
+    else:
+        pooled_base = (
+            float(statistics.median([r["oos_base_rate"] for r in full_fold]))
+            if full_fold else None
+        )
     payload = {
         "preset": args.preset,
         "stride": stride,
@@ -323,14 +394,20 @@ def main() -> None:
         "final_holdout_start": FINAL_HOLDOUT_START,
         "n_configs": len(configs),
         "n_failed": len(results) - len(ok),
+        "min_signals": min_signals,
+        "ranked_basis": (
+            f"{len(ok)} config(s) with >= {min_signals} out-of-sample signals "
+            f"across at least {min_folds} folds, sorted by out-of-sample precision"
+        ),
         # Report-level pooled base rate over configs that completed every fold.
         "oos_base_rate": pooled_base,
-        "oos_base_rate_basis": (
-            f"median over {len(full_fold)} config(s) with n_folds >= "
-            f"{args.folds - 1} and >= 100 signals; per-row values differ by "
-            f"label and fold count"
-        ),
+        "oos_base_rate_by_label": {
+            k: float(statistics.median(v)) for k, v in sorted(by_label.items())
+        },
+        "oos_base_rate_basis": basis,
         "ranked": ok,
+        # Everything that ran, in the same order, so the filter hides nothing.
+        "ranked_unfiltered": ranked_unfiltered,
         "failed": [r for r in results if "error" in r],
     }
     path = wf.save_report(f"search_{args.preset}", payload)

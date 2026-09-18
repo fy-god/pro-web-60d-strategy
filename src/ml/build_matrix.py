@@ -121,9 +121,12 @@ def add_price_features(frame: pd.DataFrame) -> dict[str, np.ndarray]:
     frame["_ret1"] = f["ret1"]
     for window in (5, 10, 20, 60):
         f[f"vol{window}"] = _groll(frame, "_ret1", window, "std")
-    # Log ratio: is short-term vol expanding or contracting?
-    f["vol_ratio_5_20"] = (f["vol5"] / (f["vol20"] + EPS)).astype("float32")
-    f["vol_ratio_20_60"] = (f["vol20"] / (f["vol60"] + EPS)).astype("float32")
+    # NB: `vol_ratio_5_20`/`vol_ratio_20_60` are defined further down from the
+    # volume moving averages, not from these return volatilities. A duplicate
+    # definition here (return-vol ratio) was overwritten before anything read it,
+    # so it was dead code that read as the live definition and would mislead the
+    # next editor about which quantity the feature holds. Removed: no numeric
+    # effect, the surviving volume-based version is unchanged.
 
     # --- true range and ATR, expressed as a fraction of price so it is
     # comparable across stocks and across time.
