@@ -4,19 +4,12 @@ _Written automatically every four hours by `scripts/scheduled_report_audit.py`. 
 
 | | |
 |---|---|
-| Last run (local) | 2026-09-18 23:15:02 |
+| Last run (local) | 2026-09-19 01:58:54 |
 | Verdict | **PASS** |
 | Consistency check | exit code 0 |
 | Checks | 629 checks run, 0 problem(s) |
-| Remote drift | 2 path(s) differ from origin/main |
-| Detail log | `logs/report_audit/audit_2026-09-18_231502.log` (local, not committed) |
-
-## Remote drift
-
-2 path(s) differ from origin/main:
-
-- `docs/audits/expert-ml/2026-09-18_23-03-03_JST.md`
-- `docs/audits/expert-ml/LATEST.md`
+| Remote drift | 0 path(s) differ from origin/main |
+| Detail log | `logs/report_audit/audit_2026-09-19_015854.log` (local, not committed) |
 
 ## Headline
 
