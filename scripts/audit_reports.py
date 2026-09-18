@@ -1547,6 +1547,85 @@ def check_frontier(f: Findings) -> None:
                         f"({topk_p:.6f}/{oracle_p:.6f})")
 
 
+    # ------------------------------------------------------------------
+    # TARGET_70PCT.md section 7: the null battery.
+    #
+    # The review found this table in no check. It carries the validation claim
+    # the whole document rests on -- that the harness detects nothing where
+    # nothing is planted and detects a planted signal -- so its rows are tied to
+    # outputs/ml/audit/nulls_audit.json here. The real control's base rate and
+    # lift come from `pooled_base_rate` (ratio of sums) while the null rows use
+    # `oos_base_rate`; both are present in the report and the document now marks
+    # which is which, so the check accepts either basis but requires the value to
+    # be one of them.
+    # ------------------------------------------------------------------
+    nulls_path = ROOT / "outputs" / "ml" / "audit" / "nulls_audit.json"
+    if nulls_path.exists() and text:
+        try:
+            nulls = json.loads(nulls_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            LOAD_ERRORS.append(f"nulls_audit.json is not readable JSON: {exc}")
+            nulls = None
+        if nulls:
+            nrows = {r.get("config"): r for r in (nulls.get("results") or [])}
+            # The battery's own composition, which both documents now state.
+            n_variants = len(nrows)
+            n_null = sum(1 for c in nrows
+                         if not str(c).startswith(("real", "oracle_")))
+            n_pos = sum(1 for c in nrows if str(c).startswith("oracle_"))
+            f.check(n_variants == 14 and n_null == 11 and n_pos == 2,
+                    f"nulls_audit.json holds 1 real + {n_null} null variants + "
+                    f"{n_pos} positive controls ({n_variants} total)")
+            f.check(f"{n_null} null variants" in text
+                    or f"eleven different ways" in text,
+                    f"TARGET_70PCT.md states the null-variant count "
+                    f"({n_null}), not 'ten'")
+            real = nrows.get("real")
+            if real:
+                pooled = real.get("pooled_base_rate")
+                flat = real.get("oos_base_rate")
+                found = None
+                for line in text.splitlines():
+                    if "real (control)" in line:
+                        m = re.search(r"\|\s*([\d.]+)%\s*[†|]", line)
+                        if m:
+                            found = float(m.group(1))
+                        break
+                f.check(found is not None,
+                        "TARGET_70PCT.md section 7 real-control row parses")
+                if found is not None:
+                    f.check(
+                        any(abs(found - (v or 0) * 100) < 0.005
+                            for v in (pooled, flat)),
+                        f"TARGET_70PCT.md real-control base rate {found}% is one "
+                        f"of the report's two bases "
+                        f"(pooled {pooled*100 if pooled else 0:.4f}%, "
+                        f"unweighted {flat*100 if flat else 0:.4f}%)",
+                    )
+                # The lift must correspond to the base rate printed beside it.
+                doc_lift = None
+                for line in text.splitlines():
+                    if "real (control)" in line:
+                        m = re.search(r"\*\*([\d.]+)×\*\*", line)
+                        if m:
+                            doc_lift = float(m.group(1))
+                        break
+                if doc_lift is not None and found is not None:
+                    f.check(
+                        abs(real["oos_precision"] * 100 / found - doc_lift) < 0.01,
+                        f"TARGET_70PCT.md real-control lift {doc_lift}× equals "
+                        f"15.98%/{found}% = "
+                        f"{real['oos_precision']*100/found:.2f}×",
+                    )
+            # Every positive control must be present with its own precision.
+            for cid, want in (("oracle_strong", 39.05), ("oracle_weak", 19.42)):
+                r = nrows.get(cid)
+                if r:
+                    f.check(f"{r['oos_precision']*100:.2f}%" in text,
+                            f"TARGET_70PCT.md states {cid} precision "
+                            f"{r['oos_precision']*100:.2f}%")
+
+
 # ---------------------------------------------------------------------------
 # 5. Markdown structure
 # ---------------------------------------------------------------------------

@@ -336,7 +336,7 @@ controls** that prove the harness *can* detect a real signal when one is planted
 
 | Variant | OOS precision | Base rate | Lift | Folds above base |
 | --- | ---: | ---: | ---: | ---: |
-| **real (control)** | **15.98%** | 4.09% | **3.91×** | **4/4** |
+| **real (control)** | **15.98%** | 4.09%† | **3.91×**† | **4/4** |
 | permuted labels, global (3 seeds) | 2.99–3.32% | ~3.1% | 0.98–1.08× | 1–3/4 |
 | permuted within each session | 6.28% | 5.48% | 1.15× | 1/2 |
 | i.i.d. Bernoulli labels | 3.38% | 3.06% | 1.10× | 4/4 |
@@ -347,6 +347,15 @@ controls** that prove the harness *can* detect a real signal when one is planted
 | test labels shuffled only | 4.97% | 4.12% | 1.21× | 3/4 |
 | **POSITIVE CONTROL: `fwd_max_high` + noise** | **39.05%** | 4.12% | **9.47×** | **4/4** |
 | **POSITIVE CONTROL: `label_high` + noise** | **19.42%** | 4.12% | **4.71×** | **4/4** |
+
+† The real control's base rate and lift use the **ratio-of-sums** pooling (total
+positives / total test rows, 4.0878%), which the correction blockquote below
+establishes as the right one; the null rows and both positive controls below use
+the report's per-variant `oos_base_rate` (unweighted mean of per-fold rates,
+4.1243% for the real row). The two bases differ by 0.036 pp and the two lifts by
+0.04, so the distinction does not change any conclusion — but the two must not be
+read as one column. `nulls_audit.json` carries both as `pooled_base_rate` and
+`oos_base_rate`.
 
 **Every null collapses to the base rate (lift 0.88–1.21), and both positive
 controls fire strongly (9.47× and 4.71× with 4/4 folds).** This is the decisive
