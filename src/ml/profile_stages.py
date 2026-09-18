@@ -18,7 +18,7 @@ from src.ml import walkforward as wf
 
 def main() -> None:
     t0 = time.perf_counter()
-    frame = wf.load_matrix()
+    frame = wf.load_matrix()  # resolves to the densest grid; see resolve_stride
     t_load = time.perf_counter() - t0
     print(f"load matrix          {t_load:6.2f}s  {len(frame):,} rows x {len(frame.columns)} cols")
 

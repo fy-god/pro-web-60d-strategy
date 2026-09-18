@@ -1,6 +1,6 @@
 {
-  "path": "D:\\ccc\\pro-web-60d-strategy\\outputs\\ml\\matrix_h10_t30_s5.parquet",
-  "rows": 536143,
+  "path": "D:\\ccc\\pro-web-60d-strategy\\outputs\\ml\\matrix_h10_t30_s1.parquet",
+  "rows": 2680715,
   "stocks": 3193,
   "sessions": 887,
   "features": 82,
@@ -90,8 +90,8 @@
   ],
   "horizon": 10,
   "target": 0.3,
-  "stride": 5,
-  "base_rate_high": 0.030916061252355576,
-  "base_rate_close": 0.020303647965192795,
+  "stride": 1,
+  "base_rate_high": 0.030893409624695778,
+  "base_rate_close": 0.020291944965720177,
   "resolved_share": 0.9880890250205994
 }

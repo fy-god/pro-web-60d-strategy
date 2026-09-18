@@ -300,7 +300,13 @@ def add_cross_sectional(frame: pd.DataFrame, base: dict[str, np.ndarray]) -> dic
     return f
 
 
-def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.DataFrame:
+def build(
+    panel: pd.DataFrame,
+    horizon: int,
+    target: float,
+    stride: int,
+    stride_mode: str = "row",
+) -> pd.DataFrame:
     """Assemble the full feature matrix and both label definitions."""
     from src import labels as label_mod
 
@@ -335,6 +341,15 @@ def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.D
     out["label_high"] = labelled["label_bull"].to_numpy("float32")
     out["resolved"] = labelled["label_resolved"].to_numpy("float32")
 
+    # Keep the true float64 entry price for label arithmetic. `entry_open` above
+    # is deliberately float32 because it is a feature-layer convenience column,
+    # but casting it back to float64 downstream does NOT recover the lost
+    # precision: float32(9.99) is 9.989999771118164. A review correctly identified
+    # that the close-label comparison below was doing exactly that round trip, so a
+    # price ratio sitting exactly on the target boundary could flip. Label
+    # decisions now use this full-precision vector and never touch `entry_open`.
+    entry_f64 = labelled["entry_open"].to_numpy("float64")
+
     # forward maximum close, same entry and window.
     #
     # The label must be censored on the SAME condition as `resolved` (a full
@@ -362,23 +377,88 @@ def build(panel: pd.DataFrame, horizon: int, target: float, stride: int) -> pd.D
         bars_seen += ok.astype("int32")
 
     mature = bars_seen >= horizon
+
+    # A non-positive entry price is a data error, not something to paper over with
+    # an epsilon: adding EPS to the denominator silently shifts EVERY boundary to
+    # protect against a case that should simply be reported. Flag it instead.
+    #
+    # `entry_open` is the NEXT bar's open, so the final bar of every stock has no
+    # entry price and is legitimately NaN. A first version of this check used
+    # `~(entry > 0)`, which is True for NaN and so reported one "bad" row per
+    # stock (3,193 of them) that were not bad at all. Non-finite and non-positive
+    # are now counted separately, and only the latter is a data error.
+    not_finite = ~np.isfinite(entry_f64)
+    non_positive = np.isfinite(entry_f64) & (entry_f64 <= 0)
+    n_bad = int(non_positive.sum())
+    if n_bad:
+        print(f"  WARNING {n_bad} row(s) have a finite non-positive entry price; "
+              f"their labels are censored rather than computed")
+    n_open_end = int(not_finite.sum())
+    if n_open_end:
+        print(f"  note: {n_open_end} row(s) have no entry price (final bar of a "
+              f"stock); labels censored as unresolved")
+    usable = mature & ~not_finite & ~non_positive & np.isfinite(run)
+
+    # Direct price comparison: `future_high > entry * (1 + target)`. This is the
+    # definition stated in the module docstring, evaluated in float64 on the raw
+    # prices, so no ratio is formed and no epsilon is needed.
+    threshold_price = entry_f64 * (1.0 + target)
     out["fwd_max_close"] = np.where(
-        mature, run / (out["entry_open"].to_numpy("float64") + EPS) - 1.0, np.nan
+        usable, run / entry_f64 - 1.0, np.nan
     ).astype("float32")
-    # Compare in float64 against a tolerance-tightened target. The audit found 3
-    # rows where the forward ratio was 0.29999999999938076 but the float32
-    # round-trip of the ratio made `> 0.30` evaluate True. Using the float64
-    # ratio directly removes that artifact.
-    close_ratio = run / (out["entry_open"].to_numpy("float64") + EPS) - 1.0
     with np.errstate(invalid="ignore"):
+        # The high-based label comes from src.labels (bit-identical to the
+        # published definition); the close-based one is computed here the same
+        # way, by comparing prices rather than a rounded ratio.
         out["label_close"] = np.where(
-            mature,
-            (close_ratio > target).astype("float32"),
-            np.nan,
+            usable, (run > threshold_price).astype("float32"), np.nan
         ).astype("float32")
 
     if stride > 1:
-        out = out.iloc[::stride].reset_index(drop=True)
+        # Two subsampling modes, and the difference matters enough to be explicit.
+        #
+        # `row` (default) reproduces every published number in this repository.
+        # It takes every stride-th ROW of the (code, date)-sorted frame. Because
+        # stocks have unequal row counts, each stock lands on a different date
+        # phase: measured on the full panel at stride 5 this keeps all 887
+        # sessions but only ~604 of ~3,022 stocks per session, with 660 distinct
+        # per-stock date sets.
+        #
+        # That phase spread is worth being honest about. It is NOT a label or
+        # feature bias: every feature and both labels are computed on the full
+        # panel *before* subsampling, so the retained rows are a plain thinning
+        # of correctly-computed data and the label distribution is essentially
+        # unchanged (base_rate_high 0.030916 subsampled vs 0.030893 full, a
+        # 0.07% relative difference). What it does do is make any *per-session
+        # cross-sectional* statement weaker, because "top-1 that day" is the best
+        # of ~604 sampled names rather than of the full ~3,022. Results of that
+        # kind should be re-run at `--stride 1` before being relied on.
+        #
+        # `session` instead keeps every stride-th SESSION, so each retained day
+        # carries a complete cross-section and every stock shares one date set.
+        # It is the cleaner sample for cross-sectional work, but it costs
+        # coverage: at stride 5 it keeps only 178 of 887 sessions, which is below
+        # the 150-session warm-up plus purge/embargo that
+        # `walkforward.folds` needs, so the walk-forward raises rather than
+        # silently producing fewer folds.
+        if stride_mode == "session":
+            sessions = np.sort(out["date"].unique())
+            keep_sessions = set(sessions[::stride])
+            n_before = len(out)
+            out = out[out["date"].isin(keep_sessions)].reset_index(drop=True)
+            print(f"  stride {stride} (session grid): kept {len(keep_sessions):,} "
+                  f"of {len(sessions):,} sessions ({n_before:,} -> {len(out):,} "
+                  f"rows); every stock shares the same retained dates")
+        else:
+            n_before = len(out)
+            n_sess_before = out["date"].nunique()
+            out = out.iloc[::stride].reset_index(drop=True)
+            per_sess = out.groupby("date").size()
+            print(f"  stride {stride} (row grid): {n_before:,} -> {len(out):,} "
+                  f"rows, {out['date'].nunique():,} of {n_sess_before:,} sessions "
+                  f"kept, ~{per_sess.mean():.0f} stocks per retained session "
+                  f"(phases differ per stock; use --stride 1 for full "
+                  f"cross-sections)")
 
     for tmp in ("_ret1", "_tr", "_rng", "_lu", "_up", "_k", "_j", "_mkt1"):
         if tmp in out.columns:
@@ -391,14 +471,28 @@ def main() -> None:
     ap.add_argument("--stride", type=int, default=1)
     ap.add_argument("--horizon", type=int, default=10)
     ap.add_argument("--target", type=float, default=0.30)
+    ap.add_argument(
+        "--stride-mode", choices=("row", "session"), default="row",
+        help="how --stride subsamples: 'row' takes every stride-th row and "
+             "reproduces every published number; 'session' keeps whole sessions "
+             "with complete cross-sections but drops far more of the timeline",
+    )
     args = ap.parse_args()
 
     panel = data_pipeline.load_panel()
-    matrix = build(panel, args.horizon, args.target, args.stride)
+    matrix = build(panel, args.horizon, args.target, args.stride,
+                   stride_mode=args.stride_mode)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     # Stride is part of the identity: a stride-5 matrix is a different sample of
-    # the same panel and must never silently overwrite the dense one.
-    stem = f"matrix_h{args.horizon}_t{int(args.target*100)}_s{args.stride}"
+    # the same panel and must never silently overwrite the dense one. The mode is
+    # part of the name too, because a session-grid stride-5 matrix is a different
+    # sample again and would otherwise collide with the row-grid one under the
+    # same name — which is exactly how a session-grid matrix once overwrote the
+    # matrix every published report was built from.
+    suffix = f"_s{args.stride}"
+    if args.stride > 1 and args.stride_mode != "row":
+        suffix += f"_{args.stride_mode}"
+    stem = f"matrix_h{args.horizon}_t{int(args.target*100)}{suffix}"
     path = OUT_DIR / f"{stem}.parquet"
     matrix.to_parquet(path, index=False)
 

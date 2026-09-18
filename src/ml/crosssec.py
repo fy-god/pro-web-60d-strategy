@@ -45,7 +45,7 @@ PERCENTILE_GRID = (0.995, 0.999, 0.9995, 0.9999)
 # ---------------------------------------------------------------------------
 def load() -> pd.DataFrame:
     """The shared feature matrix. Thin alias so callers import one module."""
-    return wf.load_matrix()
+    return wf.load_matrix()  # resolves to the densest grid; see resolve_stride
 
 
 def build_folds(
