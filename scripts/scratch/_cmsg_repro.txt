@@ -1,0 +1,44 @@
+Make the project's own correctness gate reproducible off this machine
+
+Two review rounds raised the same HIGH finding: no dependency manifest, no stated
+Python version, and no obtainable input data -- so a third party could not
+reproduce anything. Concretely:
+
+  * `src/validate_cards.py` read the frozen 100-card bundle from a hardcoded
+    `D:\xm\exports\Luna_Max_Kline_Practice_Web_Pro_20260818\...` path. That gate
+    is the repository's own precondition for trusting every other number ("the
+    vendored strategy source is unmodified"), and it could not run anywhere but
+    this machine.
+  * There was no requirements.txt, pyproject.toml, setup.py or any other manifest;
+    README section 7 said only "Requires pandas, numpy, scikit-learn, pyarrow,
+    matplotlib" with no versions, while the ML reports are sensitive to
+    scikit-learn's histogram binning.
+  * The raw OHLCV source is a hardcoded D:\xm default too.
+
+FIXED
+
+  * `data/cards_100/cards.json` + `outcomes.json` are vendored (1.6 MB, well inside
+    GitHub's limits) and the path is overridable via `WEBPRO_CARD_BUNDLE`. Verified
+    by running the gate from the vendored copy: **11/11 published selectors
+    reproduced exactly**, same as before.
+  * `.gitignore` explicitly un-ignores `data/cards_100/*.json`. It has to, because
+    `data/*.json` is ignored wholesale ("large, reproducible from source") -- and
+    these two are exactly the files that are NOT reproducible from source.
+  * `requirements.txt` pins the versions the shipped reports came from, measured
+    from the actual environment: pandas 3.0.2, numpy 2.4.4, scikit-learn 1.8.0,
+    pyarrow 20.0.0, scipy 1.17.1, matplotlib 3.10.8, pytest 9.1.1, on Python
+    3.13.12.
+  * `REPRODUCIBILITY.md` splits the work into a Tier 1 that needs no market data
+    (`pytest`, `validate_cards`, `audit_reports` -- all runnable from a fresh
+    clone) and a Tier 2 that needs the raw source via `PWS_DATA_ROOT`, and states
+    plainly what cannot be reproduced: the raw panel, and the 2026 holdout's
+    pristine-lockbox property (it is labelled
+    `historical_holdout_with_prior_project_exposure`).
+
+New audit bindings make all of this enforceable rather than declarative: the
+manifest must exist and name every imported third-party package, the vendored
+bundle must exist and be readable, `validate_cards.py` must not default to a
+hardcoded D:\xm path and must accept an override, and REPRODUCIBILITY.md must
+state the Python version and name the correctness gate.
+
+581 checks, 0 problems.

@@ -2470,6 +2470,65 @@ def check_frontier(f: Findings) -> None:
                 f"({ {k: sorted(v) for k, v in named.items()} })")
 
     # ------------------------------------------------------------------
+    # A third party must be able to run the project's own correctness gate and
+    # its audit. Two review rounds raised this as HIGH: there was no dependency
+    # manifest, no stated Python version, and `src/validate_cards.py` read the
+    # frozen 100-card bundle from a hardcoded `D:\xm\...` path, so the one check
+    # that proves the vendored strategy source is unmodified could not run off
+    # this machine. The bundle's two required files (1.6 MB) are now vendored
+    # under data/cards_100/ and the path is overridable.
+    # ------------------------------------------------------------------
+    f.check((ROOT / "requirements.txt").exists(),
+            "a dependency manifest exists (requirements.txt)")
+    f.check((ROOT / "REPRODUCIBILITY.md").exists(),
+            "the reproducibility requirements are documented "
+            "(REPRODUCIBILITY.md)")
+    req = (ROOT / "requirements.txt")
+    if req.exists():
+        rtext_req = req.read_text(encoding="utf-8")
+        for pkg in ("pandas", "numpy", "scikit-learn", "pyarrow", "scipy",
+                    "matplotlib"):
+            f.check(pkg in rtext_req,
+                    f"requirements.txt names {pkg}, which the shipped code "
+                    f"imports")
+    # The vendored bundle must be present AND usable, i.e. the gate must be able
+    # to read it without any environment variable set.
+    cards = ROOT / "data" / "cards_100"
+    vc = ROOT / "src" / "validate_cards.py"
+    if vc.exists():
+        vsrc = vc.read_text(encoding="utf-8")
+        f.check("WEBPRO_CARD_BUNDLE" in vsrc,
+                "src/validate_cards.py lets the card bundle path be overridden "
+                "rather than hardcoding one machine's directory")
+        # The retired hardcoded path must be gone from the DEFAULT. Asserting on
+        # the literal is safe because the comment explains the change without
+        # quoting the path.
+        f.check(r"D:\xm\exports" not in vsrc,
+                "src/validate_cards.py no longer defaults to a hardcoded D:\\xm "
+                "path")
+    f.check(cards.exists(), "the 100-card bundle is vendored (data/cards_100/)")
+    for name in ("cards.json", "outcomes.json"):
+        p = cards / name
+        f.check(p.exists() and p.stat().st_size > 1000,
+                f"the vendored bundle carries {name}")
+    # data_pipeline may keep a default path, but it must honour PWS_DATA_ROOT,
+    # and REPRODUCIBILITY.md must tell a reader so.
+    dp = ROOT / "src" / "data_pipeline.py"
+    if dp.exists():
+        f.check("PWS_DATA_ROOT" in dp.read_text(encoding="utf-8"),
+                "src/data_pipeline.py honours PWS_DATA_ROOT for the raw source")
+    repro = ROOT / "REPRODUCIBILITY.md"
+    if repro.exists():
+        rtxt = repro.read_text(encoding="utf-8")
+        f.check("PWS_DATA_ROOT" in rtxt,
+                "REPRODUCIBILITY.md explains how to point the pipeline at a raw "
+                "source")
+        f.check("validate_cards" in rtxt,
+                "REPRODUCIBILITY.md names the correctness gate")
+        f.check("3.13" in rtxt,
+                "REPRODUCIBILITY.md states the Python version used")
+
+    # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
     #
     # The review found the 23.81%-at-462 claim -- one of the document's two

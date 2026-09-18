@@ -1,0 +1,20 @@
+# Runtime dependencies for pro-web-60d-strategy.
+#
+# Versions are the ones the published reports were actually produced with, on
+# Python 3.13.12 (see REPRODUCIBILITY.md). They are pinned with `>=` on the minor
+# series rather than `==` because the project uses only stable public APIs; if you
+# need bit-identical numbers, install these exact versions.
+#
+# There was no manifest of any kind before this file, so a third party had no
+# machine-readable statement of what to install and no way to know which versions
+# the numbers in reports/ came from.
+
+pandas>=3.0,<4
+numpy>=2.4,<3
+scikit-learn>=1.8,<2
+pyarrow>=20.0,<21
+scipy>=1.17,<2
+matplotlib>=3.10,<4
+
+# Test-only.
+pytest>=9.1,<10

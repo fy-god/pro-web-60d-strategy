@@ -17,6 +17,7 @@ Usage
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -24,9 +25,17 @@ import pandas as pd
 from experts.contracts import ExpertCard, VisibleBar
 from experts.registry import STRATEGY_IDS, get_strategy
 
+# The frozen 100-card bundle. `cards.json` and `outcomes.json` are VENDORED under
+# data/cards_100/ so this gate runs for anyone who clones the repository; before,
+# this was only a hardcoded D:\xm\ path and the project's own correctness gate
+# could not be reproduced off this machine. Override with WEBPRO_CARD_BUNDLE if
+# you have the full original bundle, which additionally holds expert_evaluation/.
+REPO_ROOT_FOR_BUNDLE = Path(__file__).resolve().parents[1]
 BUNDLE = Path(
-    r"D:\xm\exports\Luna_Max_Kline_Practice_Web_Pro_20260818"
-    r"\data\practice_sessions\practice-ffa6e671f3f5749e09338d8b"
+    os.environ.get(
+        "WEBPRO_CARD_BUNDLE",
+        str(REPO_ROOT_FOR_BUNDLE / "data" / "cards_100"),
+    )
 )
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = REPO_ROOT / "reports"
