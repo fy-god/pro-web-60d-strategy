@@ -14,7 +14,12 @@ Requirements this satisfies
 Output layout::
 
     outputs/charts_120d/<strategy_id>/<code>_<date>_<outcome>.png
-    outputs/charts_120d/<strategy_id>/index.html
+    outputs/charts_120d/index.html
+
+``index.html`` is a single page at the top level, not one per directory: it lists
+every chart grouped by strategy_id, and each group carries that strategy's
+measured hit rate, base rate and lift, so the per-strategy labelling lives in the
+index as well as in the filenames and chart titles.
 
 CPU rendering is used deliberately: charts are rendered in worker processes in
 parallel, and a GUI backend would fork a window per worker.
