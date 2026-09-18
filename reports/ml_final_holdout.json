@@ -1,5 +1,8 @@
 {
   "holdout_start": "2026-01-01",
+  "stride": 1,
+  "horizon": 10,
+  "target_pct": 30,
   "config": {
     "model": "hgb",
     "params": {
@@ -13,23 +16,30 @@
     "label": "label_high",
     "target_rate": 0.02
   },
-  "threshold": 0.16596081773308322,
-  "n_train_rows": 434383,
-  "n_holdout_rows": 95374,
-  "base_rate": 0.02909598003648793,
-  "signals": 1614,
-  "hits": 196,
-  "precision": 0.12143742255266418,
-  "lift": 4.173683869743349,
+  "threshold": 0.16580970336242568,
+  "n_train_rows": 2140262,
+  "n_holdout_rows": 476860,
+  "n_purged_rows": 31663,
+  "base_rate": 0.028958184792182193,
+  "signals": 6202,
+  "hits": 844,
+  "precision": 0.1360851338277975,
+  "lift": 4.6993668561896955,
   "wilson_95": [
-    0.10639435026425698,
-    0.1382783049573667
+    0.12777650080651828,
+    0.14484431503899095
   ],
   "date_clustered_95": [
-    0.08815834007458594,
-    0.16483272570379323
+    0.10237860520583451,
+    0.17587299375071255
   ],
-  "distinct_stocks": 802,
-  "distinct_dates": 146,
-  "note": "Single pre-committed configuration, evaluated once on sessions never used for any selection. No maximum is taken over configurations here by design."
+  "distinct_stocks": 1194,
+  "distinct_dates": 150,
+  "note": "Single pre-committed configuration, evaluated once on sessions never used for any selection. No maximum is taken over configurations here by design.",
+  "date_hhi": 0.026392023211661234,
+  "effective_dates": 37.890236454405404,
+  "busiest_date": "2026-07-20",
+  "busiest_date_signals": 421,
+  "precision_ex_busiest_date": 0.1413250302715793,
+  "signals_ex_busiest_date": 5781
 }
