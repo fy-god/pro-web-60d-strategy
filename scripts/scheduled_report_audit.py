@@ -203,7 +203,23 @@ def write_status(
 
 
 def commit_and_push(started: dt.datetime, dry_run: bool) -> str:
-    """Commit and push the status file. Returns a human-readable outcome."""
+    """Commit and push the status file. Returns a human-readable outcome.
+
+    This runs unattended every four hours, and this repository has a SECOND
+    automation writing to `main` (the expert/ML review, which commits under
+    `docs/audits/expert-ml/`). A plain `git push` therefore loses the race
+    whenever the other job commits first -- and because this function reports
+    the failure and returns, the audit's own commit is left dangling on the local
+    branch forever. Measured: the 23:15 run passed 629 checks / 0 problems,
+    committed `ad27bea` locally, and never reached GitHub; the published status
+    stayed frozen at the 21:49 file.
+
+    So: re-fetch, rebase our single status commit onto the new remote head, and
+    retry. This is safe here because we only ever commit `reports/AUDIT_STATUS.md`
+    -- a file no other job touches -- so the rebase cannot conflict, and
+    `--autostash` protects the working tree if a human is mid-edit (the audit must
+    never eat someone's uncommitted work).
+    """
     if dry_run:
         return "dry run: not committed"
     code, out = run(["git", "add", "--", "reports/AUDIT_STATUS.md"])
@@ -223,9 +239,32 @@ def commit_and_push(started: dt.datetime, dry_run: bool) -> str:
         return f"git commit failed: {out.strip()[:200]}"
 
     code, out = run(["git", "push", "origin", "HEAD:main"], timeout=300)
-    if code != 0:
-        return f"committed locally; push failed: {out.strip()[:200]}"
-    return f"committed and pushed ({msg})"
+    if code == 0:
+        return f"committed and pushed ({msg})"
+
+    # The push lost a race with the other automation (or the network blipped).
+    # Retry a couple of times, rebasing onto the fresh remote head each time.
+    last = out.strip()[:200]
+    for attempt in range(1, 4):
+        fetch_code, fetch_out = run(["git", "fetch", "origin", "main"],
+                                    timeout=300)
+        if fetch_code != 0:
+            last = f"fetch failed: {fetch_out.strip()[:200]}"
+            continue
+        # --autostash so an in-progress human edit is never destroyed.
+        rb_code, rb_out = run(["git", "rebase", "--autostash",
+                               "origin/main"], timeout=300)
+        if rb_code != 0:
+            run(["git", "rebase", "--abort"], timeout=120)
+            return (f"committed locally; rebase onto origin/main failed on "
+                    f"attempt {attempt}: {rb_out.strip()[:200]}")
+        push_code, push_out = run(["git", "push", "origin", "HEAD:main"],
+                                  timeout=300)
+        if push_code == 0:
+            return (f"committed and pushed after {attempt} rebase(s) "
+                    f"({msg})")
+        last = push_out.strip()[:200]
+    return f"committed locally; push failed after 3 rebase attempts: {last}"
 
 
 def main() -> int:

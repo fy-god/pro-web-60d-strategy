@@ -327,6 +327,137 @@ def test_kdj_flat_window_is_neutral():
     print("ok  kdj_flat_window_is_neutral")
 
 
+def test_first_hit_and_bull_use_the_same_strict_comparator():
+    """The first-hit freeze and the bull label must agree on strict ``>``.
+
+    Reported as P0 by the 18:59 expert/ML audit. ``forward_outcomes`` tested
+    ``high_d >= target`` when freezing the path-to-hit but ``forward_high > target``
+    for the label. They now share ``>``.
+
+    The counterexample, reproduced from the real function: E=10, +30% (target 13).
+    Bar 1 (d=1) has high exactly 13.00 with low 9.00; bar 2 (d=2) has high 13.10
+    with low 7.00. If the freeze stops at the exact touch it records a path low of
+    9.00, which clears the 0.8*E = 8.00 strict-low gate, so joint=1. Under a
+    consistent strict-`>` rule the first exceed is d=2, the path low is 7.00,
+    7.00 < 8.00 fails the gate, and joint must be 0.
+
+    This is not a float-measure-zero case: the two comparators differ only when a
+    high lands EXACTLY on ``entry * (1 + target_return)``, and cent-quantised
+    A-share prices make that a legal value (entry 10.00 -> target 13.00).
+    """
+    rows = [
+        # entry for row 0 is row 1's open, so hold open at 10.00 throughout.
+        {"code": "000001", "date": "2024-01-01", "open": 10.0, "high": 10.0,
+         "low": 10.0, "close": 10.0, "volume": 1000.0},
+        {"code": "000001", "date": "2024-01-02", "open": 10.0, "high": 13.00,
+         "low": 9.00, "close": 10.0, "volume": 1000.0},   # exact touch
+        {"code": "000001", "date": "2024-01-03", "open": 10.0, "high": 13.10,
+         "low": 7.00, "close": 10.0, "volume": 1000.0},   # first strict exceed
+        {"code": "000001", "date": "2024-01-04", "open": 10.0, "high": 10.0,
+         "low": 10.0, "close": 10.0, "volume": 1000.0},
+        {"code": "000001", "date": "2024-01-05", "open": 10.0, "high": 10.0,
+         "low": 10.0, "close": 10.0, "volume": 1000.0},
+        {"code": "000001", "date": "2024-01-08", "open": 10.0, "high": 10.0,
+         "low": 10.0, "close": 10.0, "volume": 1000.0},
+    ]
+    df = labels.forward_outcomes(_frame(rows), horizon=5, target_return=0.30)
+    row = df.iloc[0]
+    assert row["entry_open"] == 10.0
+    assert row["label_bull"] == 1.0, "13.10 > 13.00 must be a bull"
+    assert row["bars_to_target"] == 2.0, (
+        f"the first STRICT exceed is d=2; bars_to_target="
+        f"{row['bars_to_target']} means the freeze stopped at the ==target bar")
+    assert row["label_strict_low"] == 0.0, (
+        "low 7.00 < 0.8*10.00 fails the strict-low gate")
+    assert row["label_joint"] == 0.0, (
+        "joint must be 0: the path to the true hit breaches the strict-low gate")
+
+    # Control 1: with NO exact touch the two comparators agree, so the old code
+    # passed this shape -- which is why the defect survived.
+    rows[1]["high"] = 12.99
+    df2 = labels.forward_outcomes(_frame(rows), horizon=5, target_return=0.30)
+    assert df2.iloc[0]["bars_to_target"] == 2.0
+    assert df2.iloc[0]["label_joint"] == 0.0
+
+    # Control 2: a bar STRICTLY above the target on d=1 still freezes at d=1.
+    rows[1]["high"] = 13.01
+    rows[2]["low"] = 9.50
+    df3 = labels.forward_outcomes(_frame(rows), horizon=5, target_return=0.30)
+    assert df3.iloc[0]["bars_to_target"] == 1.0, (
+        "a strict exceed on d=1 must freeze at d=1")
+    assert df3.iloc[0]["label_joint"] == 1.0, (
+        "low 9.50 >= 8.00 keeps the strict-low gate")
+
+    # Control 3: touching the target without ever exceeding it is not a bull.
+    rows[1]["high"] = 13.00
+    rows[2]["high"] = 12.00
+    df4 = labels.forward_outcomes(_frame(rows), horizon=5, target_return=0.30)
+    assert df4.iloc[0]["label_bull"] == 0.0, (
+        "touching the target without exceeding it is not a bull label")
+    assert pd.isna(df4.iloc[0]["bars_to_target"]), (
+        "no strict exceed means no bars_to_target")
+    print("ok  first_hit_and_bull_use_the_same_strict_comparator")
+
+
+def test_scan_targets_and_baseline_select_the_same_rows():
+    """`build_scan_targets` and `population_baselines` must agree at every stride.
+
+    Reported as P0 by the 18:59 expert/ML audit. `build_scan_targets` applied
+    `_seq >= min_history` unconditionally, but `scan_all.population_baselines`
+    gated the WHOLE filter behind `if stride > 1:`, so at stride=1 the baseline also
+    counted each stock's warm-up bars -- rows the scan never visits. Measured on a
+    synthetic 2-stock x 65-bar panel: 10 scan targets vs 130 baseline rows, i.e. 120
+    warm-up rows too many, i.e. a base rate computed over a population no strategy
+    was ever scored on.
+
+    Both now call `runner.select_scan_mask`. This test asserts the two KEY SETS are
+    identical rather than trusting that both call the same helper, and covers
+    stride 5 as well -- where they already agreed, which is exactly why the shipped
+    stride-5 baseline never exposed the bug.
+    """
+    from src import runner
+
+    n = 65
+    recs = []
+    for code in ("000001", "000002"):
+        for i, d in enumerate(pd.bdate_range("2024-01-01", periods=n)):
+            recs.append({"code": code, "date": d, "open": 10.0, "high": 10.0,
+                         "low": 10.0, "close": 10.0, "volume": 1000.0})
+    panel = _frame(recs)
+
+    for stride in (1, 2, 5):
+        targets = runner.build_scan_targets(panel, stride=stride, min_history=60)
+        mask = runner.select_scan_mask(panel, stride=stride, min_history=60)
+        selected = panel[mask.to_numpy()]
+        a = set(map(tuple, targets[["code", "date"]].to_numpy()))
+        b = set(map(tuple, selected[["code", "date"]].to_numpy()))
+        assert a == b, (
+            f"stride={stride}: scan targets and population baseline selected "
+            f"different rows ({len(a)} vs {len(b)}, "
+            f"{len(a ^ b)} symmetric difference)")
+        # Count the bars that qualify: index >= 60 in a 65-bar panel, then every
+        # stride-th. Indices 60..64 survive the warm-up filter; stride thins them.
+        qualifying = [i for i in range(n) if i >= 60 and i % stride == 0]
+        expected = 2 * len(qualifying)
+        assert len(a) == expected, (
+            f"stride={stride}: expected 2 stocks x {len(qualifying)} qualifying "
+            f"bars (indices {qualifying}) = {expected}; got {len(a)}")
+        # The warm-up rows must never be counted at any stride. Counting them would
+        # add indices 0..59, i.e. far more rows than the qualifying set.
+        assert len(a) <= 2 * 5, (
+            f"stride={stride}: expected at most 2 x 5 rows when index < 60 is "
+            f"excluded; got {len(a)}, which means warm-up bars were counted")
+
+    # At stride=1 the warm-up rows must be excluded, not counted.
+    one = runner.build_scan_targets(panel, stride=1, min_history=60)
+    assert len(one) == 10, (
+        f"stride=1 must still apply the warm-up filter: expected 10 rows, got "
+        f"{len(one)} (counting warm-up would give 130)")
+    per_stock = one.groupby("code").size()
+    assert (per_stock == 5).all(), per_stock.to_dict()
+    print("ok  scan_targets_and_baseline_select_the_same_rows")
+
+
 def test_wilson_interval_sane():
     lo, hi = labels._wilson(79, 100)
     assert 0.69 < lo < 0.71, lo          # matches the project's 79/100 -> 70.02%

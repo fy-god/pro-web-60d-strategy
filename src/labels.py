@@ -135,6 +135,18 @@ def forward_outcomes(
         bull_expression = f"forward_max_return > {target_multiple - 1.0}"
     _ = bull_expression  # documented in the returned report metadata
 
+    # ONE comparator, used by BOTH the first-hit freeze below and the `bull` label.
+    # They disagreed until now: the freeze tested `high_d >= target` while `bull`
+    # tested `forward_high > target`. On a bar that only TOUCHED the threshold the
+    # freeze stopped one bar early, so `path_low_to_hit` recorded the drawdown up to
+    # the touch instead of up to the first strict exceed -- which made
+    # `label_strict_low` and `label_joint` too optimistic on exactly those rows.
+    # Reproduced: E=10, +30% (target 13), day 1 high=13.00/low=9.00, day 2
+    # high=13.10/low=7.00. The old code froze at day 1 (path low 9.00 >= 8.00 gate)
+    # and returned joint=1; a consistent strict-`>` rule freezes at day 2 (path low
+    # 7.00 < 8.00) and returns joint=0. `>`, not `>=`, because both bull branches
+    # are strict.
+
     forward_high = np.full(n, np.nan, dtype="float64")
     forward_low = np.full(n, np.nan, dtype="float64")
     bars_to_target = np.full(n, np.nan, dtype="float64")
@@ -166,7 +178,8 @@ def forward_outcomes(
         run_min = np.where(valid, np.minimum(run_min, low_d), run_min)
         seen |= valid
 
-        newly = (~hit) & valid & (high_d >= target)
+        # Strict `>`, matching the bull label. See the comparator note above.
+        newly = (~hit) & valid & (high_d > target)
         bars_to_target[newly] = d
         path_low_to_hit[newly] = run_min[newly]
         hit |= newly

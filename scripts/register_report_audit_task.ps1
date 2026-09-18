@@ -2,16 +2,28 @@
 #
 # Why schtasks and not Register-ScheduledTask: the latter requires elevation and
 # fails with "Access is denied" (0x80070005) for a normal user. schtasks can
-# register a per-user task without elevation, which is all this needs — the job
+# register a per-user task without elevation, which is all this needs -- the job
 # only reads the repo, writes a log, and runs git with cached credentials.
 #
-# Run:  powershell -ExecutionPolicy Bypass -File scripts\register_report_audit_task.ps1
+# Why XML and not `/sc HOURLY`: `schtasks /create /sc HOURLY` can set the interval
+# and start time but NOT the power settings, and the first registration inherited
+# `DisallowStartIfOnBatteries=true` on a laptop. That means the audit is skipped
+# ENTIRELY and silently whenever the machine is unplugged -- no run, no log, no
+# alert, and the published status simply goes stale. Registering from an XML
+# definition is the only way to set those flags without elevation.
+#
+# Run:    powershell -ExecutionPolicy Bypass -File scripts\register_report_audit_task.ps1
+# At a chosen time:
+#         powershell -ExecutionPolicy Bypass -File scripts\register_report_audit_task.ps1 `
+#             -StartAt '2026-09-18T23:15:00'
 # Remove: schtasks /delete /tn "ProWeb60d-ReportAudit" /f
 
 [CmdletBinding()]
 param(
     [string]$TaskName = 'ProWeb60d-ReportAudit',
     [int]$EveryHours = 4,
+    # Local time. Defaults to five minutes from now, the previous behaviour.
+    [string]$StartAt = '',
     [switch]$RunNow
 )
 
@@ -60,21 +72,97 @@ cd /d "$repo"
 "@
 Set-Content -Path $wrapper -Encoding ASCII -Value $wrapperBody
 
+# Resolve the start boundary.
+if ([string]::IsNullOrWhiteSpace($StartAt)) {
+    $startBoundary = (Get-Date).AddMinutes(5)
+} else {
+    $startBoundary = [datetime]::Parse($StartAt)
+}
+if ($startBoundary -lt (Get-Date)) {
+    Write-Warning "StartAt $($startBoundary.ToString('s')) is in the past; the task will run at the next repetition boundary or via -RunNow."
+}
+$sb = $startBoundary.ToString('yyyy-MM-ddTHH:mm:ss')
+
+$userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+
+# Power/catch-up settings, and why each matters on a laptop:
+#   DisallowStartIfOnBatteries=false  - the previous value silently skipped every
+#       run while unplugged. On a laptop that is most of the day.
+#   StopIfGoingOnBatteries=false      - likewise, do not kill a run in progress.
+#   StartWhenAvailable=true           - if the machine slept through the trigger,
+#       run at the next opportunity instead of dropping the slot.
+#   WakeToRun=false                   - do NOT wake the machine; this is a passive
+#       audit and waking a laptop on a schedule is hostile.
+$xml = @"
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Author>$env:USERDOMAIN\$env:USERNAME</Author>
+    <Description>Four-hourly consistency audit of reports/ in $repo. Publishes reports/AUDIT_STATUS.md.</Description>
+    <URI>\$TaskName</URI>
+  </RegistrationInfo>
+  <Triggers>
+    <TimeTrigger>
+      <StartBoundary>$sb</StartBoundary>
+      <Enabled>true</Enabled>
+      <Repetition>
+        <Interval>PT${EveryHours}H</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+    </TimeTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$userId</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT15M</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>$wrapper</Command>
+    </Exec>
+  </Actions>
+</Task>
+"@
+
+$xmlPath = Join-Path $env:TEMP "proweb60d_task_$PID.xml"
+# schtasks requires UTF-16 for an XML definition. `-Encoding Unicode` is UTF-16LE
+# with BOM in PowerShell 5.1, which is what it expects.
+Set-Content -Path $xmlPath -Encoding Unicode -Value $xml
+
 Write-Host "repo    : $repo"
 Write-Host "python  : $python"
 Write-Host "wrapper : $wrapper"
+Write-Host "start   : $sb (every $EveryHours h)"
 
 # Remove any previous registration so this is idempotent. A missing task is the
 # normal case on first run, so a non-zero exit here is expected and ignored.
 $del = Invoke-Schtasks /delete /tn $TaskName /f
 if ($del.Code -eq 0) { Write-Host "removed previous registration of '$TaskName'" }
 
-# /sc HOURLY /mo 4 repeats indefinitely starting at the given time.
-$startTime = (Get-Date).AddMinutes(5).ToString('HH:mm')
-Write-Host "registering: $TaskName every $EveryHours hour(s) from $startTime"
-$create = Invoke-Schtasks /create /tn $TaskName /tr "`"$wrapper`"" `
-    /sc HOURLY /mo "$EveryHours" /st $startTime /f
+$create = Invoke-Schtasks /create /tn $TaskName /xml $xmlPath /f
 Write-Host $create.Output
+Remove-Item $xmlPath -ErrorAction SilentlyContinue
 if ($create.Code -ne 0) {
     throw "schtasks /create failed (exit $($create.Code)): $($create.Output)"
 }
@@ -83,7 +171,7 @@ Write-Host ""
 Write-Host "verifying registration..."
 $q = Invoke-Schtasks /query /tn $TaskName /fo LIST /v
 $q.Output -split "`n" |
-    Where-Object { $_ -match 'TaskName|Next Run Time|Status|Schedule Type|Repeat: Every|Task To Run' } |
+    Where-Object { $_ -match 'TaskName|Next Run Time|Status|Schedule Type|Repeat: Every|Task To Run|Run As User' } |
     ForEach-Object { $_.Trim() }
 
 if ($RunNow) {
@@ -91,7 +179,7 @@ if ($RunNow) {
     Write-Host "starting the task now to verify it actually runs..."
     $r = Invoke-Schtasks /run /tn $TaskName
     Write-Host $r.Output
-    Start-Sleep -Seconds 45
+    Start-Sleep -Seconds 60
     Write-Host ""
     Write-Host "last result:"
     $q2 = Invoke-Schtasks /query /tn $TaskName /fo LIST /v

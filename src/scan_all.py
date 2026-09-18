@@ -251,11 +251,25 @@ def population_baselines(shard_paths: list[str], stride: int) -> dict:
             for c in ("label_bull", "label_joint", "label_resolved")
         ]
         frame = pd.read_parquet(path, columns=cols)
-        if stride > 1:
-            # cumcount must be taken on the full shard, then filtered, so the
-            # stride aligns with the scan's own target selection.
-            seq = frame.groupby("code", sort=False).cumcount()
-            frame = frame[(seq >= MIN_HISTORY) & (seq % stride == 0)]
+        # The warm-up filter is NOT conditional on stride, and it must not be.
+        # `runner.build_scan_targets` applies `_seq >= min_history` unconditionally
+        # and only then thins by stride; this function used to gate the whole thing
+        # behind `if stride > 1`, so at stride=1 it counted each stock's first 60
+        # warm-up bars -- rows the scan never visits. Reproduced on a synthetic
+        # 2-stock x 65-bar panel: build_scan_targets gives 10 rows, the old
+        # baseline gave 130, i.e. 120 warm-up rows too many.
+        #
+        # The shipped `webpro_baselines.json` was produced at stride 5, where the
+        # two agree, which is why this stayed hidden; it would have corrupted any
+        # stride-1 expert scan -- and the ML wide search now runs at stride 1, so a
+        # same-population comparison was one call away from being wrong.
+        #
+        # cumcount is taken on the full shard, then filtered, so the selection is
+        # identical to the scan's own. `select_scan_mask` is shared with
+        # `runner.build_scan_targets` so the two cannot drift apart again.
+        mask = runner.select_scan_mask(frame, stride=stride,
+                                       min_history=MIN_HISTORY)
+        frame = frame[mask.to_numpy()]
         for regime in labels.REGIMES:
             resolved = frame[frame[f"label_resolved__{regime}"]]
             totals[regime]["n"] += int(len(resolved))

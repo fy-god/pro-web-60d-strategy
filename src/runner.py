@@ -121,6 +121,36 @@ def run_strategies(
     return out
 
 
+def select_scan_mask(
+    panel: pd.DataFrame,
+    stride: int = 5,
+    min_history: int = VISIBLE_BARS,
+) -> pd.Series:
+    """Boolean mask of the (code, date) rows a screener would actually scan.
+
+    The single source of truth for scan-target selection. ``build_scan_targets``
+    and ``scan_all.population_baselines`` must select the SAME rows, or a published
+    lift divides a scan-grid hit rate by a differently-defined base rate. They were
+    two hand-written copies until a review found they disagreed at ``stride=1``:
+    ``build_scan_targets`` applied ``_seq >= min_history`` unconditionally while the
+    baseline gated the whole filter behind ``if stride > 1``, so at stride 1 the
+    baseline also counted each stock's warm-up bars.
+
+    Warm-up is therefore applied FIRST and unconditionally; ``stride`` only thins
+    what survives. The mask is aligned to ``panel.index``, so callers that have
+    already sorted can use ``frame[mask.to_numpy()]``.
+    """
+    if panel.empty:
+        return pd.Series([], dtype=bool, index=panel.index)
+    frame = panel.sort_values(["code", "date"])
+    seq = frame.groupby("code", sort=False).cumcount()
+    keep = seq >= min_history
+    if stride > 1:
+        keep &= (seq % stride == 0)
+    # Return in the caller's original order so `mask.to_numpy()` lines up.
+    return keep.reindex(panel.index, fill_value=False)
+
+
 def build_scan_targets(
     panel: pd.DataFrame,
     stride: int = 5,
@@ -134,6 +164,9 @@ def build_scan_targets(
     re-decide on every single bar for every stock, and scoring all 2.68M bars
     would multiply runtime with almost no information gain. ``stride=5`` gives
     a weekly decision cadence.
+
+    Selection goes through :func:`select_scan_mask` so it cannot drift from the
+    population baseline that every published lift is divided by.
     """
     frame = panel
     if start is not None:
@@ -142,10 +175,8 @@ def build_scan_targets(
         frame = frame[frame["date"] <= pd.Timestamp(end)]
 
     frame = frame.sort_values(["code", "date"])
-    frame = frame.assign(_seq=frame.groupby("code", sort=False).cumcount())
-    targets = frame[frame["_seq"] >= min_history]
-    if stride > 1:
-        targets = targets[targets["_seq"] % stride == 0]
+    targets = frame[select_scan_mask(frame, stride=stride,
+                                     min_history=min_history).to_numpy()]
     return targets[["code", "date"]].reset_index(drop=True)
 
 

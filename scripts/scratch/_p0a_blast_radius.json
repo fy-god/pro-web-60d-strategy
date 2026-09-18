@@ -1,0 +1,26 @@
+{
+  "webpro": {
+    "panel_rows": 2680715,
+    "rows_with_a_resolved_window": 82098,
+    "bar_level_exact_touches": 160,
+    "rows_where_the_two_freezes_differ": 1,
+    "strict_low_outcome_flips": 0,
+    "flip_share_of_resolved": 0.0
+  },
+  "low60": {
+    "panel_rows": 2680715,
+    "rows_with_a_resolved_window": 1812,
+    "bar_level_exact_touches": 29,
+    "rows_where_the_two_freezes_differ": 0,
+    "strict_low_outcome_flips": 0,
+    "flip_share_of_resolved": 0.0
+  },
+  "low504": {
+    "panel_rows": 2680715,
+    "rows_with_a_resolved_window": 104165,
+    "bar_level_exact_touches": 5551,
+    "rows_where_the_two_freezes_differ": 0,
+    "strict_low_outcome_flips": 0,
+    "flip_share_of_resolved": 0.0
+  }
+}
