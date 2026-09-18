@@ -254,6 +254,27 @@ def main() -> None:
         print(f"group table OK: {len(wf.FEATURE_GROUPS)} groups partition "
               f"{len(wf.feature_columns(probe))} features", flush=True)
 
+    # Search reads the parquet through pandas rather than wf.load_matrix, so
+    # LAST_LOAD stayed empty and save_report could not stamp the row and session
+    # counts -- reports carried a stride but no evidence of which grid produced
+    # it. Record the provenance here. The counts come from the metadata file when
+    # present (cheap) and otherwise from the frame the workers will load; either
+    # way they describe THIS matrix, not whatever happens to be in outputs/.
+    meta_path = matrix.with_name(matrix.stem + "_meta.json")
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        meta = {}
+    wf.LAST_LOAD = {
+        "path": str(matrix),
+        "stride": stride,
+        "rows": int(meta.get("rows") or 0),
+        "sessions": int(meta.get("sessions") or 0),
+    }
+    if not wf.LAST_LOAD["rows"]:
+        print(f"WARNING: {meta_path.name} missing; reports will not record the "
+              f"matrix row count", flush=True)
+
     grid = presets()
     if args.preset == "all":
         configs = [c for group in grid.values() for c in group]
