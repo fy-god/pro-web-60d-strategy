@@ -4,16 +4,16 @@ _Written automatically every four hours by `scripts/scheduled_report_audit.py`. 
 
 | | |
 |---|---|
-| Last run (local) | 2026-09-18 05:33:52 |
-| Verdict | **PASS** |
-| Consistency check | exit code 0 |
-| Checks | 112 checks run, 0 problem(s) |
-| Remote drift | git fetch failed (exit 124): TIMEOUT after 300s: git fetch origin main --quiet |
-| Detail log | `logs/report_audit/audit_2026-09-18_053352.log` (local, not committed) |
+| Last run (local) | 2026-09-18 09:22:02 |
+| Verdict | **ATTENTION** |
+| Consistency check | exit code 1 |
+| Checks | 132 checks run, 1 problem(s) |
+| Remote drift | 0 path(s) differ from origin/main |
+| Detail log | `logs/report_audit/audit_2026-09-18_092202.log` (local, not committed) |
 
-## Headline
+## Failures
 
-- holdout precision **13.61%** against a base rate of 2.90% (4.70x lift)
-- 6,202 signals, 844 hits
-
-All consistency checks passed.
+```
+  FAIL  search reports share one grid: median base rate over full-fold configs spans 1.644e-05 ({'ml_search_models.json': 0.040894451, 'ml_search_wide.json': 0.04087800958, 'ml_search_ablation.json': 0.040894451})
+  - search reports share one grid: median base rate over full-fold configs spans 1.644e-05 ({'ml_search_models.json': 0.040894451, 'ml_search_wide.json': 0.04087800958, 'ml_search_ablation.json': 0.040894451})
+```
