@@ -164,6 +164,29 @@ def main() -> None:
             "expected_best_of_K": float(draws.mean()),
             "p_best_of_K_ge_real": float((draws >= 0.1598).mean()),
         }
+    # The note is FORMATTED FROM THE COMPUTED VALUES rather than hardcoded. The
+    # previous version was a literal string that had drifted from the payload it
+    # describes in four ways at once: it said the models preset had 3 configs
+    # (it has 7), SD ~0.7% (0.0125 = 1.25%), mean ~3.9% (0.03749 = 3.75%), and
+    # best-of-3 ~4.6% (0.04803 = 4.80%). Every one of those numbers already
+    # existed in this same dict, so a reader could see the contradiction without
+    # leaving the file -- which is exactly the kind of drift that hardcoding
+    # guarantees and interpolation cannot reproduce.
+    n_configs = None
+    try:
+        models_rep = json.loads(
+            (REPO_ROOT / "reports" / "ml_search_models.json").read_text(
+                encoding="utf-8"))
+        n_configs = int(models_rep.get("n_configs")
+                        or len(models_rep.get("ranked") or []))
+    except (OSError, ValueError, TypeError):
+        pass
+    _b3 = sel["3"]["expected_best_of_K"]
+    if n_configs:
+        _scope = (f"The 15.98% baseline was the top of the {n_configs}-config "
+                  f"`models` preset.")
+    else:
+        _scope = "The 15.98% baseline was the top of the `models` preset."
     report["selection_budget"] = {
         "null_precision_mean": mu, "null_precision_sd": sd,
         "n_null_draws": len(nulls),
@@ -171,9 +194,9 @@ def main() -> None:
         "model": "Gaussian on the observed nulls (mean/SD above)",
         "best_of_K": sel,
         "practical_note": (
-            "The 15.98% baseline was the top of a 3-config `models` preset. "
-            "Selecting the best of 3 i.i.d. nulls with mean ~3.9% and SD ~0.7% "
-            "gives ~4.6%. Selection cannot manufacture 15.98%."
+            f"{_scope} Selecting the best of 3 i.i.d. nulls with mean "
+            f"{mu * 100:.2f}% and SD {sd * 100:.2f}% gives "
+            f"{_b3 * 100:.2f}%. Selection cannot manufacture 15.98%."
         ),
     }
 

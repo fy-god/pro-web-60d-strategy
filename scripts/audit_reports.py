@@ -2413,6 +2413,46 @@ def check_frontier(f: Findings) -> None:
                 f.check(ex.get("label_close_defined_where_resolved_false") == 5747,
                         "label_pairs_audit.json preserves the pre-fix measurement "
                         "rather than rewriting it")
+        # selection_ceiling.json's `practical_note` is now FORMATTED from the same
+        # dict it sits in. It was previously a hardcoded string that contradicted
+        # its own payload in four places at once (3 configs vs 7, SD ~0.7% vs
+        # 1.25%, mean ~3.9% vs 3.75%, best-of-3 ~4.6% vs 4.80%). Since every
+        # number is present in the same object, the note can be checked against
+        # it arithmetically instead of by substring.
+        sel = audit_dir / "selection_ceiling.json"
+        if sel.exists():
+            try:
+                sd = json.loads(sel.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                sd = None
+            if isinstance(sd, dict):
+                sb = sd.get("selection_budget") or {}
+                note = str(sb.get("practical_note") or "")
+                if note and sb.get("null_precision_sd") is not None:
+                    mu_pct = float(sb["null_precision_mean"]) * 100
+                    sd_pct = float(sb["null_precision_sd"]) * 100
+                    b3 = (sb.get("best_of_K") or {}).get("3") or {}
+                    b3_pct = float(b3.get("expected_best_of_K", 0)) * 100
+                    f.check(f"{mu_pct:.2f}%" in note,
+                            f"selection_ceiling.json's practical_note quotes its "
+                            f"own null mean ({mu_pct:.2f}%)")
+                    f.check(f"{sd_pct:.2f}%" in note,
+                            f"selection_ceiling.json's practical_note quotes its "
+                            f"own null SD ({sd_pct:.2f}%), not a stale one")
+                    f.check(f"{b3_pct:.2f}%" in note,
+                            f"selection_ceiling.json's practical_note quotes its "
+                            f"own best-of-3 ({b3_pct:.2f}%)")
+                    # The preset's config count must match the report it names.
+                    try:
+                        models_n = int(json.loads(
+                            (ROOT / "reports" / "ml_search_models.json")
+                            .read_text(encoding="utf-8")).get("n_configs"))
+                    except (OSError, ValueError, TypeError):
+                        models_n = None
+                    if models_n:
+                        f.check(f"{models_n}-config `models` preset" in note,
+                                f"selection_ceiling.json's practical_note names "
+                                f"the models preset's real size ({models_n})")
         # Every artifact that names a matrix must name the SAME one, so a partial
         # regeneration cannot leave the set split across two matrices.
         named = {}

@@ -95,6 +95,6 @@
         "p_best_of_K_ge_real": 0.0
       }
     },
-    "practical_note": "The 15.98% baseline was the top of a 3-config `models` preset. Selecting the best of 3 i.i.d. nulls with mean ~3.9% and SD ~0.7% gives ~4.6%. Selection cannot manufacture 15.98%."
+    "practical_note": "The 15.98% baseline was the top of the 7-config `models` preset. Selecting the best of 3 i.i.d. nulls with mean 3.75% and SD 1.25% gives 4.80%. Selection cannot manufacture 15.98%."
   }
 }
