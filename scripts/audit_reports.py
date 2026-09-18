@@ -1935,6 +1935,51 @@ def check_frontier(f: Findings) -> None:
 
 
     # ------------------------------------------------------------------
+    # The `turnover := volume` proxy's blast radius, bound to the test that pins
+    # it (EML-MEDIUM-4).
+    #
+    # Three artifacts stated three different counts: src/features.py said "only
+    # two ... the other three", README said "three read only scale-invariant
+    # ratios", and tests/test_engine.py enumerates four. Measured from the
+    # strategy modules, four read ratios and ONE (leader_momentum) reads the
+    # level. The count matters because it is the blast radius of the single
+    # largest documented data limitation: an understated radius makes the proxy
+    # look safer than it is.
+    # ------------------------------------------------------------------
+    engine_test = ROOT / "tests" / "test_engine.py"
+    _ = engine_test
+    src_feat = ROOT / "src" / "features.py"
+    if src_feat.exists():
+        ftext = src_feat.read_text(encoding="utf-8")
+        f.check("Only ONE of the five" in ftext
+                or "one of the five" in ftext.lower(),
+                "src/features.py states the turnover proxy's level-reader count "
+                "as one")
+        f.check("Only two of the five" not in ftext,
+                "src/features.py does not claim two level readers")
+    if (ROOT / "README.md").exists():
+        rtext = (ROOT / "README.md").read_text(encoding="utf-8")
+        f.check("four read only\n   scale-invariant" in rtext
+                or "four read only" in rtext,
+                "README.md states that four of the five turnover-consuming "
+                "strategies read scale-invariant ratios")
+    if engine_test.exists():
+        etext = engine_test.read_text(encoding="utf-8")
+        # The test must agree with the document: it enumerates the ratio readers.
+        m = re.search(r"def test_\w*scale_invariant\w*\(.*?\n(.*?)(?=\ndef |\Z)",
+                      etext, re.S)
+        f.check(m is not None,
+                "tests/test_engine.py pins turnover scale-invariance")
+        if m:
+            names = re.findall(r'"([a-z_0-9]+)"', m.group(1))
+            n_ratio = len({"accumulation_base", "turnover_weak_to_strong",
+                           "turnover_regime_switch",
+                           "strict_turnover_weak_to_strong_v2"} & set(names))
+            f.check(n_ratio == 4,
+                    f"tests/test_engine.py pins scale-invariance for all four "
+                    f"ratio readers (found {n_ratio})")
+
+    # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
     #
     # The review found the 23.81%-at-462 claim -- one of the document's two

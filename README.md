@@ -56,7 +56,7 @@ close-outside-bracket rows.
    in `D:\xm` carries an empty `amount` column. The original project explicitly
    refused to fabricate it (*"成交额字段为空，因此没有把成交额伪装成换手率"* —
    `volume_causal_filter_search_86.py`). We expose `turnover := volume` as a
-   documented proxy. Of the five turnover-consuming strategies, three read only
+   documented proxy. Of the five turnover-consuming strategies, four read only
    scale-invariant ratios and are provably unaffected; `tests/test_engine.py`
    pins this, and `leader_momentum` (which reads the turnover *level*) is
    flagged as proxy-sensitive in the results.

@@ -156,10 +156,17 @@ def prepare(panel: pd.DataFrame) -> pd.DataFrame:
     没有把成交额伪装成换手率" — ``volume_causal_filter_search_86.py``).
 
     We therefore expose a documented proxy, ``turnover := volume``, and flag the
-    consequence per strategy. Only two of the five turnover-consuming strategies
-    read the *level* of turnover; the other three read scale-invariant ratios
-    (a 5/20-session mean ratio, or a coefficient of variation) and are therefore
-    unaffected by the substitution. ``tests/test_engine.py`` pins this.
+    consequence per strategy. Only ONE of the five turnover-consuming strategies
+    reads the *level* of turnover (``leader_momentum``); the other four read
+    scale-invariant ratios (a 5/20-session mean ratio, or a coefficient of
+    variation) and are therefore unaffected by the substitution.
+    ``tests/test_engine.py`` pins this.
+
+    This paragraph said "two ... the other three", which contradicted both
+    ``README.md`` and the test: the scale-invariance test enumerates exactly four
+    strategies, leaving one level reader. The count matters because it is the blast
+    radius of the single largest documented data limitation in the project -- an
+    understated radius would suggest the ``turnover`` proxy is safer than it is.
     """
     out = add_context(kdj(panel))
     out["turnover"] = out["volume"]
