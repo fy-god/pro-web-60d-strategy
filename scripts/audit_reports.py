@@ -1454,6 +1454,82 @@ def check_frontier(f: Findings) -> None:
                     f"RESULTS.md states the leader_momentum lift {lift:.2f}x")
 
 
+    # ------------------------------------------------------------------
+    # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
+    #
+    # The review found the 23.81%-at-462 claim -- one of the document's two
+    # headline cross-sectional results -- was in no check: ml_crosssec_final.json
+    # was loaded only for stride bookkeeping, so no value in it was ever
+    # compared. Both tables against that payload are bound here.
+    # ------------------------------------------------------------------
+    xs = load("ml_crosssec_final.json")
+    if xs and text:
+        res = (xs.get("results") or {}).get("fam_hgb_0")
+        if res:
+            topk = res.get("topk") or {}
+            # Table 1: rule -> signals, precision, CI.
+            for k, want_pct in (("1", 23.81), ("3", 19.41),
+                                ("5", 17.97), ("10", 15.45)):
+                row = topk.get(k)
+                if not row:
+                    f.check(False,
+                            f"ml_crosssec_final has a topk row for k={k}")
+                    continue
+                pct = float(row["precision"]) * 100
+                sig = int(row.get("signals") or row.get("n_signals") or 0)
+                f.check(abs(pct - want_pct) < 0.02,
+                        f"TARGET_70PCT.md top-{k} row states {want_pct:.2f}%; "
+                        f"ml_crosssec_final says {pct:.2f}%")
+                f.check(f"{sig:,}" in text,
+                        f"TARGET_70PCT.md states the top-{k} signal count "
+                        f"{sig:,}")
+            # The baseline row those are compared against.
+            gt = res.get("global_threshold") or {}
+            if gt.get("precision") is not None:
+                bp = float(gt["precision"]) * 100
+                f.check(f"{bp:.2f}%" in text,
+                        f"TARGET_70PCT.md states the global-threshold baseline "
+                        f"{bp:.2f}% (ml_crosssec_final)")
+            # Table 2: the matched-budget oracle comparison. Its whole point is
+            # that the ratios cluster at 1.00, so a ratio drifting away from 1 is
+            # exactly what must not pass unnoticed.
+            mb = res.get("matched_budget") or {}
+            for k, want_topk, want_oracle, want_ratio in (
+                ("1", 23.81, 23.38, 1.02), ("3", 19.41, 20.35, 0.95),
+                ("5", 17.97, 18.31, 0.98), ("10", 15.45, 15.67, 0.99),
+                ("20", 13.32, 13.19, 1.01), ("50", 10.54, 10.96, 0.96),
+            ):
+                row = mb.get(k)
+                if not row:
+                    continue
+                # Use the exact field. An earlier version picked the maximum of
+                # every field whose name contains "precision", which selected
+                # topk_precision (23.81%) instead of the oracle's
+                # oracle_global_precision (23.38%) and then reported the DOCUMENT
+                # as wrong. The document was right; the heuristic was not.
+                topk_p = row.get("topk_precision")
+                oracle_p = row.get("oracle_global_precision")
+                ratio = row.get("topk_vs_oracle_ratio")
+                if oracle_p is None or topk_p is None:
+                    f.check(False,
+                            f"ml_crosssec_final matched_budget k={k} records "
+                            f"topk_precision and oracle_global_precision")
+                    continue
+                f.check(abs(oracle_p * 100 - want_oracle) < 0.02,
+                        f"TARGET_70PCT.md matched-budget k={k} oracle states "
+                        f"{want_oracle:.2f}%; payload says {oracle_p*100:.2f}%")
+                if ratio is not None:
+                    f.check(abs(ratio - want_ratio) < 0.02,
+                            f"TARGET_70PCT.md matched-budget k={k} ratio is "
+                            f"{want_ratio:.2f}; payload gives {ratio:.2f}")
+                # The ratio must be consistent with the two precisions it is
+                # derived from, or one of the three drifted.
+                f.check(abs(topk_p / oracle_p - ratio) < 1e-9,
+                        f"ml_crosssec_final matched_budget k={k} ratio "
+                        f"{ratio:.4f} == topk/oracle "
+                        f"({topk_p:.6f}/{oracle_p:.6f})")
+
+
 # ---------------------------------------------------------------------------
 # 5. Markdown structure
 # ---------------------------------------------------------------------------
