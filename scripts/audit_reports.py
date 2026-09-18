@@ -96,9 +96,31 @@ class Findings:
 # list into the reported problems.
 LOAD_ERRORS: list[str] = []
 
+# Every artifact actually opened by a check, recorded at the point of the call.
+# The coverage metric below needs to know which published files were really read.
+# It used to regex the source for `load("x.json")`-shaped text, which is a proxy
+# and wrong in both directions: it credited a file merely mentioned in a comment
+# or looked up through a loop variable (the two baselines reports are loaded as
+# `load(name)` inside a for loop, so both showed as unread while being checked on
+# every run), and it would credit nothing for a file opened any other way. A set
+# mutated by load() itself cannot drift from what actually happened.
+#
+# "Read" is still too generous a word for coverage, though. The provenance sweep
+# opens eight reports only to look at their `stride` field, which says nothing
+# about whether the numbers inside them are right. Those loads pass
+# provenance=True and land in LOADED_PROVENANCE instead, so the coverage metric
+# can tell "some check compared a value in this file" apart from "some check read
+# one field of it".
+LOADED: set[str] = set()
+LOADED_PROVENANCE: set[str] = set()
 
-def load(name: str) -> dict | None:
+
+def load(name: str, provenance: bool = False) -> dict | None:
     path = REPORTS / name
+    if provenance:
+        LOADED_PROVENANCE.add(name)
+    else:
+        LOADED.add(name)
     if not path.exists():
         # A report named by the audit but absent is a finding, not a reason to
         # skip: silently skipping is how a deleted artifact passes.
@@ -119,6 +141,7 @@ def load_csv(name: str) -> list[dict]:
     function is invisible from the next.
     """
     path = REPORTS / name
+    LOADED.add(name)
     if not path.exists():
         LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
         return []
@@ -931,7 +954,7 @@ def check_prose(f: Findings, verbose: bool) -> None:
                  "ml_search_ablation.json", "ml_crosssec_final.json",
                  "ml_crosssec_hgb0.json", "ml_precision_ceiling.json",
                  "ml_null_tests.json", "ml_concentration.json"):
-        report = load(name)
+        report = load(name, provenance=True)
         if not report:
             continue
         stride = report.get("stride")
@@ -1701,6 +1724,13 @@ def check_no_orphan_reports(f: Findings) -> None:
     on_disk = {p.name for p in REPORTS.glob("*.json")}
     csvs = {p.name for p in REPORTS.glob("*.csv")}
     print(f"  ({len(on_disk)} JSON reports, {len(csvs)} CSVs present)")
+    # Snapshot coverage BEFORE the parse sweep below. That sweep calls load() on
+    # every file on disk, so reading LOADED afterwards would report every artifact
+    # as covered and the metric would be vacuous -- which is what happened on the
+    # first version of this change. By here every real check has already run, so
+    # this snapshot is exactly the set of files some check actually consumed.
+    covered = set(LOADED)
+    provenance_only = set(LOADED_PROVENANCE) - covered
     # `load` records its own failures into LOAD_ERRORS; count them so this check
     # can actually fail. Previously it called f.check(True, ...) unconditionally,
     # so "15 reports parse" was printed even when every one was malformed.
@@ -1716,21 +1746,25 @@ def check_no_orphan_reports(f: Findings) -> None:
     # including live_readiness.json, which carries the intraday answer -- sat
     # outside every check while the audit reported no problems.
     #
-    # Coverage is derived from actual load()/load_csv() CALL SITES, not from
-    # filename strings anywhere in the source. The previous version regexed the
-    # whole file, so a filename mentioned only in a comment or in the known_grid
-    # table counted as covered -- ml_crosssec_final.json was reported as read
-    # while no value in it was ever compared.
-    src = Path(__file__).read_text(encoding="utf-8")
-    referenced = set(re.findall(
-        r"(?:load|load_csv)\(\s*[\"']([A-Za-z0-9_]+\.(?:json|csv))[\"']", src
-    ))
-    unreferenced = sorted((on_disk | csvs) - referenced)
+    # Coverage comes from LOADED, the set that load()/load_csv() populate as they
+    # run, so it reflects what was really opened rather than what the source text
+    # looks like. The previous regex-based version missed the two baselines
+    # reports, which are loaded as `load(name)` inside a loop and were therefore
+    # reported as unread on every run despite being checked each time.
+    # A file opened only to read its `stride` field is not verified: nothing in it
+    # was compared to anything. Report those separately rather than as fully
+    # unread, and do not list them twice -- "opened only for provenance" is the
+    # more precise statement and implies the file was opened at all.
+    unreferenced = sorted((on_disk | csvs) - covered - provenance_only)
     for name in unreferenced:
         f.note(f"reports/{name} is published but no check reads it")
-    print(f"  ({len(unreferenced)} published artifact(s) outside every check)")
+    for name in sorted(provenance_only):
+        f.note(f"reports/{name} is opened only for its provenance fields "
+               f"(stride); no number in it is verified")
+    print(f"  ({len(unreferenced)} published artifact(s) outside every check, "
+          f"{len(provenance_only)} opened only for provenance)")
     if f.verbose:
-        print(f"  (checked artifacts: {len(referenced)})")
+        print(f"  (value-verified artifacts: {len(covered)})")
 
 
 def main() -> int:
