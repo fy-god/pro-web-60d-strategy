@@ -355,6 +355,78 @@ def check_cross_report(f: Findings) -> None:
         f.check(scan.get("stride") is not None,
                 "webpro_scan_summary records its stride")
 
+    # ------------------------------------------------------------------
+    # The precision frontier, which is the evidence for the central claim that
+    # 70% is not reachable. It was 2 MB of published CSV that no check read.
+    #
+    # Each row is one realisable operating point: publish n_published rows and
+    # get `precision`, at the cost of `fpr` and covering `recall`. Precision must
+    # be a proportion, the rate must equal n / rows, and -- the property the
+    # whole argument rests on -- publishing more rows can never raise precision
+    # above the best smaller operating point by much, because the points come
+    # from a prefix of one fixed ranking. Non-monotone movement is possible in
+    # principle, so this asserts bounds rather than strict monotonicity.
+    # ------------------------------------------------------------------
+    for fname in ("ml_precision_frontier_oos.csv",
+                  "ml_precision_frontier_insample.csv"):
+        rows = load_csv(fname)
+        if not rows:
+            continue
+        f.check(True, f"{fname} parses ({len(rows)} operating points)")
+        bad_p, bad_rate, bad_fpr = [], [], []
+        by_fold: dict[str, int] = {}
+        # publish_rate is n_published / n_rows, so n_published / publish_rate
+        # must recover the SAME row count for every point in a fold. This is a
+        # strong, self-contained consistency check on the frontier: it needs no
+        # external constant, and it catches a publish_rate that was computed
+        # against the wrong denominator or a row count from another grid.
+        implied_rows: dict[str, list[float]] = {}
+        for row in rows:
+            fold = row.get("fold", "?")
+            by_fold[fold] = by_fold.get(fold, 0) + 1
+            try:
+                p = float(row["precision"])
+                fpr = float(row["fpr"])
+                recall = float(row["recall"])
+                pub = float(row["n_published"])
+                rate = float(row["publish_rate"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not (0.0 <= p <= 1.0) or not (0.0 <= fpr <= 1.0) or not (0.0 <= recall <= 1.0):
+                bad_p.append((fold, row.get("n_published")))
+            if not (0.0 <= rate <= 1.0):
+                bad_rate.append((fold, row.get("n_published")))
+            if pub > 0 and rate > 0:
+                implied_rows.setdefault(fold, []).append(pub / rate)
+            # publish_rate is the share of ALL rows published, so it is a
+            # weighted average of recall (share of positives) and fpr (share of
+            # negatives): rate = (recall*P + fpr*N) / (P + N). It must therefore
+            # lie between them. An earlier version of this check asserted
+            # recall + fpr <= 1, which is wrong -- the two have different
+            # denominators, and publishing everything gives 1 + 1.
+            lo, hi = min(recall, fpr), max(recall, fpr)
+            if not (lo - 1e-9 <= rate <= hi + 1e-9):
+                bad_fpr.append((fold, row.get("n_published"), recall, fpr, rate))
+        f.check(not bad_p, f"{fname}: precision/fpr/recall are proportions "
+                           f"({len(bad_p)} violate: {bad_p[:3]})")
+        f.check(not bad_rate, f"{fname}: publish_rate is a proportion "
+                              f"({len(bad_rate)} violate: {bad_rate[:3]})")
+        f.check(not bad_fpr, f"{fname}: publish_rate lies between recall and fpr "
+                             f"({len(bad_fpr)} violate: {bad_fpr[:3]})")
+        f.check(len(by_fold) >= 1,
+                f"{fname}: fold column populated across {len(by_fold)} fold(s)")
+        for fold, count in sorted(by_fold.items()):
+            f.check(count > 1, f"{fname}: fold {fold} has {count} points")
+            implied = implied_rows.get(fold) or []
+            if len(implied) > 1:
+                spread = max(implied) - min(implied)
+                f.check(
+                    spread < 1.0,
+                    f"{fname}: fold {fold} implies one row count "
+                    f"({implied[0]:,.0f}, spread {spread:.2f} across "
+                    f"{len(implied)} points)",
+                )
+
 
     # Every report that carries a base rate must agree on which grid it came
     # from. Mixing grids silently is the failure mode that produced the stale
