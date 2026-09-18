@@ -190,6 +190,22 @@ initial bug (prefix matching made seven "different" ablations resolve to the sam
 ten columns — they are now exact, disjoint sets covering all 82 features, with a
 `check_groups` guard).
 
+**Two caveats on "82".** The count is the number of *columns*, not the number of
+independent directions:
+
+1. **Six of the 82 are algebraically redundant.** `ma{5,10,20,60,120,250}_slope` is
+   computed as `(MA_w − close_{t−w}) / close_t`, which is exactly
+   `1/(1 + dist_ma_w) − 1/(1 + ret_w)` — and `dist_ma_w` and `ret_w` are both
+   already columns. Verified to float32 precision (max difference
+   7.7e-09 … 6.9e-08). They add no information; they are kept so the published
+   matrices and the ablations run against them stay reproducible.
+2. **The `momentum` group therefore counts some directions more than once**, so
+   "drop `momentum`" removes 6 duplicated directions as well as its unique ones.
+   The `drop cross` result below is unaffected — `cross` contains none of these.
+
+Full disclosure of what the count does and does not mean is in
+`src/ml/build_matrix.py` at the `ma{w}_slope` definition.
+
 | Feature set | OOS precision | Signals | Lift |
 | --- | ---: | ---: | ---: |
 | **all 82 features** (baseline) | 16.44% | 12,143 | 4.02× |

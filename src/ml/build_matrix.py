@@ -156,7 +156,25 @@ def add_price_features(frame: pd.DataFrame) -> dict[str, np.ndarray]:
     for window in (5, 10, 20, 60, 120, 250):
         ma = _groll(frame, "close", window, "mean").astype("float64")
         f[f"dist_ma{window}"] = (close / (ma + EPS) - 1.0).astype("float32")
-        # slope of the MA itself, normalised by price
+        # Change in the MA since `window` sessions ago, normalised by price.
+        #
+        # The comment here used to say "slope of the MA itself", but `ma_prev` is
+        # the CLOSE `window` sessions ago, not the MA -- `_gshift(frame, "close",
+        # window)`. The name is kept because it is a published column that the
+        # feature groups and the ablation table reference by name; the comment
+        # describes what the arithmetic does.
+        #
+        # Note this column is algebraically REDUNDANT, which the earlier comment
+        # did not say. Writing dist_ma = close/MA - 1 and ret_w = close/close_{t-w}
+        # - 1, the expression below equals exactly
+        #
+        #     1/(1 + dist_ma{w}) - 1/(1 + ret{w})
+        #
+        # -- both of which are already columns. Verified to float32 precision
+        # (max |difference| 7.7e-09 .. 6.9e-08 across w in 5..250). So
+        # `ma{w}_slope` carries no information beyond `dist_ma{w}` and `ret{w}`;
+        # it is retained for reproducibility of the published matrices and the
+        # ablations that were run against them, not because it adds a direction.
         ma_prev = _gshift(frame, "close", window).astype("float64")
         f[f"ma{window}_slope"] = ((ma - ma_prev) / (close + EPS)).astype("float32")
 

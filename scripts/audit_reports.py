@@ -2055,6 +2055,42 @@ def check_frontier(f: Findings) -> None:
                 "TARGET_70PCT.md states the grid per section")
 
     # ------------------------------------------------------------------
+    # `ma{w}_slope` is mislabelled AND algebraically redundant (EML-HIGH-4).
+    #
+    # The comment claimed the "slope of the MA itself" while `ma_prev` is the CLOSE
+    # w sessions ago, and the column equals 1/(1+dist_ma_w) - 1/(1+ret_w), both
+    # already columns -- so 6 of the advertised 82 features carry no information.
+    # Nothing checked this: a causality/truncation test is structurally incapable
+    # of detecting redundancy, since a redundant column is still causal.
+    # ------------------------------------------------------------------
+    bm_src = ROOT / "src" / "ml" / "build_matrix.py"
+    if bm_src.exists():
+        bm = bm_src.read_text(encoding="utf-8")
+        f.check('_gshift(frame, "close", window)' in bm,
+                "build_matrix.py builds ma{w}_slope from the shifted CLOSE, which "
+                "is what the comment must describe")
+        # Comments are excluded because the corrected comment quotes the retired
+        # phrase in order to explain why it was wrong -- the same trap the
+        # final_holdout.py docstring check hit.
+        bm_code = "\n".join(ln for ln in bm.splitlines()
+                            if not ln.lstrip().startswith("#"))
+        f.check("slope of the MA itself" not in bm_code,
+                "build_matrix.py's executable comments do not call ma{w}_slope "
+                "the slope of the MA itself")
+        f.check("algebraically REDUNDANT" in bm
+                or "algebraically redundant" in bm,
+                "build_matrix.py discloses that ma{w}_slope is redundant with "
+                "dist_ma{w} and ret{w}")
+        # The identity, on the source's own expressions.
+        f.check("1/(1 + dist_ma" in bm or "1/(1 + dist_ma{w})" in bm,
+                "build_matrix.py states the redundancy identity")
+    if t70.exists():
+        dtext2 = t70.read_text(encoding="utf-8")
+        f.check("Six of the 82 are algebraically redundant" in dtext2,
+                "TARGET_70PCT.md discloses that six of the 82 features are "
+                "redundant, so '82 features' is not 82 independent directions")
+
+    # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
     #
     # The review found the 23.81%-at-462 claim -- one of the document's two
