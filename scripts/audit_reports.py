@@ -406,6 +406,110 @@ def check_cross_report(f: Findings) -> None:
             )
 
     # ------------------------------------------------------------------
+    # tradeability.json -- the fillability ledger behind "15.8% of the best
+    # strategy's signals cannot be bought" (README 9.2). Its columns are
+    # arithmetically related, so they are all checkable with no external input.
+    # ------------------------------------------------------------------
+    tb = load("tradeability.json")
+    if tb:
+        def _check_tb(entry: dict, where: str) -> None:
+            sig = entry.get("signals")
+            if not sig:
+                return
+            hits, unf = entry.get("hits"), entry.get("unfillable")
+            trade = entry.get("tradeable_signals")
+            if trade is not None:
+                f.check(
+                    int(trade) == int(sig) - int(unf or 0),
+                    f"tradeability {where}: tradeable_signals {trade} == "
+                    f"signals {sig} - unfillable {unf}",
+                )
+            if hits is not None and entry.get("hit_rate") is not None:
+                f.check(
+                    abs(entry["hit_rate"] - hits / sig) < 1e-9,
+                    f"tradeability {where}: hit_rate == hits / signals",
+                )
+            if unf is not None and entry.get("unfillable_pct") is not None:
+                f.check(
+                    abs(entry["unfillable_pct"] - unf / sig) < 1e-9,
+                    f"tradeability {where}: unfillable_pct == unfillable / signals",
+                )
+            # The components must sum to the total, or a signal is double-counted
+            # or lost between the reason columns.
+            parts = [entry.get("one_word_limit"), entry.get("gapped_at_limit"),
+                     entry.get("no_next_bar")]
+            if unf is not None and all(p is not None for p in parts):
+                f.check(
+                    sum(int(p) for p in parts) >= int(unf),
+                    f"tradeability {where}: reasons {parts} cover the "
+                    f"{unf:,} unfillable signals",
+                )
+            th = entry.get("tradeable_hits")
+            if th is not None and trade:
+                f.check(
+                    int(th) <= int(trade),
+                    f"tradeability {where}: tradeable_hits {th} <= tradeable_signals {trade}",
+                )
+
+        _check_tb(tb.get("overall") or {}, "overall")
+        for i, entry in enumerate(tb.get("worst_by_unfillable") or []):
+            _check_tb(entry, f"worst[{i}]/{entry.get('label', '?')}")
+        # `worst` is a top-10 by unfillable_pct, so it must be sorted desc.
+        pcts = [e.get("unfillable_pct") for e in (tb.get("worst_by_unfillable") or [])
+                if e.get("unfillable_pct") is not None]
+        f.check(pcts == sorted(pcts, reverse=True),
+                f"tradeability worst_by_unfillable is ordered by unfillable_pct "
+                f"({len(pcts)} rows)")
+
+    # ------------------------------------------------------------------
+    # The two remaining artifacts, each a CSV twin of data checked above.
+    # ------------------------------------------------------------------
+    lrc = load_csv("live_readiness.csv")
+    if lrc and lr:
+        f.check(
+            len(lrc) == len(lr.get("expectancy") or []),
+            f"live_readiness.csv has one row per JSON expectancy entry "
+            f"({len(lrc)} vs {len(lr.get('expectancy') or [])})",
+        )
+        # Spot-check that the CSV and JSON carry the same numbers, so a
+        # regeneration of one without the other is caught.
+        jrows = {r.get("label"): r for r in (lr.get("expectancy") or [])}
+        mismatch = []
+        for row in lrc:
+            j = jrows.get(row.get("label"))
+            if not j:
+                mismatch.append((row.get("label"), "missing from JSON"))
+                continue
+            for col in ("signals", "resolved"):
+                if row.get(col) and j.get(col) is not None:
+                    if int(row[col]) != int(j[col]):
+                        mismatch.append((row.get("label"), col))
+        f.check(not mismatch,
+                f"live_readiness.csv agrees with live_readiness.json "
+                f"({len(mismatch)} differ: {mismatch[:3]})")
+
+    cards = load_csv("webpro_cards_100_reproduction.csv")
+    if cards:
+        f.check(True, f"webpro_cards_100_reproduction.csv parses ({len(cards)} rows)")
+        bad = []
+        for row in cards:
+            pred, tp, fp = (_num(row.get("yes_predictions")), _num(row.get("tp")),
+                            _num(row.get("fp")))
+            prec = _num(row.get("yes_precision"))
+            if None in (pred, tp, fp, prec):
+                continue
+            # tp + fp must be the number of positive predictions, and precision
+            # must be tp over that; a reproduction table that fails this cannot
+            # be reproducing anything.
+            if int(tp) + int(fp) != int(pred):
+                bad.append((row.get("strategy_id"), "tp+fp != yes_predictions"))
+            elif tp + fp > 0 and abs(prec - tp / (tp + fp)) > 1e-9:
+                bad.append((row.get("strategy_id"), "precision != tp/(tp+fp)"))
+        f.check(not bad,
+                f"webpro_cards_100_reproduction arithmetic holds "
+                f"({len(bad)} violate: {bad[:3]})")
+
+    # ------------------------------------------------------------------
     # The precision frontier, which is the evidence for the central claim that
     # 70% is not reachable. It was 2 MB of published CSV that no check read.
     #
