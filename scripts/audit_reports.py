@@ -86,14 +86,27 @@ class Findings:
         return abs(a - b) / scale <= rtol
 
 
+# Load failures are recorded here rather than printed and forgotten. `load` and
+# `load_csv` are called from module-level helpers that have no `Findings` handle,
+# so an unreadable report used to print a FAIL line and then vanish: every check
+# gated on that report simply skipped, the problem list stayed empty, and the
+# process exited 0. A truncated file mid-regeneration is exactly that state, so
+# the audit went green precisely when a report was unusable. main() folds this
+# list into the reported problems.
+LOAD_ERRORS: list[str] = []
+
+
 def load(name: str) -> dict | None:
     path = REPORTS / name
     if not path.exists():
+        # A report named by the audit but absent is a finding, not a reason to
+        # skip: silently skipping is how a deleted artifact passes.
+        LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
         return None
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        print(f"  FAIL  {name} is not valid JSON: {exc}")
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        LOAD_ERRORS.append(f"reports/{name} is not readable JSON: {exc}")
         return None
 
 
@@ -217,6 +230,7 @@ def check_cross_report(f: Findings) -> None:
     def load_csv(name: str) -> list[dict]:
         path = REPORTS / name
         if not path.exists():
+            LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
             return []
         with path.open(encoding="utf-8", newline="") as fh:
             return list(_csv.DictReader(fh))
@@ -781,13 +795,33 @@ def extract_table_cells(text: str) -> list[str]:
     return cells
 
 
+# Markers that a line is narrating a correction rather than asserting a current
+# value. Deliberately matched against the LINE ONLY: an earlier version searched
+# a 7-line window, so a word like "previous" in a neighbouring table row exempted
+# the headline result two lines below it.
+CORRECTION_MARKERS = re.compile(
+    r"(correct|retired|supersed|was reported|no longer|previously|"
+    r"revision|history|changed|old stride|earlier version)",
+    re.I,
+)
+
+
+def _is_correction_prose(line: str) -> bool:
+    """True if this line explains a past value rather than asserting a live one."""
+    return bool(CORRECTION_MARKERS.search(line))
+
+
 def check_prose(f: Findings, verbose: bool) -> None:
     print("\n[4] prose drift against reports")
 
     holdout = load("ml_final_holdout.json")
-    ceiling = load("ml_precision_ceiling.json")
-    if not (holdout and ceiling):
-        print("  (skipped: reports missing)")
+    # Only the holdout is needed for the holdout-prose checks. Requiring the
+    # ceiling file as well meant an unrelated missing report silently disabled
+    # them -- and made the explicit `f.check(False, ...)` guard below
+    # unreachable, so the intended loud failure never fired. A missing report is
+    # now reported by load() itself, and the checks that CAN run do run.
+    if not holdout:
+        f.check(False, "ml_final_holdout.json is available for the prose checks")
         return
 
     # ------------------------------------------------------------------
@@ -839,12 +873,6 @@ def check_prose(f: Findings, verbose: bool) -> None:
     # to agree. If the report changes, the documents must change with it or this
     # fails.
     # ------------------------------------------------------------------
-    holdout = load("ml_final_holdout.json")
-    ceiling = load("ml_precision_ceiling.json")
-    if not holdout:
-        f.check(False, "ml_final_holdout.json present and parseable")
-        return
-
     if holdout:
         pct = holdout["precision"] * 100
         lift = holdout["lift"]
@@ -882,12 +910,14 @@ def check_prose(f: Findings, verbose: bool) -> None:
                     continue
                 if in_fence or stripped.startswith(">"):
                     continue
-                window = "\n".join(
-                    text.splitlines()[max(0, line_no - 7):line_no]
-                )
-                if re.search(r"(correct|retired|earlier|previous|was reported|"
-                             r"supersed|revision|history|before the|changed|"
-                             r"old stride)", line + window, re.I):
+                # Exempt only the line itself, or a line that is plainly
+                # narrating the correction. The previous version searched a
+                # 7-line window for words like "previous", which silently
+                # exempted README's headline results row because the row above it
+                # says "HGB (previous baseline)". That masked exactly the line
+                # this check exists to protect. Blockquotes and fenced code are
+                # already exempt above, so correction prose keeps its escape.
+                if _is_correction_prose(line):
                     continue
                 for value in stale:
                     if re.search(rf"\b{value:.2f}\s*%", line):
@@ -1051,20 +1081,22 @@ def check_prose(f: Findings, verbose: bool) -> None:
         "3.58": "lift computed against a signal-weighted base rate",
         "24.54": "frontier computed on the stride-5 grid",
     }
-    exempt_markers = re.compile(
-        r"(correct|retired|earlier|previous|was reported|not the|superseded|"
-        r"original|first \"?fix)",
-        re.I,
-    )
     prose_docs = ["README.md", "TARGET_70PCT.md", "RESULTS.md"]
     for doc in prose_docs:
         path = ROOT / doc
         if not path.exists():
             continue
         lines = path.read_text(encoding="utf-8").splitlines()
+        in_fence = False
         for line_no, line in enumerate(lines, 1):
-            window = "\n".join(lines[max(0, line_no - 7):line_no])
-            if exempt_markers.search(line) or exempt_markers.search(window):
+            stripped = line.lstrip()
+            if stripped.startswith("```"):
+                in_fence = not in_fence
+                continue
+            # Blockquotes and fenced code are where the documents explain their
+            # own corrections; body text asserting a retired number is a find.
+            # Line-scoped, not window-scoped: see CORRECTION_MARKERS.
+            if in_fence or stripped.startswith(">") or _is_correction_prose(line):
                 continue
             for value, why in retired.items():
                 if re.search(rf"\b{re.escape(value)}\s*(x|×)", line):
@@ -1138,9 +1170,15 @@ def check_no_orphan_reports(f: Findings) -> None:
     on_disk = {p.name for p in REPORTS.glob("*.json")}
     csvs = {p.name for p in REPORTS.glob("*.csv")}
     print(f"  ({len(on_disk)} JSON reports, {len(csvs)} CSVs present)")
+    # `load` records its own failures into LOAD_ERRORS; count them so this check
+    # can actually fail. Previously it called f.check(True, ...) unconditionally,
+    # so "15 reports parse" was printed even when every one was malformed.
+    before = len(LOAD_ERRORS)
     for name in sorted(on_disk):
-        load(name)  # surface JSON errors early
-    f.check(True, f"{len(on_disk)} reports parse")
+        load(name)
+    failed = len(LOAD_ERRORS) - before
+    f.check(failed == 0,
+            f"{len(on_disk) - failed} of {len(on_disk)} JSON reports parse")
 
     # Which published artifacts does this audit actually read? A report that no
     # check names is published and unverified, which is how nine of them --
@@ -1169,6 +1207,12 @@ def main() -> int:
     check_prose(f, args.verbose)
     check_markdown_structure(f)
     check_no_orphan_reports(f)
+
+    # Fold in anything load()/load_csv() could not read. These are recorded, not
+    # printed-and-forgotten, so an unreadable report fails the run instead of
+    # quietly removing the checks that depend on it.
+    for msg in dict.fromkeys(LOAD_ERRORS):
+        f.check(False, msg)
 
     print("\n" + "=" * 70)
     print(f"{f.checked} checks run, {len(f.problems)} problem(s)")
