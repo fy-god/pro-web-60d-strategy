@@ -55,7 +55,19 @@ class Findings:
     def __init__(self, verbose: bool = False) -> None:
         self.problems: list[str] = []
         self.checked = 0
+        self.notes: list[str] = []
         self.verbose = verbose
+
+    def note(self, message: str) -> None:
+        """Record something worth printing that is not a failure.
+
+        Used for known, explained gaps -- a report that predates provenance
+        stamping and whose grid was established by other means. It is printed so
+        the exception is visible rather than silently skipped.
+        """
+        self.notes.append(message)
+        if self.verbose:
+            print(f"  note  {message}")
 
     def check(self, ok: bool, message: str) -> bool:
         self.checked += 1
@@ -395,7 +407,43 @@ def check_prose(f: Findings, verbose: bool) -> None:
         return
 
     # ------------------------------------------------------------------
-    # THE CHECK THAT MATTERS: tie each headline prose figure to the payload.
+    # Every report that a grid could shift must say which grid it used.
+    #
+    # Two grids are in circulation and they give different base rates
+    # (0.04089445 dense vs 0.04087801 stride-5), so a report without a `stride`
+    # field cannot be compared with anything. Skipping a report because it
+    # happens to predate the stamping is how the gap stayed invisible, so the
+    # reports that genuinely lack the field are named individually with the grid
+    # they were measured on, established from their own payload.
+    # ------------------------------------------------------------------
+    known_grid = {
+        # n_rows 281,227 and oos_base_rate 0.04087801 = the stride-5 matrix.
+        "ml_crosssec_final.json": ("stride-5", "n_rows=281,227, base=0.04087801"),
+        "ml_crosssec_hgb0.json": ("stride-5", "same run as ml_crosssec_final"),
+        # These three were regenerated on the dense grid but by a run whose code
+        # predated the provenance stamp, so the numbers are right and the grid is
+        # provable from the payload while the `stride` field is absent. They are
+        # listed and then scheduled for regeneration, not exempted permanently.
+        "ml_search_models.json": ("stride-1", "median full-fold base=0.04089445"),
+        "ml_search_ablation.json": ("stride-1", "median full-fold base=0.04089445"),
+        "ml_null_tests.json": ("stride-1", "n_rows=2,680,715 = the dense matrix"),
+    }
+    for name in ("ml_search_models.json", "ml_search_wide.json",
+                 "ml_search_ablation.json", "ml_crosssec_final.json",
+                 "ml_crosssec_hgb0.json", "ml_precision_ceiling.json",
+                 "ml_null_tests.json", "ml_concentration.json"):
+        report = load(name)
+        if not report:
+            continue
+        stride = report.get("stride")
+        if stride is None and name in known_grid:
+            grid, why = known_grid[name]
+            f.note(f"{name} has no `stride` field but is {grid} ({why}); "
+                   f"regenerate to stamp it")
+            continue
+        f.check(stride is not None,
+                f"{name} records the stride it was measured on")
+
     #
     # The previous version only grepped for literal strings ("13.61" in the
     # document). That is blind in the one direction that counts: prose asserting
@@ -729,6 +777,10 @@ def main() -> int:
     print(f"{f.checked} checks run, {len(f.problems)} problem(s)")
     for p in f.problems:
         print(f"  - {p}")
+    if f.notes:
+        print(f"\n{len(f.notes)} known gap(s), reported but not failures:")
+        for n in f.notes:
+            print(f"  - {n}")
     return 1 if f.problems else 0
 
 
