@@ -202,6 +202,71 @@ def check_cross_report(f: Findings) -> None:
                     f"{pooled_base:.6f} vs walkforward {got:.6f} "
                     f"(rel {rel*100:.3f}%)")
 
+    # ------------------------------------------------------------------
+    # Published CSVs, which nothing checked until now.
+    #
+    # The audit read only JSON, so every CSV in reports/ was unverified -- and
+    # the two hit-rate files count signals differently in a way that is easy to
+    # get wrong: README documents that the tradeability file's larger count is
+    # the raw count plus the censored windows, while `unfillable` is a different,
+    # smaller subset. That is exactly the kind of claim that should be executable
+    # rather than prose.
+    # ------------------------------------------------------------------
+    import csv as _csv
+
+    def load_csv(name: str) -> list[dict]:
+        path = REPORTS / name
+        if not path.exists():
+            return []
+        with path.open(encoding="utf-8", newline="") as fh:
+            return list(_csv.DictReader(fh))
+
+    hit = {r["strategy_id"]: r for r in load_csv("hitrate_vs_expectancy.csv")}
+    trade = {r["label"]: r for r in load_csv("tradeability_by_strategy.csv")}
+    raw = {r["strategy_id"]: r for r in load_csv("webpro_hit_rates.csv")}
+    if hit and trade and raw:
+        shared = sorted(set(hit) & set(trade))
+        f.check(len(shared) > 0,
+                f"hit-rate and tradeability CSVs share strategies ({len(shared)})")
+        # identical sets of strategies, and the documented arithmetic relation
+        f.check(set(hit) <= set(raw),
+                "every strategy in hitrate_vs_expectancy.csv has a row in "
+                "webpro_hit_rates.csv")
+        bad_relation = []
+        for sid in shared:
+            expected = (int(raw[sid]["signals_raw__webpro"])
+                        + int(raw[sid]["censored_signals__webpro"]))
+            if int(trade[sid]["signals"]) != expected:
+                bad_relation.append(sid)
+        f.check(not bad_relation,
+                f"tradeability signals == raw + censored for every shared strategy "
+                f"({len(bad_relation)} violate: {bad_relation[:4]})")
+        # `unfillable` must be a subset of the counted signals, and never equal
+        # the raw/censored difference (the two are different quantities and the
+        # prose says so).
+        over = [s for s in shared
+                if int(trade[s]["unfillable"]) > int(trade[s]["signals"])]
+        f.check(not over, f"unfillable never exceeds signals ({over[:4]})")
+        mism = [s for s in shared
+                if int(hit[s]["signals"]) != int(raw[s]["signals_raw__webpro"])]
+        f.check(not mism,
+                f"hitrate_vs_expectancy signals == raw webpro signals "
+                f"({len(mism)} differ: {mism[:4]})")
+        # A hit rate must be a proportion of its own denominator.
+        bad_rate = []
+        for sid, row in hit.items():
+            try:
+                n, rate = int(row["signals"]), float(row["hit_rate"])
+            except (TypeError, ValueError):
+                continue
+            if n and not (0.0 <= rate <= 1.0):
+                bad_rate.append(sid)
+        f.check(not bad_rate,
+                f"hit rates lie in [0,1] ({bad_rate[:4]})")
+
+    if f.verbose:
+        print("  (checked the published CSV denominators)")
+
     # Every report that carries a base rate must agree on which grid it came
     # from. Mixing grids silently is the failure mode that produced the stale
     # 15.98% in an earlier revision of the documents.
