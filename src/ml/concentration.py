@@ -31,8 +31,13 @@ from src.ml import walkforward as wf
 
 REPORT_DIR = Path(__file__).resolve().parents[2] / "reports"
 HOLDOUT_START = "2026-01-01"
-# Must match the horizon the matrix was labelled with, or the purge drops the
-# wrong number of sessions and the holdout silently overlaps the training set.
+# The horizon the matrix was labelled with. Getting this wrong is not cosmetic:
+# the purge below drops `horizon` pre-cutoff sessions, so too small a value leaves
+# training rows whose labels look forward into the holdout -- a leak -- and too
+# large a value throws away clean rows. It used to be declared here AND written as
+# a literal `10` in the wf.folds call a few lines down, so the two could drift
+# apart silently. It now has one definition, and main() checks it against the
+# horizon actually recorded for the matrix it loaded.
 HORIZON = 10
 
 
@@ -50,7 +55,18 @@ def main() -> None:
     frame = wf.load_matrix()
     cols = wf.feature_columns(frame)
     sessions = np.sort(frame["date"].unique())
-    folds = wf.folds(sessions, n_folds=5, horizon=10, embargo=2,
+    # Fail loudly if HORIZON disagrees with the matrix we actually loaded. This is
+    # the drift the comment above warns about, and it is silent: a wrong horizon
+    # produces a plausible-looking precision on a leaky split.
+    loaded_horizon = wf.LAST_LOAD.get("horizon")
+    if loaded_horizon is not None and int(loaded_horizon) != HORIZON:
+        raise SystemExit(
+            f"HORIZON is {HORIZON} but {wf.LAST_LOAD.get('path')} was labelled "
+            f"with horizon {loaded_horizon}; the purge would drop the wrong "
+            f"number of sessions"
+        )
+    print(f"matrix horizon {loaded_horizon} matches HORIZON {HORIZON}")
+    folds = wf.folds(sessions, n_folds=5, horizon=HORIZON, embargo=2,
                      min_train_sessions=150, final_holdout_start=HOLDOUT_START)
     cfg = wf.Config(name="conc", model="hgb", label="label_high", target_rate=0.02)
 

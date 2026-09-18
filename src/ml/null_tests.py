@@ -36,6 +36,15 @@ from src.ml import walkforward as wf
 REPORT_DIR = Path(__file__).resolve().parents[2] / "reports"
 FINAL_HOLDOUT_START = "2026-01-01"
 
+# A null is called CLEAN unless its precision exceeds LEAK_FACTOR times its own
+# base rate. The factor was a bare `1.6` at two call sites with no stated reason.
+# It is a triage threshold, not a test: a permutation null should sit AT the base
+# rate (lift ~1.0), and the observed nulls land within 0.88-1.21x, so 1.6 is
+# comfortably above the whole realised range while still catching a genuine leak,
+# which would show up at many times the base rate. Named and justified so the
+# number is reviewable, and recorded in the report beside each verdict.
+LEAK_FACTOR = 1.6
+
 
 def run_null(frame: pd.DataFrame, cols: list[str], label_col: str, seed: int) -> dict:
     """Evaluate the baseline config under one null transformation."""
@@ -80,18 +89,38 @@ def main() -> None:
         "mean_precision": float(np.mean(perm_prec)),
         "mean_base_rate": float(np.mean(perm_base)),
         "max_precision": float(np.max(perm_prec)),
+        # Persist the per-seed fold counts. The three permuted-label seeds each
+        # produced only a precision value, so a reader could not tell whether a
+        # seed had completed all folds or had been averaged over a different
+        # number of them -- which is exactly the kind of missing denominator that
+        # makes a null look cleaner than it is.
+        "n_folds": [r.get("n_folds") for r in perm_results],
+        "per_fold_signals": [r.get("per_fold_signals") for r in perm_results],
     }
     print(f"  --> mean permuted precision {np.mean(perm_prec)*100:.2f}% "
           f"vs mean base rate {np.mean(perm_base)*100:.2f}%")
-    verdict_perm = "CLEAN" if np.mean(perm_prec) < 1.6 * np.mean(perm_base) else "LEAK"
+    verdict_perm = "CLEAN" if np.mean(perm_prec) < LEAK_FACTOR * np.mean(perm_base) else "LEAK"
     print(f"  --> verdict: {verdict_perm}")
     report["permuted_labels"]["verdict"] = verdict_perm
+    report["permuted_labels"]["leak_factor"] = LEAK_FACTOR
 
     # --- Null 2: noise features --------------------------------------------
     print("\n=== NULL 2: Gaussian noise features (expect ~= base rate) ===")
     rng = np.random.default_rng(7)
-    noisy = frame[["code", "date", "entry_open", "fwd_max_high", "fwd_min_low",
-                   "fwd_max_close", "label_high", "label_close", "resolved"]].copy()
+    # Build the noise frame from walkforward.META_COLUMNS rather than a
+    # hand-copied list. If a metadata column were ever added to the matrix and
+    # not added here, it would silently be treated as a FEATURE, and the "noise
+    # features" null would stop being a null -- it would carry real signal and
+    # fail as a leak that is not one. Taking the list from the source of truth
+    # makes that drift impossible.
+    # META_COLUMNS is a set, so sort it: column order does not affect the fit,
+    # but a stable order keeps the run reproducible and the printouts diffable.
+    keep = sorted(c for c in wf.META_COLUMNS if c in frame.columns)
+    missing_meta = sorted(c for c in wf.META_COLUMNS if c not in frame.columns)
+    if missing_meta:
+        print(f"  NOTE: matrix lacks meta columns {missing_meta}; the noise frame "
+              f"keeps only the {len(keep)} present", flush=True)
+    noisy = frame[keep].copy()
     noise = rng.standard_normal((len(frame), len(cols))).astype("float32")
     for i, c in enumerate(cols):
         noisy[c] = noise[:, i]
@@ -99,10 +128,11 @@ def main() -> None:
     print(f"  OOS {s_noise['oos_precision']*100:6.2f}%  "
           f"({s_noise['oos_signals']:,} signals, base {s_noise['oos_base_rate']*100:.2f}%, "
           f"lift {s_noise['oos_lift']:.2f}x)")
-    verdict_noise = ("CLEAN" if s_noise["oos_precision"] < 1.6 * s_noise["oos_base_rate"]
+    verdict_noise = ("CLEAN" if s_noise["oos_precision"] < LEAK_FACTOR * s_noise["oos_base_rate"]
                      else "LEAK")
     print(f"  --> verdict: {verdict_noise}")
-    report["noise_features"] = {**s_noise, "verdict": verdict_noise}
+    report["noise_features"] = {**s_noise, "verdict": verdict_noise,
+                                "leak_factor": LEAK_FACTOR}
 
     # --- Null 3: single-feature AUC scan -----------------------------------
     print("\n=== single-feature AUC against label_high (flags leakage) ===")
