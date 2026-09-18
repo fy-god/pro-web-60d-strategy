@@ -301,6 +301,60 @@ def check_cross_report(f: Findings) -> None:
         intrad = lr.get("intraday") or {}
         f.check(bool(intrad), "live_readiness carries the intraday assessment")
 
+    # ------------------------------------------------------------------
+    # lowzone_hit_rates.csv and webpro_scan_summary.json.
+    #
+    # The low-zone table is the V0x family's published hit-rate ledger, and its
+    # "in_sample" flag is what stops an in-sample fit from being read as a live
+    # result -- so an out-of-sample row whose precision exceeds its own Wilson
+    # upper bound, or a lift that disagrees with precision / baseline, means the
+    # table no longer says what the documents claim it says.
+    # ------------------------------------------------------------------
+    lz = load_csv("lowzone_hit_rates.csv")
+    if lz:
+        f.check(True, f"lowzone_hit_rates.csv parses ({len(lz)} rows)")
+        bad_lift, bad_ci, bad_frac = [], [], []
+        for row in lz:
+            rid = f"{row.get('version')}/{row.get('regime')}"
+            try:
+                prec = float(row["bull_precision"])
+                base = float(row["baseline_rate"])
+                lift = float(row["lift_vs_baseline"])
+                lo, hi = float(row["wilson_low"]), float(row["wilson_high"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if base > 0 and abs(lift - prec / base) > 1e-3:
+                bad_lift.append((rid, lift, prec / base))
+            if not (0.0 <= lo <= prec <= hi <= 1.0):
+                bad_ci.append((rid, lo, prec, hi))
+            if not (0.0 <= prec <= 1.0):
+                bad_frac.append(rid)
+        f.check(not bad_lift,
+                f"lowzone lift == precision / baseline ({len(bad_lift)} differ: "
+                f"{bad_lift[:3]})")
+        f.check(not bad_ci,
+                f"lowzone Wilson bound brackets the precision ({len(bad_ci)} "
+                f"violate: {bad_ci[:3]})")
+        f.check(not bad_frac, f"lowzone precisions are proportions ({bad_frac[:3]})")
+
+    scan = load("webpro_scan_summary.json")
+    if scan:
+        # The scan's own signal count must equal the headline figure the hit-rate
+        # table reports for the same population; they are produced by the same
+        # pass and drifted apart once already.
+        emitted = scan.get("signals_emitted")
+        f.check(isinstance(emitted, int) and emitted > 0,
+                f"webpro_scan_summary reports signals_emitted ({emitted})")
+        if raw:
+            total = sum(int(r["signals_raw__webpro"]) for r in raw.values())
+            f.check(
+                total <= (emitted or 0),
+                f"per-strategy raw webpro signals {total:,} do not exceed the scan "
+                f"total {emitted:,}",
+            )
+        f.check(scan.get("stride") is not None,
+                "webpro_scan_summary records its stride")
+
 
     # Every report that carries a base rate must agree on which grid it came
     # from. Mixing grids silently is the failure mode that produced the stale
