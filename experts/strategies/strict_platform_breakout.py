@@ -1,4 +1,4 @@
-"""High-precision, lower-coverage platform-breakout selector."""
+"""Fixed-cutoff platform_breakout variant, fitted on the 100-card development scan, not a stricter selector: emits 6.97x platform_breakout's signals at -1.45pp precision."""
 
 from __future__ import annotations
 
@@ -13,8 +13,9 @@ STRATEGY_ID = "strict_platform_breakout"
 BASE_STRATEGY_ID = "platform_breakout"
 DISPLAY_NAME = "Strict Platform Breakout"
 THESIS = (
-    "Require a strong platform-breakout score before selecting a candidate. It is "
-    "intended for selective breakout hunting, with small deliberate coverage."
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy platform_breakout, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
 )
 THRESHOLD = 0.65
 FORMULA = "reuse platform_breakout score; predict 1 iff score >= 0.65."

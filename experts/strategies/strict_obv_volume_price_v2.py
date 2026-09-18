@@ -14,6 +14,7 @@ STRATEGY_ID = "strict_obv_volume_price_v2"
 DISPLAY_NAME = "Strict OBV Volume-Price v2 [Development]"
 THESIS = "A higher cutoff keeps only volume-price structures with the strongest visible accumulation confirmation."
 THRESHOLD = 0.969655
+BASE_STRATEGY_ID = "obv_volume_price"
 FORMULA = "Reuse obv_volume_price score; predict 1 iff score >= 0.969655; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +37,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

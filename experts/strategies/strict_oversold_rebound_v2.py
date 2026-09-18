@@ -1,4 +1,4 @@
-"""Development-only high-precision oversold rebound selector."""
+"""Fixed-cutoff oversold_rebound variant, fitted on the 100-card development scan, not a stricter selector: emits 102.43x oversold_rebound's signals at -9.01pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.oversold_rebound import (
 
 STRATEGY_ID = "strict_oversold_rebound_v2"
 DISPLAY_NAME = "Strict Oversold Rebound v2 [Development]"
-THESIS = "A higher cutoff keeps only oversold rebounds with the clearest exhaustion and recovery signals."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy oversold_rebound, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.449606
+BASE_STRATEGY_ID = "oversold_rebound"
 FORMULA = "Reuse oversold_rebound score; predict 1 iff score >= 0.449606; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

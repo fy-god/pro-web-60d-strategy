@@ -585,6 +585,118 @@ def check_cross_report(f: Findings) -> None:
         print("  (checked the published CSV denominators)")
 
     # ------------------------------------------------------------------
+    # The strict_* family's DIRECTION contract (EML-MEDIUM, experts audit).
+    #
+    # `_strict_selector.thresholded_decision`'s docstring promises "a stricter
+    # binary cutoff", and until this was checked, ten of the sixteen strict_*
+    # variants used a threshold BELOW their base strategy's -- so they emit a
+    # SUPERSET of it, not a subset. Nothing caught it because:
+    #
+    #   * only 5 of 16 modules declared BASE_STRATEGY_ID, and those 5 were read
+    #     nowhere, so the only machine-readable statement of the link was inert;
+    #   * THESIS is read by no code at all, so a false sentence in it could not
+    #     fail anything;
+    #   * no test pinned any strict_* threshold.
+    #
+    # The link is now declared in all 16 and the prose is corrected, and this
+    # check makes the RELATION enforceable: every strict_* variant must declare a
+    # base that exists, and must not claim a direction its threshold contradicts.
+    # THRESHOLD values are deliberately NOT asserted to be higher -- they are
+    # fitted outputs and moving them to satisfy a sentence would be backwards.
+    # What is asserted is that the prose does not lie about which way they went.
+    # ------------------------------------------------------------------
+    strat_dir = ROOT / "experts" / "strategies"
+    if strat_dir.exists():
+        strict_files = sorted(strat_dir.glob("strict_*.py"))
+        f.check(len(strict_files) >= 16,
+                f"the strict_* family is present ({len(strict_files)} modules)")
+        undeclared, unknown, false_claim, unexported = [], [], [], []
+        unparsed = []
+        directions = {"looser": 0, "tighter": 0, "equal": 0}
+        # Matches `THRESHOLD = 0.72` AND `THRESHOLD: float = 0.90`. The first
+        # version used `[:=][^=]*?` which cannot cross the `=` of an annotated
+        # declaration, so it silently resolved only 7 of 16 variants and reported
+        # `looser=1` instead of 10 -- the very fail-open this check exists to
+        # prevent, reproduced inside the check. `unparsed` now makes such a skip
+        # a FAILURE rather than an omission.
+        th_re = re.compile(r"^THRESHOLD\s*(?::[^=\n]*)?=\s*([\d.]+)", re.M)
+        for p in strict_files:
+            src = p.read_text(encoding="utf-8")
+            m = re.search(r'^BASE_STRATEGY_ID\s*=\s*"([a-z0-9_]+)"', src, re.M)
+            if not m:
+                undeclared.append(p.stem)
+                continue
+            base = m.group(1)
+            if not (strat_dir / f"{base}.py").exists():
+                unknown.append((p.stem, base))
+                continue
+            base_src = (strat_dir / f"{base}.py").read_text(encoding="utf-8")
+            own, bth = th_re.search(src), th_re.search(base_src)
+            if not own or not bth:
+                unparsed.append((p.stem, base, bool(own), bool(bth)))
+                continue
+            st, bt = float(own.group(1)), float(bth.group(1))
+            if st < bt:
+                directions["looser"] += 1
+            elif st > bt:
+                directions["tighter"] += 1
+            else:
+                directions["equal"] += 1
+            # A LOOSER variant must not claim to be stricter in its own prose.
+            # Evaluated PER LINE, so a correct THESIS cannot excuse a false
+            # docstring: an earlier version built one module-wide blob and skipped
+            # the whole check if the word "superset" appeared anywhere in it, which
+            # let `"""Development-only high-precision ..."""` pass untouched
+            # (caught by scripts/scratch/_probe_strict_guard.py). A line is a
+            # violation if it carries a forbidden claim and does not itself carry
+            # the honest qualifier. Comment-only lines are skipped: an explanation
+            # that quotes the retired wording is not a claim.
+            if st < bt:
+                FORBIDDEN = ("higher cutoff", "high-precision", "high precision",
+                             "lower-coverage", "lower coverage",
+                             "only the strongest", "only the upper",
+                             "small deliberate coverage", "stricter")
+                HONEST = ("not a stricter", "superset", "not a claim of")
+                for line in src.splitlines():
+                    s = line.strip()
+                    if s.startswith("#") or s.startswith("from ") \
+                            or s.startswith("import "):
+                        continue
+                    low = s.lower()
+                    if any(bad in low for bad in FORBIDDEN) and not any(
+                            ok in low for ok in HONEST):
+                        false_claim.append(f"{p.stem}: {s[:58]}")
+                        break
+            # If the module has an __all__, BASE_STRATEGY_ID must be in it.
+            al = re.search(r"^__all__ = \[(.*?)\]", src, re.M | re.S)
+            if al and '"BASE_STRATEGY_ID"' not in al.group(1):
+                unexported.append(p.stem)
+        f.check(not undeclared,
+                f"every strict_* variant declares BASE_STRATEGY_ID "
+                f"({len(undeclared)} do not: {undeclared[:4]})")
+        f.check(not unknown,
+                f"every declared base strategy exists ({unknown[:3]})")
+        f.check(not unexported,
+                f"a declared base is also exported ({unexported[:4]})")
+        f.check(not unparsed,
+                f"every strict_* variant's and its base's THRESHOLD is readable, "
+                f"so none is silently exempt from the direction check "
+                f"({len(unparsed)} unparsed: {unparsed[:3]})")
+        f.check(not false_claim,
+                f"no strict_* variant whose threshold is BELOW its base's claims "
+                f"to be a stricter/higher/lower-coverage selector "
+                f"({len(false_claim)} do: {false_claim[:4]})")
+        f.check(directions["looser"] >= 1,
+                f"the family's direction is recorded, not assumed: "
+                f"{directions}")
+        # And the census must cover the whole family: 10 looser / 6 tighter is
+        # the measured state after the correction. If a future edit adds a
+        # variant that the direction check cannot see, this fails.
+        f.check(sum(directions.values()) == len(strict_files),
+                f"the direction census covers every strict_* module "
+                f"({sum(directions.values())}/{len(strict_files)})")
+
+    # ------------------------------------------------------------------
     # README section 9.2 publishes a table of tradeability figures BY HAND, and
     # nothing checked it. After the denominator fix every cell of that table
     # changed, so the numbers a reader sees were a manual transcription with no

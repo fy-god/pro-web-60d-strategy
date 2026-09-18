@@ -1,4 +1,4 @@
-"""Development-only high-precision platform-breakout selector."""
+"""Fixed-cutoff platform_breakout variant, fitted on the 100-card development scan, not a stricter selector: emits 9.54x platform_breakout's signals at -1.56pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.platform_breakout import (
 
 STRATEGY_ID = "strict_platform_breakout_v2"
 DISPLAY_NAME = "Strict Platform Breakout v2 [Development]"
-THESIS = "A higher cutoff keeps only platform breakouts with the strongest visible compression and release evidence."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy platform_breakout, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.607503
+BASE_STRATEGY_ID = "platform_breakout"
 FORMULA = "Reuse platform_breakout score; predict 1 iff score >= 0.607503; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

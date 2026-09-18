@@ -14,6 +14,7 @@ STRATEGY_ID = "strict_bollinger_release_v2"
 DISPLAY_NAME = "Strict Bollinger Release v2 [Development]"
 THESIS = "A higher cutoff keeps only compressed-range releases with the strongest visible expansion confirmation."
 THRESHOLD = 0.952088
+BASE_STRATEGY_ID = "bollinger_squeeze"
 FORMULA = "Reuse bollinger_squeeze score; predict 1 iff score >= 0.952088; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +37,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

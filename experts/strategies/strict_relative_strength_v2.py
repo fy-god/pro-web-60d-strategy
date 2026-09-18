@@ -14,6 +14,7 @@ STRATEGY_ID = "strict_relative_strength_v2"
 DISPLAY_NAME = "Strict Relative Strength v2 [Development]"
 THESIS = "A higher cutoff keeps only the strongest relative-strength ranks in the development quiz."
 THRESHOLD = 0.951370
+BASE_STRATEGY_ID = "relative_strength_rank"
 FORMULA = "Reuse relative_strength_rank score; predict 1 iff score >= 0.951370; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +37,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

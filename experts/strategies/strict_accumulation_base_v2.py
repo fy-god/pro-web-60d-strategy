@@ -1,4 +1,4 @@
-"""Development-only high-precision accumulation-base selector."""
+"""Fixed-cutoff accumulation_base variant, fitted on the 100-card development scan, not a stricter selector: THRESHOLD sits below accumulation_base's, so it emits a superset."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.accumulation_base import (
 
 STRATEGY_ID = "strict_accumulation_base_v2"
 DISPLAY_NAME = "Strict Accumulation Base v2 [Development]"
-THESIS = "A higher cutoff keeps only low-volatility bases with the strongest visible accumulation evidence."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy accumulation_base, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.462083
+BASE_STRATEGY_ID = "accumulation_base"
 FORMULA = "Reuse accumulation_base score; predict 1 iff score >= 0.462083; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

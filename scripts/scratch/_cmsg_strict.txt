@@ -1,0 +1,71 @@
+Correct the strict_* family's direction contract: 10 of 16 were looser, not stricter
+
+The experts audit reported that `_strict_selector.thresholded_decision`'s docstring
+promises "a stricter binary cutoff" and that 10 of the 16 `strict_*` variants use a
+threshold BELOW the strategy they claim to tighten. Measured, confirmed, and fixed.
+
+WHY NOTHING CAUGHT IT
+
+  * only 5 of 16 modules declared BASE_STRATEGY_ID, and those 5 were imported by
+    nothing, so the only machine-readable statement of the link was inert;
+  * THESIS is read by no code (re-verified: no non-comment reference to it exists
+    in src/ or scripts/), so a false sentence in it could not fail anything;
+  * no test pinned any strict_* threshold -- `grep THRESHOLD tests/` returns
+    nothing for the whole family.
+
+THE MEASUREMENT
+
+Resolving each base by function identity (the module imports it as `_base_predict`)
+rather than by parsing the import gives all 16 pairs, where a regex gave 5 and then
+a naive annotated-declaration regex gave 7. Direction census: 10 LOOSER, 6 tighter,
+0 equal. And every one of the 10 looser variants emits MORE signals than its base,
+without exception, and 9 of the 10 have LOWER precision:
+
+  strict_oversold_rebound_v2    T=0.4496 vs base 0.8200   102.43x signals  -9.01pp
+  strict_turnover_weak_to_strong_v2 T=0.7027 vs 0.9000     20.24x signals  -1.12pp
+  strict_platform_breakout_v2   T=0.6075 vs 0.8000          9.54x signals  -1.56pp
+  strict_platform_breakout      T=0.6500 vs 0.8000          6.97x signals  -1.45pp
+  strict_leader_momentum_v2     T=0.7885 vs 0.9000          4.52x signals  -3.14pp
+  strict_washout_complete_v2    T=0.7037 vs 0.8200          2.68x signals  -0.81pp
+  strict_washout_complete       T=0.7200 vs 0.8200          2.45x signals  -0.66pp
+  strict_first_board_breakout_v2 T=0.7000 vs 0.9000         2.41x signals  +0.48pp
+  strict_gap_follow_through_v2  T=0.6909 vs 0.7200          1.45x signals  -1.15pp
+  strict_accumulation_base_v2   T=0.4621 vs 0.9000          base emits 0 signals
+
+strict_oversold_rebound_v2 is the clearest case: its THESIS said "A higher cutoff
+keeps only oversold rebounds with the clearest exhaustion", and it emits 31,754
+signals at 2.93% precision -- below the 3.035% scanned-grid base rate, i.e. worse
+than picking at random.
+
+THE FIX
+
+  * BASE_STRATEGY_ID declared in all 16 modules (and exported in the 11 that have
+    an __all__; the 5 others never had one, checked against git).
+  * Single-line THESIS claims rewritten on the 7 that said "A higher cutoff keeps
+    only ...", and the parenthesised multi-line ones on the 3 the first pass could
+    not match, plus 9 "high-precision" docstrings that measured LOWER precision.
+  * THRESHOLD VALUES ARE NOT TOUCHED. They are fitted outputs of the 100-card
+    development scan; moving a fitted number to match a sentence written about it
+    would be backwards. The sentence was what was wrong.
+  * The change is text-only: THESIS, docstrings and __all__ are read by no logic,
+    and all 16 modules still import, the registry still reports 36 strategies with
+    16 strict_*, and the test suite passes.
+
+THE GUARD, AND THE HOLE THE TEST FOUND IN IT
+
+The audit now requires every strict_* variant to declare an existing, exported base,
+to have a readable THRESHOLD for itself AND its base, and not to claim a direction
+its threshold contradicts. Two fail-opens were found in this new guard by its own
+negative test (scripts/scratch/_probe_strict_guard.py, now 6/6 caught):
+
+  1. the threshold regex `[:=][^=]*?` cannot cross the `=` of an annotated
+     `THRESHOLD: float = 0.90`, so it resolved 7 of 16 pairs and reported
+     `looser=1` instead of 10 -- the same fail-open the guard exists to prevent,
+     reproduced inside the guard. An `unparsed` list now turns any such skip into a
+     FAILURE, and a coverage check requires the census to sum to the family size.
+  2. the prose test built one module-wide blob and skipped the module if "superset"
+     appeared anywhere in it, so restoring `"""Development-only high-precision
+     leader-momentum selector."""` passed. It is now evaluated per line, and a line
+     carrying a forbidden claim must itself carry the honest qualifier.
+
+560 checks, 0 problems. 10 tests pass.

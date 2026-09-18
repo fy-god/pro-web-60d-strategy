@@ -1,4 +1,4 @@
-"""High-precision, lower-coverage washout-completion selector."""
+"""Fixed-cutoff washout_complete variant, fitted on the 100-card development scan, not a stricter selector: emits 2.45x washout_complete's signals at -0.66pp precision."""
 
 from __future__ import annotations
 
@@ -13,8 +13,9 @@ STRATEGY_ID = "strict_washout_complete"
 BASE_STRATEGY_ID = "washout_complete"
 DISPLAY_NAME = "Strict Washout Complete"
 THESIS = (
-    "Select only the upper washout-completion scores. This is a high-precision "
-    "selector with deliberately lower coverage, not a claim of broad accuracy."
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy washout_complete, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
 )
 THRESHOLD = 0.72
 FORMULA = "reuse washout_complete score; predict 1 iff score >= 0.72."

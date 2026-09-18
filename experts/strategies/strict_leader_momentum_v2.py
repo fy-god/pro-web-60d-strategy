@@ -1,4 +1,4 @@
-"""Development-only high-precision leader-momentum selector."""
+"""Fixed-cutoff leader_momentum variant, fitted on the 100-card development scan, not a stricter selector: emits 4.52x leader_momentum's signals at -3.14pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.leader_momentum import (
 
 STRATEGY_ID = "strict_leader_momentum_v2"
 DISPLAY_NAME = "Strict Leader Momentum v2 [Development]"
-THESIS = "A higher cutoff keeps only the strongest leader-momentum setups in the development quiz."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy leader_momentum, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.788535
+BASE_STRATEGY_ID = "leader_momentum"
 FORMULA = "Reuse leader_momentum score; predict 1 iff score >= 0.788535; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

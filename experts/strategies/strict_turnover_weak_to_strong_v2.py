@@ -1,4 +1,4 @@
-"""Development-only high-precision turnover weak-to-strong selector."""
+"""Fixed-cutoff turnover_weak_to_strong variant, fitted on the 100-card development scan, not a stricter selector: emits 20.24x turnover_weak_to_strong's signals at -1.12pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.turnover_weak_to_strong import (
 
 STRATEGY_ID = "strict_turnover_weak_to_strong_v2"
 DISPLAY_NAME = "Strict Turnover Weak-to-Strong v2 [Development]"
-THESIS = "A higher cutoff keeps only turnover recovery setups with the clearest visible demand confirmation."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy turnover_weak_to_strong, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.702740
+BASE_STRATEGY_ID = "turnover_weak_to_strong"
 FORMULA = "Reuse turnover_weak_to_strong score; predict 1 iff score >= 0.702740; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

@@ -1,4 +1,4 @@
-"""Development-only high-precision washout completion selector."""
+"""Fixed-cutoff washout_complete variant, fitted on the 100-card development scan, not a stricter selector: emits 2.68x washout_complete's signals at -0.81pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.washout_complete import (
 
 STRATEGY_ID = "strict_washout_complete_v2"
 DISPLAY_NAME = "Strict Washout Complete v2 [Development]"
-THESIS = "A higher cutoff keeps only washout-and-recovery shapes with the strongest visible reversal evidence."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy washout_complete, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.703662
+BASE_STRATEGY_ID = "washout_complete"
 FORMULA = "Reuse washout_complete score; predict 1 iff score >= 0.703662; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

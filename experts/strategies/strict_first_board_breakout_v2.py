@@ -1,4 +1,4 @@
-"""Development-only high-precision first-board breakout selector."""
+"""Fixed-cutoff first_board_breakout variant, fitted on the 100-card development scan, not a stricter selector: emits 2.41x first_board_breakout's signals at +0.48pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.first_board_breakout import (
 
 STRATEGY_ID = "strict_first_board_breakout_v2"
 DISPLAY_NAME = "Strict First-Board Breakout v2 [Development]"
-THESIS = "A higher cutoff keeps only first-board breakout setups with the strongest visible breakout evidence."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy first_board_breakout, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.700000
+BASE_STRATEGY_ID = "first_board_breakout"
 FORMULA = "Reuse first_board_breakout score; predict 1 iff score >= 0.700000; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",

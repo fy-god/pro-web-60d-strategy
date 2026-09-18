@@ -1,4 +1,4 @@
-"""Development-only high-precision gap follow-through selector."""
+"""Fixed-cutoff gap_follow_through variant, fitted on the 100-card development scan, not a stricter selector: emits 1.45x gap_follow_through's signals at -1.15pp precision."""
 
 from __future__ import annotations
 
@@ -12,8 +12,13 @@ from experts.strategies.gap_follow_through import (
 
 STRATEGY_ID = "strict_gap_follow_through_v2"
 DISPLAY_NAME = "Strict Gap Follow Through v2 [Development]"
-THESIS = "A higher cutoff keeps only the strongest gap follow-through setups in the 100-card development quiz."
+THESIS = (
+    "A fixed cutoff fitted on the 100-card development scan, not a stricter selector: it "
+    "sits BELOW the threshold of the base strategy gap_follow_through, so it emits a SUPERSET "
+    "of that strategy rather than a subset."
+)
 THRESHOLD = 0.690867
+BASE_STRATEGY_ID = "gap_follow_through"
 FORMULA = "Reuse gap_follow_through score; predict 1 iff score >= 0.690867; development-only."
 FACTOR_DEFINITIONS = dict(_BASE_FACTORS)
 SOURCE = "Handoff development selector"
@@ -36,6 +41,7 @@ __all__ = [
     "DISPLAY_NAME",
     "THESIS",
     "THRESHOLD",
+    "BASE_STRATEGY_ID",
     "FORMULA",
     "FACTOR_DEFINITIONS",
     "SOURCE",
