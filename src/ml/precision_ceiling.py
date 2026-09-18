@@ -1,8 +1,9 @@
-"""Is a 70% precision target mathematically reachable at a 3.1% base rate?
+"""Empirical threshold frontier for the fitted HGB ranking at a ~4.1% base rate.
 
-This is the defining question of the project, and it can be answered before any
-further modelling. Precision is not a free parameter: for a fixed base rate it is
-a deterministic function of where the model operates on its ROC curve.
+This module started from the project's defining question -- is a 70% precision
+target reachable? -- and the arithmetic below is the reason it is not reachable at
+any useful recall for THIS model, on THIS sample. That is a narrower claim than
+"70% is mathematically impossible", and the difference matters.
 
 Derivation
 ----------
@@ -32,7 +33,10 @@ What this module measures, on the real purged walk-forward folds:
 
 * the empirical precision-recall frontier of the best available model,
 * the **maximum precision achievable at any threshold** (the oracle bound for
-  that model — an upper limit no threshold choice can beat),
+  that model — an upper limit no scalar threshold on that ranking can beat). This
+  is an empirical frontier for ONE fitted model on ONE matrix, not a bound over
+  all models: a different model family, feature set or training objective could
+  rank the same rows differently and could in principle lie outside it.
 * the same after the fold's own training data is included, to show how much of a
   high number is in-sample memory,
 * and the required false-positive rate for each precision target.
@@ -206,10 +210,21 @@ def main() -> None:
         print(f"  >>> Practical ceiling (>=250 signals), rank-norm  : {hard_rank*100:.2f}%")
         top = max(hard_ceiling, hard_rank)
         print(f"  >>> A 70% target is {(0.70/top):.2f}x that ceiling.")
-        print("  >>> No threshold, model or hyperparameter choice can exceed the "
-              "oracle rows above;")
-        print("  >>> they are computed on the true labels, so they are upper "
-              "bounds by construction.")
+        # Scope the claim to what was actually measured. This module evaluates the
+        # frontier of ONE fitted model's score ranking, so it bounds scalar
+        # thresholds on THAT ranking. It is not a bound over all models: another
+        # family, feature set or objective could order the same rows differently.
+        # The earlier wording ("no threshold, model or hyperparameter choice") made
+        # a claim over all models that the arithmetic here cannot support, and the
+        # documents had already been corrected to a narrower statement.
+        print("  >>> No scalar threshold on this fitted score ranking can exceed "
+              "the oracle rows above;")
+        print("  >>> they are computed on the true labels, so they bound this "
+              "ranking by construction.")
+        print("  >>> This is an empirical frontier for one fitted HGB model on "
+              "one matrix, not a")
+        print("  >>> bound over all models: a different model could rank these "
+              "rows differently.")
 
     print("\n--- IN-SAMPLE equivalent, for contrast ---")
     if len(ins):
