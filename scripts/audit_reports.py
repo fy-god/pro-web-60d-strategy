@@ -205,15 +205,21 @@ def check_cross_report(f: Findings) -> None:
                    if r.get("config") == "fam_hgb_0"]
         if configs and pooled_base:
             got = configs[0]["oos_base_rate"]
-            # The two modules drop different rows when fitting (the ceiling keeps
-            # every scorable row; evaluate_fold requires resolved labels), so a
-            # small difference is expected. A difference beyond ~0.5% relative
-            # means they are not describing the same population.
+            # The two modules compute this from the same out-of-sample rows and
+            # currently agree BIT-IDENTICALLY (rel diff 0.0), so the tolerance can
+            # be tight. The previous 5e-3 was 12x looser than the separation it
+            # had to detect: the dense and stride-5 grids differ by 4.02e-4
+            # relative (0.040894451 vs 0.040878010), so a ceiling report
+            # regenerated on the stride-5 matrix while the search stayed dense
+            # passed. The comment claimed the tolerance allowed for different row
+            # filters, but a tolerance that cannot separate the two grids is not
+            # allowing for anything. 1e-6 admits float noise and rejects a grid
+            # change by more than two orders of magnitude.
             rel = abs(pooled_base - got) / max(pooled_base, 1e-12)
-            f.check(rel < 5e-3,
-                    f"base rate agrees across modules within 0.5%: ceiling "
-                    f"{pooled_base:.6f} vs walkforward {got:.6f} "
-                    f"(rel {rel*100:.3f}%)")
+            f.check(rel < 1e-6,
+                    f"base rate agrees across modules: ceiling "
+                    f"{pooled_base:.9f} vs walkforward {got:.9f} "
+                    f"(rel {rel:.3e}, grid separation is 4.02e-04)")
 
     # ------------------------------------------------------------------
     # Published CSVs, which nothing checked until now.
@@ -241,6 +247,42 @@ def check_cross_report(f: Findings) -> None:
             return float(value)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return None
+
+    def _spearman(xs: list, ys: list) -> float | None:
+        """Spearman rank correlation, recomputed so a published rho is verified.
+
+        Implemented here rather than importing scipy: the audit must run with
+        only the standard library plus pandas/numpy, and this is a few lines.
+        """
+        pairs = [(x, y) for x, y in zip(xs, ys)
+                 if x is not None and y is not None]
+        if len(pairs) < 3:
+            return None
+
+        def rank(vals: list[float]) -> list[float]:
+            order = sorted(range(len(vals)), key=lambda i: vals[i])
+            ranks = [0.0] * len(vals)
+            i = 0
+            while i < len(order):
+                j = i
+                while j + 1 < len(order) and vals[order[j + 1]] == vals[order[i]]:
+                    j += 1
+                avg = (i + j) / 2.0 + 1.0
+                for k in range(i, j + 1):
+                    ranks[order[k]] = avg
+                i = j + 1
+            return ranks
+
+        a = rank([float(p[0]) for p in pairs])
+        b = rank([float(p[1]) for p in pairs])
+        n = len(a)
+        ma, mb = sum(a) / n, sum(b) / n
+        num = sum((x - ma) * (y - mb) for x, y in zip(a, b))
+        da = sum((x - ma) ** 2 for x in a) ** 0.5
+        db = sum((y - mb) ** 2 for y in b) ** 0.5
+        if da == 0 or db == 0:
+            return None
+        return num / (da * db)
 
     hit = {r["strategy_id"]: r for r in load_csv("hitrate_vs_expectancy.csv")}
     trade = {r["label"]: r for r in load_csv("tradeability_by_strategy.csv")}
@@ -367,10 +409,15 @@ def check_cross_report(f: Findings) -> None:
         f.check(isinstance(emitted, int) and emitted > 0,
                 f"webpro_scan_summary reports signals_emitted ({emitted})")
         if raw:
+            # Exact identity: the per-strategy raw counts plus the censored
+            # windows account for EVERY emitted signal. The previous `total <=
+            # emitted` left 9,219 rows of slack (the censored total), so nearly
+            # 1.4% of the scan could vanish from the published table unnoticed.
             total = sum(int(r["signals_raw__webpro"]) for r in raw.values())
+            censored = sum(int(r["censored_signals__webpro"]) for r in raw.values())
             f.check(
-                total <= (emitted or 0),
-                f"per-strategy raw webpro signals {total:,} do not exceed the scan "
+                total + censored == emitted,
+                f"per-strategy raw {total:,} + censored {censored:,} == scan "
                 f"total {emitted:,}",
             )
         f.check(scan.get("stride") is not None,
@@ -385,20 +432,47 @@ def check_cross_report(f: Findings) -> None:
     hve = load("hitrate_vs_expectancy.json")
     if hve:
         strategies = hve.get("strategies")
-        f.check(strategies == len(hit) if hit else strategies is not None,
-                f"hitrate_vs_expectancy.json strategies {strategies} matches the "
-                f"CSV row count ({len(hit)})")
+        # Require the field to be PRESENT before checking its value. The previous
+        # form accepted None (`in (None, pos)`), so renaming or dropping a field
+        # turned the check into a pass -- the same shape as the holdout-split
+        # guard that read train_rows instead of n_train_rows and silently did
+        # nothing.
+        f.check(strategies is not None,
+                "hitrate_vs_expectancy.json declares its strategy count")
+        if strategies is not None and hit:
+            f.check(strategies == len(hit),
+                    f"hitrate_vs_expectancy.json strategies {strategies} matches "
+                    f"the CSV row count ({len(hit)})")
         for key in ("positive_expectancy_count", "positive_at_target_count"):
             v = hve.get(key)
+            f.check(v is not None,
+                    f"hitrate_vs_expectancy.json declares {key}")
             if v is not None and strategies:
                 f.check(0 <= int(v) <= int(strategies),
                         f"hitrate_vs_expectancy.json {key} {v} is within "
                         f"0..{strategies}")
         rho = hve.get("spearman_hit_rate_vs_net_expectancy")
+        f.check(rho is not None,
+                "hitrate_vs_expectancy.json declares its Spearman correlation")
         if rho is not None:
             f.check(-1.0 <= float(rho) <= 1.0,
                     f"hitrate_vs_expectancy.json Spearman rho {rho:.4f} is a "
                     f"correlation")
+            # README quotes this value, so require it to match the recomputed
+            # correlation from the CSV rather than merely being in range. A rho
+            # that decayed from -0.511 to -0.20 would previously pass.
+            if hit:
+                recomputed = _spearman(
+                    [_num(r.get("hit_rate")) for r in hit.values()],
+                    [_num(r.get("net_expectancy")) for r in hit.values()],
+                )
+                if recomputed is not None:
+                    f.check(
+                        abs(float(rho) - recomputed) < 2e-3,
+                        f"hitrate_vs_expectancy.json Spearman rho {float(rho):.4f} "
+                        f"matches the correlation recomputed from the CSV "
+                        f"({recomputed:.4f})",
+                    )
         # Recompute the two counts from the CSV. If the JSON disagrees, the
         # document's headline claim no longer describes the published table.
         if hit:
@@ -409,12 +483,12 @@ def check_cross_report(f: Findings) -> None:
                         if _num(r.get("net_expectancy_at_target")) is not None
                         and _num(r["net_expectancy_at_target"]) > 0)
             f.check(
-                hve.get("positive_expectancy_count") in (None, pos),
+                hve.get("positive_expectancy_count") == pos,
                 f"hitrate_vs_expectancy.json positive_expectancy_count "
                 f"{hve.get('positive_expectancy_count')} matches the CSV ({pos})",
             )
             f.check(
-                hve.get("positive_at_target_count") in (None, pos_t),
+                hve.get("positive_at_target_count") == pos_t,
                 f"hitrate_vs_expectancy.json positive_at_target_count "
                 f"{hve.get('positive_at_target_count')} matches the CSV ({pos_t})",
             )
@@ -1183,14 +1257,23 @@ def check_no_orphan_reports(f: Findings) -> None:
     # Which published artifacts does this audit actually read? A report that no
     # check names is published and unverified, which is how nine of them --
     # including live_readiness.json, which carries the intraday answer -- sat
-    # outside every check while the audit reported no problems. This check does
-    # not verify their contents; it makes their absence from the audit visible.
+    # outside every check while the audit reported no problems.
+    #
+    # Coverage is derived from actual load()/load_csv() CALL SITES, not from
+    # filename strings anywhere in the source. The previous version regexed the
+    # whole file, so a filename mentioned only in a comment or in the known_grid
+    # table counted as covered -- ml_crosssec_final.json was reported as read
+    # while no value in it was ever compared.
     src = Path(__file__).read_text(encoding="utf-8")
-    referenced = set(re.findall(r"[\"']([A-Za-z0-9_]+\.(?:json|csv))[\"']", src))
+    referenced = set(re.findall(
+        r"(?:load|load_csv)\(\s*[\"']([A-Za-z0-9_]+\.(?:json|csv))[\"']", src
+    ))
     unreferenced = sorted((on_disk | csvs) - referenced)
     for name in unreferenced:
         f.note(f"reports/{name} is published but no check reads it")
     print(f"  ({len(unreferenced)} published artifact(s) outside every check)")
+    if f.verbose:
+        print(f"  (checked artifacts: {len(referenced)})")
 
 
 def main() -> int:
