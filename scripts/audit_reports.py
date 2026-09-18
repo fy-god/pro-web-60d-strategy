@@ -221,6 +221,13 @@ def check_cross_report(f: Findings) -> None:
         with path.open(encoding="utf-8", newline="") as fh:
             return list(_csv.DictReader(fh))
 
+    def _num(value: object) -> float | None:
+        """Parse a CSV cell as a float, or None if it is not numeric."""
+        try:
+            return float(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return None
+
     hit = {r["strategy_id"]: r for r in load_csv("hitrate_vs_expectancy.csv")}
     trade = {r["label"]: r for r in load_csv("tradeability_by_strategy.csv")}
     raw = {r["strategy_id"]: r for r in load_csv("webpro_hit_rates.csv")}
@@ -354,6 +361,49 @@ def check_cross_report(f: Findings) -> None:
             )
         f.check(scan.get("stride") is not None,
                 "webpro_scan_summary records its stride")
+
+    # ------------------------------------------------------------------
+    # hitrate_vs_expectancy.json -- the source of the "hit rate ranks the
+    # strategies backwards" claim (Spearman -0.511, 15 of 35 profitable) that
+    # README quotes. The counts must match the CSV of the same name, or one of
+    # the two is stale.
+    # ------------------------------------------------------------------
+    hve = load("hitrate_vs_expectancy.json")
+    if hve:
+        strategies = hve.get("strategies")
+        f.check(strategies == len(hit) if hit else strategies is not None,
+                f"hitrate_vs_expectancy.json strategies {strategies} matches the "
+                f"CSV row count ({len(hit)})")
+        for key in ("positive_expectancy_count", "positive_at_target_count"):
+            v = hve.get(key)
+            if v is not None and strategies:
+                f.check(0 <= int(v) <= int(strategies),
+                        f"hitrate_vs_expectancy.json {key} {v} is within "
+                        f"0..{strategies}")
+        rho = hve.get("spearman_hit_rate_vs_net_expectancy")
+        if rho is not None:
+            f.check(-1.0 <= float(rho) <= 1.0,
+                    f"hitrate_vs_expectancy.json Spearman rho {rho:.4f} is a "
+                    f"correlation")
+        # Recompute the two counts from the CSV. If the JSON disagrees, the
+        # document's headline claim no longer describes the published table.
+        if hit:
+            pos = sum(1 for r in hit.values()
+                      if _num(r.get("net_expectancy")) is not None
+                      and _num(r["net_expectancy"]) > 0)
+            pos_t = sum(1 for r in hit.values()
+                        if _num(r.get("net_expectancy_at_target")) is not None
+                        and _num(r["net_expectancy_at_target"]) > 0)
+            f.check(
+                hve.get("positive_expectancy_count") in (None, pos),
+                f"hitrate_vs_expectancy.json positive_expectancy_count "
+                f"{hve.get('positive_expectancy_count')} matches the CSV ({pos})",
+            )
+            f.check(
+                hve.get("positive_at_target_count") in (None, pos_t),
+                f"hitrate_vs_expectancy.json positive_at_target_count "
+                f"{hve.get('positive_at_target_count')} matches the CSV ({pos_t})",
+            )
 
     # ------------------------------------------------------------------
     # The precision frontier, which is the evidence for the central claim that
