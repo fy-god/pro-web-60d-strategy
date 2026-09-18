@@ -114,6 +114,124 @@ LOAD_ERRORS: list[str] = []
 LOADED: set[str] = set()
 LOADED_PROVENANCE: set[str] = set()
 
+# ARTIFACT_SHAPES records, for every published artifact the audit reads, the
+# minimum number of entries it must carry. Without it the whole audit fails OPEN
+# on a payload that is present but wrong: every check is written as
+# `if not report: continue` (or `if rows:` / `if oos:`), so a report replaced by
+# `{}`, a CSV truncated to its header, or a JSON swapped for `[]` made the
+# dependent checks vanish WITHOUT failing. That was a false PASS -- 20 checks
+# including the recall-floor table behind the "70% is unreachable" claim could be
+# deleted and the run still exited 0.
+#
+# Deletion already failed closed because load() records it. This closes the other
+# half: a payload must be the right SHAPE as well as present. `min_rows` counts
+# JSON dict keys or CSV data rows.
+ARTIFACT_SHAPES: dict[str, int] = {
+    # JSON reports: number of top-level keys expected at minimum.
+    "hitrate_vs_expectancy.json": 4,
+    "live_readiness.json": 2,
+    "lowzone_baselines.json": 3,
+    "ml_concentration.json": 8,
+    "ml_crosssec_final.json": 8,
+    "ml_crosssec_hgb0.json": 8,
+    "ml_final_holdout.json": 15,
+    "ml_null_tests.json": 4,
+    "ml_precision_ceiling.json": 10,
+    "ml_search_ablation.json": 5,
+    "ml_search_models.json": 5,
+    "ml_search_wide.json": 5,
+    "tradeability.json": 2,
+    "webpro_baselines.json": 3,
+    "webpro_scan_summary.json": 5,
+    # CSVs: number of data rows expected at minimum.
+    "hitrate_vs_expectancy.csv": 30,
+    "live_readiness.csv": 1,
+    "lowzone_hit_rates.csv": 10,
+    "ml_precision_frontier_insample.csv": 50,
+    "ml_precision_frontier_oos.csv": 50,
+    "tradeability_by_strategy.csv": 30,
+    "webpro_cards_100_reproduction.csv": 30,
+    "webpro_hit_rates.csv": 30,
+}
+
+
+def _shape_ok(name: str, size: int) -> bool:
+    """True if `size` entries satisfy the registered minimum for `name`."""
+    floor = ARTIFACT_SHAPES.get(name)
+    if floor is None:
+        # Unregistered artifact: cannot judge, and silently accepting would
+        # recreate the hole for any new report. Say so as a note at import of the
+        # file rather than guessing a floor.
+        return True
+    return size >= floor
+
+
+# REQUIRED_FIELDS names the NESTED fields the checks actually read, per report.
+# The top-level shape floor above cannot see inside a row: stripping
+# `per_fold_signals` and `per_fold_oos` from every row of the three search reports
+# left the top-level key count unchanged at 8, so the shape guard stayed silent
+# while 82 pooling checks -- every check that recomputes a pooled figure from
+# per-fold parts -- quietly disappeared. Requiring the fields makes that visible.
+REQUIRED_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
+    # report -> (collection key, fields each entry must carry)
+    "ml_search_models.json": ("ranked", ("per_fold_signals", "per_fold_oos",
+                                         "oos_signals", "oos_precision",
+                                         "oos_base_rate", "n_folds", "label")),
+    "ml_search_wide.json": ("ranked", ("per_fold_signals", "per_fold_oos",
+                                       "oos_signals", "oos_precision",
+                                       "oos_base_rate", "n_folds", "label")),
+    "ml_search_ablation.json": ("ranked", ("per_fold_signals", "per_fold_oos",
+                                           "oos_signals", "oos_precision",
+                                           "oos_base_rate", "n_folds", "label")),
+}
+
+# TOP_LEVEL_FIELDS names the scalar fields the checks read on reports that carry
+# no per-row collection. ml_final_holdout.json and ml_precision_ceiling.json hold
+# single objects, so their guard is a field list rather than a row schema.
+# ml_precision_ceiling.json in particular had no per-fold list at all, and the
+# first version of REQUIRED_FIELDS named one that does not exist.
+TOP_LEVEL_FIELDS: dict[str, tuple[str, ...]] = {
+    "ml_final_holdout.json": ("precision", "lift", "signals", "hits",
+                              "base_rate", "distinct_stocks", "distinct_dates",
+                              "wilson_95", "date_clustered_95", "stride"),
+    "ml_precision_ceiling.json": ("base_rate", "oos_rows", "oos_positives",
+                                  "absolute_max_precision_oos",
+                                  "practical_ceiling_250plus_raw",
+                                  "practical_ceiling_250plus_rank",
+                                  "requirement_70pct"),
+    "ml_concentration.json": ("walkforward_folds",),
+    "ml_crosssec_final.json": ("results",),
+    "tradeability.json": ("overall",),
+    "webpro_scan_summary.json": ("signals_emitted",),
+}
+
+
+def _missing_fields(name: str, payload: dict) -> list[str]:
+    """Nested-field shortfalls for `name`, as human-readable strings."""
+    problems: list[str] = []
+    spec = REQUIRED_FIELDS.get(name)
+    if spec:
+        key, fields = spec
+        entries = payload.get(key)
+        if not isinstance(entries, list) or not entries:
+            problems.append(f"{name}:{key} is missing or empty")
+        else:
+            # Check the first few entries; a schema change hits every row, and
+            # scanning all 56 x 7 fields on every run buys nothing.
+            for i, entry in enumerate(entries[:5]):
+                if not isinstance(entry, dict):
+                    problems.append(f"{name}:{key}[{i}] is not an object")
+                    continue
+                absent = [f for f in fields if f not in entry]
+                if absent:
+                    problems.append(f"{name}:{key}[{i}] lacks {absent}")
+    top = TOP_LEVEL_FIELDS.get(name)
+    if top:
+        absent = [f for f in top if f not in payload]
+        if absent:
+            problems.append(f"{name} lacks the fields its checks read: {absent}")
+    return problems
+
 
 def load(name: str, provenance: bool = False) -> dict | None:
     path = REPORTS / name
@@ -127,10 +245,26 @@ def load(name: str, provenance: bool = False) -> dict | None:
         LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         LOAD_ERRORS.append(f"reports/{name} is not readable JSON: {exc}")
         return None
+    # Shape, not just presence. A wrong TYPE (a string where an object belongs) is
+    # a finding too -- it used to crash the audit with an AttributeError, which
+    # the status publisher reported as "(no structured failures parsed)".
+    if not isinstance(payload, dict):
+        LOAD_ERRORS.append(
+            f"reports/{name} is a JSON {type(payload).__name__}, not an object")
+        return None
+    if not _shape_ok(name, len(payload)):
+        LOAD_ERRORS.append(
+            f"reports/{name} carries {len(payload)} keys, fewer than the "
+            f"{ARTIFACT_SHAPES[name]} its checks depend on; checks would be "
+            f"skipped silently")
+        return None
+    for problem in _missing_fields(name, payload):
+        LOAD_ERRORS.append(problem)
+    return payload
 
 
 def load_csv(name: str) -> list[dict]:
@@ -145,8 +279,24 @@ def load_csv(name: str) -> list[dict]:
     if not path.exists():
         LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
         return []
-    with path.open(encoding="utf-8", newline="") as fh:
-        return list(_csv.DictReader(fh))
+    try:
+        with path.open(encoding="utf-8", newline="") as fh:
+            rows = list(_csv.DictReader(fh))
+    except (OSError, UnicodeDecodeError) as exc:
+        LOAD_ERRORS.append(f"reports/{name} is not readable CSV: {exc}")
+        return []
+    # Shape, not just presence. Truncating a published CSV to its header used to
+    # yield an empty list, and every dependent check was written as
+    # `if not rows: continue` -- so 20 checks, including the recall-floor table
+    # that is the evidence for "70% is unreachable", disappeared and the run
+    # still exited 0 with "0 problems". Record the shortfall here, at the single
+    # choke point every CSV read goes through.
+    if not _shape_ok(name, len(rows)):
+        LOAD_ERRORS.append(
+            f"reports/{name} has {len(rows)} data rows, fewer than the "
+            f"{ARTIFACT_SHAPES[name]} its checks depend on; checks would be "
+            f"skipped silently")
+    return rows
 
 
 def _num(value: object) -> float | None:
@@ -404,9 +554,22 @@ def check_cross_report(f: Findings) -> None:
     # table no longer says what the documents claim it says.
     # ------------------------------------------------------------------
     lz = load_csv("lowzone_hit_rates.csv")
+    # `if lz:` was fail-OPEN: a header-only file parses to an empty list, so every
+    # lowzone check below was skipped and the run stayed green -- the probe that
+    # truncated the CSV to its header caught this. The file is a published
+    # artifact the documents depend on, so its absence of rows is a failure, not
+    # a reason to skip. Do the checks unconditionally.
+    # The row count is asserted against a floor rather than printed as a pass. The
+    # previous `f.check(True, f"... parses ({len(lz)} rows)")` could never fail.
+    f.check(len(lz) >= 10,
+            f"lowzone_hit_rates.csv carries its rows ({len(lz)} >= 10)")
+    # The row-count check above runs unconditionally, so an empty or header-only
+    # file fails the run before this guard. The loop checks may then be skipped
+    # without hiding anything, since the run is already red. (The previous
+    # `if lz:` alone was the fail-open path: it skipped every lowzone check AND
+    # left the run green, which the truncation probe confirmed.)
     if lz:
-        f.check(True, f"lowzone_hit_rates.csv parses ({len(lz)} rows)")
-        bad_lift, bad_ci, bad_frac = [], [], []
+        bad_lift, bad_ci, bad_frac, unparsed = [], [], [], []
         for row in lz:
             rid = f"{row.get('version')}/{row.get('regime')}"
             try:
@@ -415,6 +578,11 @@ def check_cross_report(f: Findings) -> None:
                 lift = float(row["lift_vs_baseline"])
                 lo, hi = float(row["wilson_low"]), float(row["wilson_high"])
             except (KeyError, TypeError, ValueError):
+                # Recorded, not skipped. A schema change that made every row
+                # unparseable would leave all three lists below empty, and the
+                # three checks would then pass vacuously on a table nothing had
+                # been verified against.
+                unparsed.append(rid)
                 continue
             if base > 0 and abs(lift - prec / base) > 1e-3:
                 bad_lift.append((rid, lift, prec / base))
@@ -422,6 +590,9 @@ def check_cross_report(f: Findings) -> None:
                 bad_ci.append((rid, lo, prec, hi))
             if not (0.0 <= prec <= 1.0):
                 bad_frac.append(rid)
+        f.check(not unparsed,
+                f"lowzone rows carry the fields the checks read "
+                f"({len(unparsed)} unparseable: {unparsed[:3]})")
         f.check(not bad_lift,
                 f"lowzone lift == precision / baseline ({len(bad_lift)} differ: "
                 f"{bad_lift[:3]})")
@@ -429,6 +600,114 @@ def check_cross_report(f: Findings) -> None:
                 f"lowzone Wilson bound brackets the precision ({len(bad_ci)} "
                 f"violate: {bad_ci[:3]})")
         f.check(not bad_frac, f"lowzone precisions are proportions ({bad_frac[:3]})")
+
+        # ------------------------------------------------------------------
+        # audit/README.md makes four numeric claims about THIS repository's own
+        # backtest, in a table at lines 66-70, and no check reads that document
+        # at all. They were unverified until now.
+        #
+        # The claims are PARSED OUT OF THE DOCUMENT and compared to the ledger.
+        # An earlier version of this check compared the CSV against hard-coded
+        # constants (4.37, 4.23, 4.08), which is worthless: it would pass with
+        # audit/README.md deleted, and it could not notice the document changing.
+        # The probe caught that -- injecting 9.99% for V03 produced no FAIL.
+        #
+        # A caveat that matters for future maintainers: `version` is NOT a unique
+        # key in lowzone_hit_rates.csv, since V00-V08 each appear once per regime,
+        # so a naive version-keyed lookup returns the low60 row and makes every
+        # webpro claim look wrong. Key on (version, regime).
+        # ------------------------------------------------------------------
+        audit_doc = ROOT / "audit" / "README.md"
+        if audit_doc.exists():
+            atext = audit_doc.read_text(encoding="utf-8")
+            keyed = {(r.get("version"), r.get("regime")): r for r in lz}
+            f.check(len(keyed) == len(lz),
+                    f"lowzone (version, regime) is a unique key "
+                    f"({len(keyed)} of {len(lz)} rows)")
+            # The line that carries the four figures.
+            claim_line = next(
+                (ln for ln in atext.splitlines()
+                 if "7/08 in-sample" in ln.replace("V", "") and "V03" in ln),
+                None,
+            ) or next((ln for ln in atext.splitlines()
+                       if "walk-forward V03" in ln), None)
+            f.check(claim_line is not None,
+                    "audit/README.md carries the V03/V07/V08 comparison line")
+            if claim_line:
+                # Pull each (version, percentage) pair from the document.
+                #
+                # The document writes the in-sample pair as "V07/V08 in-sample
+                # hits (4.23%/4.08%)" -- the versions and the percentages are
+                # each slash-joined, so a version-adjacent regex reads 4.23 as
+                # V08's and loses V07 entirely. Handle that grouped form first,
+                # then any remaining version-adjacent pairs.
+                found: dict[str, float] = {}
+                grp = re.search(
+                    r"V(\d\d)/V(\d\d)[^(]*\(([\d.]+)%\s*/\s*([\d.]+)%\)",
+                    claim_line,
+                )
+                if grp:
+                    v1, v2, p1, p2 = grp.groups()
+                    found[f"V{v1}"] = float(p1)
+                    found[f"V{v2}"] = float(p2)
+                # Any character may sit between a version and its percentage --
+                # the text is "V07/V08 in-sample hits (4.23%/4.08%) do not beat
+                # the honest walk-forward V03 (4.37%)". A character class that
+                # excludes "(" loses V03 (which follows an opening parenthesis)
+                # and one that excludes nothing but stays short grabs "60%" from
+                # the table's PREVIOUS column ("fail the 60% gate"). The grouped
+                # pass takes V07/V08 from their slash-joined pair; the loose pass
+                # then picks up V03, and only adds a version the grouped pass did
+                # not already supply.
+                for n, p in re.findall(r"V(\d\d).{0,64}?([\d.]+)%", claim_line):
+                    found.setdefault(f"V{n}", float(p))
+                f.check(len(found) >= 3,
+                        f"audit/README.md's claim line yields three figures "
+                        f"(parsed {found})")
+                for vid in ("V03", "V07", "V08"):
+                    if vid not in found:
+                        f.check(False,
+                                f"audit/README.md's claim line states {vid}'s "
+                                f"percentage")
+                        continue
+                    row = keyed.get((vid, "webpro"))
+                    if row is None:
+                        f.check(False,
+                                f"lowzone_hit_rates.csv carries {vid}/webpro")
+                        continue
+                    got = float(row["hit_rate_pct"])
+                    f.check(abs(got - found[vid]) < 0.005,
+                            f"audit/README.md cites {vid} at {found[vid]}%; the "
+                            f"ledger says {got:.2f}%")
+                    # The in-sample flag is what stops an in-sample fit from being
+                    # read as a live result.
+                    expect = vid != "V03"
+                    is_in = str(row["in_sample"]).strip().lower() == "true"
+                    f.check(is_in == expect,
+                            f"lowzone ledger marks {vid} in_sample={is_in}, "
+                            f"matching audit/README.md's framing "
+                            f"(expected {expect})")
+                # The document's assertion: V07 and V08 do not beat V03.
+                if {"V03", "V07", "V08"} <= set(found):
+                    for vid in ("V07", "V08"):
+                        f.check(found[vid] < found["V03"],
+                                f"audit/README.md: {vid} ({found[vid]}%) does not "
+                                f"beat V03 ({found['V03']}%)")
+            # The 60-session/4x figure, also parsed from the document. The claim
+            # sentence names the contract and the rate; the rate must be a value
+            # the ledger's low60 rows actually contain.
+            low = [float(r["hit_rate_pct"]) for r in lz if r.get("regime") == "low60"]
+            m = re.search(r"([\d.]+)%\s*at the\s*60-session/4x", atext)
+            if m is None:
+                m = re.search(r"60-session/4x contract[^\d]{0,20}([\d.]+)%", atext)
+            f.check(m is not None,
+                    "audit/README.md states the 60-session/4x rate")
+            if m and low:
+                want = float(m.group(1))
+                f.check(any(abs(v - want) < 0.005 for v in low),
+                        f"audit/README.md's {want}% 60-session/4x figure appears "
+                        f"in the ledger (low60 range "
+                        f"{min(low):.2f}-{max(low):.2f}%)")
 
     scan = load("webpro_scan_summary.json")
     if scan:
