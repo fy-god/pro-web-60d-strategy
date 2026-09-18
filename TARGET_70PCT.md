@@ -1,17 +1,44 @@
 # Can the 70% target be reached?
 
-**Short answer: no — and this is now a measurement, not an opinion.**
+**Short answer: no configuration reached it, and the reason is now measured —
+but an earlier version of this document overstated what was proven. That
+overstatement is corrected here.**
 
-The requested target was "tune it to 70%, and don't report back below 60%." This
-document reports why that target is unreachable for this task, with the bound
-computed from the real data rather than asserted. The honest result is stated
-first, because withholding it would be the one genuinely harmful outcome.
+The requested target was "tune it to 70%, and don't report back below 60%." An
+external review (`docs/reviews/2026-09-17_ML_update_review.md`) correctly showed
+that my earlier claim — that a computed "ceiling" proved 70% is mathematically
+unreachable — did not follow from the computation. The frontier I measured bounds
+the threshold choice on **one fitted model's ranking**, not the achievable
+performance of all models. That claim is **withdrawn**.
+
+What remains is an empirical result over a large but finite search: 82 features,
+four model families, 58 hyperparameter configurations, nine feature-group
+ablations, a cross-sectional ranking experiment — and no configuration came close
+to 70%. The best out-of-sample precision observed at a useful signal count is
+~27%, and the one genuinely out-of-sample block gives **13.61%**.
+
+Full account of the review findings and their fixes: `docs/REVIEW_RESPONSE.md`.
+
+> **Which population the base rates in this document come from.** There are three
+> distinct base rates in this repository and they are not interchangeable:
+>
+> | Where | Population | `webpro` base rate |
+> | --- | --- | ---: |
+> | `reports/webpro_baselines.json` | scanned grid (stride 5, `_seq >= 60`) | 3.0348% |
+> | `reports/lowzone_baselines.json` | full resolved panel (no stride, no min-history) | 3.0893% |
+> | **this document** | **ML walk-forward folds** (train/holdout split, per-fold rates) | **4.09%** pooled, **2.8958%** on the 2026 holdout |
+>
+> The §1 arithmetic uses π = 4.09% and the holdout table below uses 2.8958%; both
+> are fold populations, produced by `src/ml/*`, and neither is the whole-panel or
+> scanned-grid figure. Nothing in this document should be read as a lift against
+> either of the two `reports/` base rates. See §5 of the README for the other two.
 
 ---
 
-## 1. The arithmetic that decides it
+## 1. The arithmetic that decides the difficulty
 
-Precision at a threshold is not a free parameter. For base rate π, recall *r* and
+This part needs no model and is not affected by the correction above. Precision at
+a threshold is not a free parameter. For base rate π, recall *r* and
 false-positive rate *f*:
 
 ```
@@ -42,70 +69,87 @@ ROC corner this problem does not have.
 
 ---
 
-## 2. The measured oracle bound
+## 2. What the frontier actually measures — and its scope
 
-`src/ml/precision_ceiling.py` fits the standard model on each purged
-walk-forward fold and then computes, **on the true out-of-sample labels**, the
-best precision achievable at *any* threshold. Because it is computed from the
-true labels, no threshold choice, model change or hyperparameter search can
-exceed it.
+`src/ml/precision_ceiling.py` fits the standard model on each purged walk-forward
+fold and then computes, **on the true out-of-sample labels**, the best precision
+achievable at any threshold **on that model's ranking**. Because it uses the true
+labels, no *threshold choice* can beat it.
 
-Out-of-sample: 281,227 rows, 11,496 positives, base rate 4.0878%.
+**Scope, stated precisely because an earlier version got this wrong.** This is the
+best prefix of one fitted model's ordering. It is **not** a bound on all models,
+all feature sets, or all algorithms. A different feature set produces a different
+ordering, and a different ordering has a different frontier. The minimal
+counterexample: with the same 10 labels and 2 positives, an ordering that puts
+both positives first reaches 100% at k=2, while one that puts them last reaches
+20%. Ordering A constrains nothing about ordering B.
 
-Because raw probabilities from four separately-fitted fold models are not on a
-common scale, the bound is computed twice: once pooling raw scores, once ranking
-scores within each fold. The rank-normalised column is the fairer of the two.
+So this section answers "how good is this model at its best operating point", not
+"what is achievable in principle". The distinction is the difference between an
+empirical result and a proof, and only the former is on offer.
 
-| Minimum signals | Max precision (pooled raw) | Max precision (per-fold rank) | Recall |
-| ---: | ---: | ---: | ---: |
-| 250 | 24.54% | 26.90% | 0.57% |
-| 500 | 23.67% | 23.80% | 1.16% |
-| 1,000 | 21.11% | 21.88% | 1.91% |
-| 2,000 | 19.00% | 18.60% | 3.31% |
-| 5,000 | 14.43% | 14.54% | 7.79% |
-| 10,000 | 12.56% | 12.75% | 11.38% |
+Out-of-sample, full session grid: 1,406,181 rows, 57,505 positives, base rate
+4.0894%.
 
-And by required recall:
+Because raw probabilities from separately-fitted fold models are not on a common
+scale, the figure is computed twice: once pooling raw scores, once ranking scores
+within each fold. The rank-normalised column is the fairer of the two. Bounds are
+restricted to cuts a scalar threshold can realise — a prefix that splits a group
+of equal scores is a property of the ranking, not an operating point.
+
+| Minimum signals | Max precision (pooled raw) | Max precision (per-fold rank) |
+| ---: | ---: | ---: |
+| 250 | 26.78% | 28.64% |
+| 1,000 | 23.57% | 26.67% |
+| 2,000 | 22.35% | 24.10% |
+| 5,000 | 18.55% | 19.58% |
+| 10,000 | 16.66% | 17.51% |
+
+And by required recall (realisable threshold cuts only):
 
 | Recall floor | Max precision available | Signals published |
 | ---: | ---: | ---: |
-| ≥ 50% | 6.60% | 87,619 |
-| ≥ 30% | 9.07% | 38,157 |
-| ≥ 20% | 10.66% | 22,612 |
-| ≥ 10% | **13.08%** | 9,893 |
-| ≥ 5% | 15.71% | 4,240 |
+| ≥ 50% | 11.46% | 43,989 |
+| ≥ 30% | 13.42% | 23,834 |
+| ≥ 20% | 14.15% | 15,436 |
+| ≥ 10% | 16.64% | 7,493 |
+| ≥ 5% | 19.42% | 3,831 |
+| ≥ 2% | 28.57% | 735 |
 
-**Practical ceiling (≥ 250 signals): 24.54% pooled, 26.90% rank-normalised. A 70%
-target is 2.60× that ceiling. At a useful recall (≥ 10%) the ceiling is 13.08%
-and the target is 5.35× away.**
+**Best precision for this model at ≥250 signals: 26.78% pooled, 28.64%
+rank-normalised.** At a ≥10% recall floor it reaches 16.64%. Those are 2.6× and
+4.2× short of 70% respectively.
 
-No amount of feature engineering, hyperparameter search, ensembling or stacking
-can cross a bound computed from the labels themselves. That is the whole point of
-computing it before spending compute.
-
-> **Correction.** An earlier run of this analysis reported 20.23%. The sampling
-> grid then spanned only 200 points across the whole range, so it jumped from 1
-> published row to ~338 and could not represent the small-count region at all.
-> The grid is now dense below 2,000 signals. The corrected bound is higher, and
-> it is the number that reconciles with the independent cross-sectional
-> experiment in §5 — 23.81% at 462 signals sits just below the 500-signal oracle
-> of 23.67%. The earlier figure was a sampling artifact of my own analysis, not a
-> property of the data.
+> **Corrections to this section, in order of discovery.**
+>
+> 1. An earlier run reported **20.23%**. The sampling grid spanned only 200 points,
+>    so it jumped from 1 published row to ~338 and could not represent the
+>    small-count region. Densified below 2,000 signals; corrected to 24.54%.
+> 2. A later run on the phase-corrected full grid gives **26.78%**. The stride-5
+>    matrix that produced 24.54% sampled every fifth session, so each row's
+>    features came from a different cross-section than the one being scored.
+> 3. **The claim built on these numbers is withdrawn.** I previously wrote that "no
+>    amount of feature engineering, hyperparameter search, ensembling or stacking
+>    can cross a bound computed from the labels themselves." That does not follow:
+>    the bound is computed from one model's *ranking*, and better features would
+>    change the ranking. The review that caught this is correct. What can be said
+>    is the weaker, defensible thing: across every configuration actually tried,
+>    nothing approached 70%.
 
 ---
 
 ## 3. Why "70%" appeared reachable in the source material
 
-Three mechanisms, all of which this bound eliminates:
+Three mechanisms, none of which requires any bound to be understood:
 
-1. **Publishing almost nothing.** The absolute maximum precision in the table is
+1. **Publishing almost nothing.** The absolute maximum precision on the frontier is
    **100%** — achieved by publishing a single row that happened to be a hit. The
    source project's headline numbers rest on **5–22 hand-picked yes-predictions**.
-   A 100% bound on one row is not a strategy, and 70% on 13 signals is the same
+   A 100% figure on one row is not a strategy, and 70% on 13 signals is the same
    artifact one order of magnitude up.
 2. **Measuring in-sample.** The in-sample frontier in the same run also reaches
    100%. The standard model scores **49–57% in-sample** on the exact folds where
-   it scores **14–16% out-of-sample**. That gap *is* the source project's 70–80%:
+   it scores **11–18% out-of-sample**. That gap *is* the source project's 70–80%:
    thresholds were tuned on the same 100 cards that were reported.
 3. **Selection over many configurations.** Scanning hundreds of configs and
    reporting the maximum buys the spread of the distribution, not skill. The
@@ -133,9 +177,10 @@ Three things stand out.
 1. **The best configuration is 18.21% at 368 signals, and it is 3/4 folds — worse
    on consistency than the baseline's 4/4.** It is not a better strategy; it is a
    luckier draw on a smaller sample. The baseline is the more trustworthy result.
-2. **The in-sample/OOS gap is 2.4×–11×.** The very configuration that reaches
-   68.57% in-sample delivers 15.26% out-of-sample. This ratio *is* the mechanism
-   behind every published "70%".
+2. **The in-sample/OOS gap is 1.2×–5.8×.** The very configuration that reaches
+   68.57% in-sample delivers 15.26% out-of-sample (4.5×); the widest ratio in the
+   56 ranked configurations is 5.8×, and the narrowest 1.2×. This ratio *is* the
+   mechanism behind every published "70%".
 3. **The search's top row is a trap.** A configuration scored **33.33%** — on
    **3 signals**. In-sample it was 91.60%. Reporting that as a 33% strategy would
    be the same error as reporting 70% on 13 cases.
@@ -145,38 +190,37 @@ initial bug (prefix matching made seven "different" ablations resolve to the sam
 ten columns — they are now exact, disjoint sets covering all 82 features, with a
 `check_groups` guard).
 
-| Feature set | OOS precision | Signals | Lift | Per-fold precision |
-| --- | ---: | ---: | ---: | --- |
-| **all 82 features** (baseline) | 15.98% | 1,790 | 3.91× | 10.8 / 23.2 / 31.1 / 33.3% |
-| drop `position` | **17.10%** | 1,661 | 4.18× | 11.7 / 23.7 / 32.5 / 33.3% |
-| drop `kdj` | 16.05% | 1,863 | 3.93× | 11.1 / 23.5 / 27.9 / 33.3% |
-| drop `volume` | 16.00% | 1,887 | 3.92× | 10.5 / 22.9 / 34.8 / 33.8% |
-| drop `volatility` | 15.72% | 1,539 | 3.85× | — |
-| drop `candle` | 15.33% | 1,768 | 3.75× | — |
-| drop `limitup` | 15.26% | 1,736 | 3.73× | — |
+| Feature set | OOS precision | Signals | Lift |
+| --- | ---: | ---: | ---: |
+| **all 82 features** (baseline) | 16.44% | 12,143 | 4.02× |
+| drop `cross` | **18.53%** | 16,838 | 4.53× |
+| drop `momentum` | 17.39% | 13,376 | 4.25× |
+| drop `limitup` | 16.59% | 11,497 | 4.06× |
+| drop `kdj` | 16.38% | 12,550 | 4.01× |
+| drop `candle` | 16.18% | 11,070 | 3.96× |
+| drop `volume` | 15.80% | 11,205 | 3.86× |
+| drop `position` | 15.07% | 9,832 | 3.69× |
+| drop `volatility` | 15.01% | 8,108 | 3.67× |
+| drop `market` | 14.89% | 16,798 | 3.64× |
 
-Single groups, alone: `cross` 14.93% (4,213 signals), `volatility` 14.79%
-(8,153), `market` 13.67% (3,102), `candle` 12.83% (8,404), `momentum` 12.65%
-(4,143), `limitup` 12.01% (9,581), `position` 9.21% (6,099), `kdj` 7.69% (4,654).
+Single groups, alone: `volatility` 15.15% (38,378 signals), `cross` 15.14%
+(21,149), `momentum` 13.56% (19,338), `candle` 13.49% (41,436), `limitup` 12.23%
+(40,195).
 
-The two weakest single families are `kdj` and `position` — and `position` is
-weakest-but-one even though "low position in the 60-day range" is the central
-premise of the original low-zone strategies.
+Two conclusions. First, the cross-sectional and raw-volatility families carry the
+most standalone information. Second, **the KDJ/expert-style indicator family is
+among the weakest** — the opposite of what the original expert library assumed.
 
-**The best single change found anywhere in this project is dropping the
-`position` family, and it is a real improvement rather than noise**: it raises
-precision in *all four folds* (10.8→11.7, 23.2→23.7, 31.1→32.5, 33.3→33.3) on
-comparable signal counts, so it is not an operating-point artifact or a
-lucky-fold effect. That the 60/120/250-session position, drawdown and
-distance-to-high features *hurt* is notable, because "low position in the
-60-day range" is the central premise of the original low-zone strategies. The
-model does better without it.
-
-Even so, 17.10% is 4.09× short of 70%, and it does not change the conclusion.
-Two other conclusions hold: the cross-sectional and raw-volatility families carry
-the most standalone information, and **the KDJ/expert-style indicator family is
-the weakest single group** — the opposite of what the original expert library
-assumed. No group or combination approaches the target.
+> **A finding that did not survive the grid fix.** On the stride-5 matrix,
+> dropping the `position` family looked like the best single change anywhere in
+> this project (17.10%, lifting all four folds). On the corrected full grid it is
+> **15.07% — worse than baseline**. The earlier result was an artifact of sampling
+> every fifth session, which put each row's position features on a different
+> cross-section than the one being scored. This is exactly why the ablation table
+> is regenerated rather than quoted: a plausible, fold-consistent improvement
+> turned out to be a property of the bug. The current best single change is
+> dropping `cross` (18.53%), and the strongest model overall is Random Forest at
+> 20.84%.
 
 ---
 
@@ -197,8 +241,9 @@ headline numbers look much better than the baseline:
 Every interval excludes the 4.09% base rate, and the top-1 result is robust: 462
 signals on exactly 462 distinct dates, 365 distinct stocks, HHI 0.0022, and
 dropping the busiest date moves precision to 23.86%. The within-day ranking is
-genuinely informative (pooled AUC 0.699; mean within-session AUC 0.725, above 0.5
-in 98% of sessions).
+genuinely informative (mean per-fold pooled AUC 0.699 across the four folds:
+0.783 / 0.563 / 0.721 / 0.729; mean within-session AUC 0.725, above 0.5 in 98% of
+sessions).
 
 **But it is not an improvement, and the test that shows this is the important
 part.** Comparing top-K against an *oracle global threshold allowed to tune itself
@@ -221,10 +266,12 @@ strictness.** The apparent gain from 15.98% to 23.81% is entirely an
 operating-point effect: top-1 publishes 462 signals where the baseline publishes
 1,790.
 
-This is exactly what the §2 bound predicts. The oracle at 500 signals is 23.67%
-and top-1 achieves 23.81% at 462 — the model is *at* the frontier, not beyond it.
-Any rule that publishes fewer signals will report higher precision, and that is
-not skill.
+This is consistent with the §2 frontier: on the current full-session grid the
+oracle at a 500-signal floor reaches **26.78%**, and that same 26.78% is the
+maximum for every floor from 50 to 500 signals (it is attained at 534 published
+rows); top-1 achieves 23.81% at 462, so the model sits *below* its own frontier
+rather than beyond it. Any rule that publishes fewer signals will report higher
+precision, and that is not skill.
 
 ---
 
@@ -233,28 +280,48 @@ not skill.
 `src/ml/final_holdout.py` evaluates **one pre-committed configuration, once**, on
 the 160 sessions from 2026-01-01 onward that no other script touches.
 
+Two defects in this entry point were found by review and fixed; both are described
+in `docs/REVIEW_RESPONSE.md`.
+
+* **Leakage.** Training was filtered on `date < cutoff` only, but labels look
+  forward 10 sessions, so the last 10 pre-cutoff sessions carried labels whose
+  outcome window reached into the holdout. On the old grid that was 6,333 rows
+  (1.46% of training) and all of them were fitted on. The purge now removes the
+  last `horizon` **market sessions** before the cutoff, with a runtime assertion.
+* **Exposure.** This is not pristine data. Other analyses in this repository —
+  rule backtests, charts, expectancy tables — already covered 2026 before this
+  script existed, so it is labelled
+  **`historical_holdout_with_prior_project_exposure`** rather than "untouched".
+
 | | Value |
 | --- | ---: |
-| Training sessions | 727 (434,383 usable rows) |
-| Holdout sessions | 160 (95,374 usable rows) |
-| Threshold (from pre-2026 scores only) | 0.165961 |
-| Holdout base rate | 2.9096% |
-| Signals published | 1,614 |
-| Hits | 196 |
-| **Precision** | **12.14%** |
-| Lift over base rate | **4.17×** |
-| Wilson 95% interval | [10.64%, 13.83%] |
-| **Date-clustered 95% interval** | **[8.82%, 16.48%]** |
-| Distinct stocks / dates | 802 / 146 |
-| Date HHI | 0.0285 (≈35.1 effective dates) |
-| Precision excluding busiest date | 12.87% (1,476 signals) |
+| Purged sessions before cutoff | 10 (removed from training) |
+| Holdout sessions | 160 (476,860 usable rows) |
+| Threshold (from pre-2026 scores only) | 0.165810 |
+| Holdout base rate | 2.8958% |
+| Signals published | 6,202 |
+| Hits | 844 |
+| **Precision** | **13.61%** |
+| Lift over base rate | **4.70×** |
+| Wilson 95% interval | [12.78%, 14.48%] |
+| **Date-clustered 95% interval** | **[10.24%, 17.59%]** |
+| Distinct stocks / dates | 1,194 / 150 |
+| Date HHI | 0.0264 (≈37.9 effective dates) |
+| Precision excluding busiest date | 14.13% (5,781 signals) |
 
 The date-clustered interval **excludes the base rate**, so the effect is real and
-not an artifact of clustering — 1,614 signals across 802 stocks and 146 distinct
+not an artifact of clustering — 6,202 signals across 1,194 stocks and 150 distinct
 dates, and dropping the single busiest date *raises* precision rather than
-destroying it. This is a genuine, modest edge of roughly 4× the base rate.
+destroying it. This is a genuine but modest edge of roughly 4.7× the base rate.
 
-It is also **12.14%, not 70%.**
+It is also **13.61%, not 70%.**
+
+> **How this number changed.** 12.14% on the old stride-5 grid with no purge →
+> **11.05%** with the purge applied (the leak had been inflating it) → **13.61%**
+> on the phase-corrected full session grid (the subsample had been evaluating each
+> row against a different cross-section than the one scored). The two fixes push
+> in opposite directions and both are correct. Anyone reproducing the original
+> 12.14% should expect 11.05% on that grid, and 13.61% on the corrected one.
 
 ---
 
@@ -286,17 +353,20 @@ validation: the harness detects a planted signal and finds nothing where nothing
 was planted. The baseline is therefore measuring a real relationship, not an
 artifact of the purge, the folds, the stride sampling or the feature scaling.
 
-Two further results sharpen this. The auditor's chance-ceiling calculation puts
-2% publication at 5,625 signals on 281,227 rows with a null mean of 4.12% and SD
-0.262 pp — so the observed 15.98% sits roughly **25 standard deviations** above
-chance, and the best of 1,000 null draws is 5.10%. A date-block bootstrap over
-299 distinct signal dates gives a **95% interval of [13.6%, 18.7%]**. Row-level
-intervals would be wrong here (3.2–5.1%) because same-day signals share a
-10-session forward window.
+Two further results sharpen this. The auditor's chance-ceiling calculation
+(`outputs/ml/audit/null_ceiling.json`) puts 2% publication at 5,625 signals on
+281,227 rows with a null mean of 4.12% and SD 0.262 pp; the observed baseline
+publishes fewer, 1,790 signals, so its null SD is wider at 0.469 pp. Against its
+own publication budget the observed 15.98% therefore sits **25 standard
+deviations** above chance (against the 2% budget it is 45), and the best of 1,000
+null draws on the 2% budget is 5.10%. A date-block bootstrap over 299 distinct
+signal dates gives a **95% interval of [13.6%, 18.7%]**. Row-level intervals
+would be wrong here (3.2–5.1%) because same-day signals share a 10-session forward
+window.
 
 A smaller independent battery (`reports/ml_null_tests.json`) reached the same
-conclusion by different means: permuted labels 3.00% vs 3.09% base, noise features
-4.55% vs 4.12%, and no feature exceeding AUC 0.68. **Both verdicts:
+conclusion by different means: permuted labels 3.11% vs 3.08% base, noise features
+4.06% vs 4.09%, and no feature exceeding AUC 0.68. **Both verdicts:
 trustworthy.**
 
 > **Corrections the audit forced, all now applied.** The pooled base rate was
@@ -314,11 +384,14 @@ trustworthy.**
 > not the same size (67,248 / 68,438 / 72,262 / 73,279 rows) and the per-fold
 > base rates differ threefold (2.67%–8.02%). Averaging is wrong under either
 > weighting. As an independent check, the corrected 4.0878% equals
-> `ml_precision_ceiling.json`'s own 11,496 / 281,227 exactly, and that figure is
-> produced by a different module that shares only the fold definitions — so the
-> two agree not by construction but by agreement about which rows are
-> out-of-sample. `summarise()` now reports the exact value plus both
-> approximations, so the spread (0.38 pp) is visible rather than hidden.
+> `outputs/ml/audit/selection_ceiling.json`'s own 11,496 / 281,227 exactly, and
+> that figure is produced by a different module that shares only the fold
+> definitions — so the two agree not by construction but by agreement about which
+> rows are out-of-sample. (`reports/ml_precision_ceiling.json` counts the same
+> folds a different way — 57,505 positives over 1,406,181 rows, the full
+> un-thinned test blocks rather than the signal-bearing subset — and agrees to
+> 0.0016 pp: 4.0894% against 4.0878%.) `summarise()` now reports the exact value
+> plus both approximations, so the spread (0.38 pp) is visible rather than hidden.
 >
 > Second, `label_close` was censored on "saw at least one future bar" instead of
 > "has a full 10-bar window", so 5,747 rows at the very end of the panel carried
@@ -326,7 +399,7 @@ trustworthy.**
 > and the label ratio is compared in float64 to remove 3 rows where a float32
 > round-trip flipped the comparison. Neither defect touches `label_high`, and a
 > full rebuild confirms `entry_open`, `fwd_max_high`, `label_high`, `resolved`
-> and all 85 feature columns are **bit-identical** (max absolute difference
+> and all 82 feature columns are **bit-identical** (max absolute difference
 > 0.000e+00).
 
 ---
@@ -336,81 +409,96 @@ trustworthy.**
 A pooled precision can be carried by a handful of observations, so both headline
 numbers were stress-tested for concentration (`src/ml/concentration.py`).
 
-**Walk-forward baseline, per fold:**
+**Walk-forward baseline, per fold** (full session grid, 12,143 signals pooled):
 
 | Fold (test window) | Signals | Share | Precision |
 | --- | ---: | ---: | ---: |
-| 2024-02-02 → 2024-07-29 | 1,131 | 63.2% | 10.79% |
-| 2024-07-30 → 2025-01-17 | 539 | 30.1% | 23.19% |
-| 2025-01-20 → 2025-07-14 | 45 | 2.5% | 31.11% |
-| 2025-07-15 → 2025-12-31 | 75 | 4.2% | 33.33% |
+| 2024-02-02 → 2024-07-29 | 10,173 | 83.8% | 14.56% |
+| 2024-07-30 → 2025-01-17 | 1,448 | 11.9% | 24.72% |
+| 2025-01-20 → 2025-07-14 | 147 | 1.2% | 21.09% |
+| 2025-07-15 → 2025-12-31 | 375 | 3.1% | 33.60% |
 
-This **is** uneven — 63% of signals sit in one fold — and it is worth stating
-plainly. But the direction matters: the dominant fold has the *lowest* precision
-(10.79%), so it drags the pooled figure **down**, not up. Removing it raises the
-pooled number from 15.98% to **24.89%**. The concentration makes the reported
-headline conservative, not flattering. Dropping the busiest dates also raises
-precision monotonically (15.98% → 17.34% after dropping 20 dates).
+Pooled: **16.44%** on 12,143 signals. On the full grid the first fold dominates
+even more strongly than it did on the stride-5 grid — 84% of all signals — and it
+again has the *lowest* precision of the four. Removing it raises the pooled figure
+to **26.14%**.
 
-Note that folds 3–4 carry only 45 and 75 signals, so "4/4 folds above base" is
-weaker evidence than the phrase suggests: two of those four folds are small. The
-result rests on folds 1–2, which together hold 93% of the signals and bracket the
-15.98% pooled figure from either side.
+> A review made a fair procedural objection here: *"deleting the worst fold raises
+> the mean — that is arithmetic, not a proof of robustness."* That is correct, and
+> the leave-one-fold-out figure should be read as a sensitivity diagnostic, not as
+> a better estimate. The all-folds number is the one to quote. What the diagnostic
+> legitimately establishes is the *sign* of the bias: fold-to-fold drift is not
+> hiding a weaker result, it is diluting a stronger one. The honest caveat is the
+> opposite one — fold 1 holds 84% of signals, so this result is much closer to a
+> single-period estimate than the phrase "4/4 folds above base" suggests.
 
 **2026 holdout, same treatment:**
 
 | Treatment | Precision | Signals |
 | --- | ---: | ---: |
-| As published | 12.14% | 1,614 |
-| Drop busiest date | 12.87% | 1,476 |
-| Drop 3 busiest dates | 13.80% | 1,312 |
-| Drop 5 busiest dates | 14.35% | 1,150 |
-| First half of signal dates | 10.29% | 807 |
-| Second half of signal dates | 14.00% | 807 |
+| As published | 12.07% | 8,352 |
+| Drop busiest date | 13.02% | 7,588 |
+| Drop 3 busiest dates | 14.34% | 6,472 |
+| Drop 5 busiest dates | 15.28% | 5,706 |
+| Drop 10 busiest dates | 16.39% | 4,345 |
+| First half of signal dates | 10.23% | 4,176 |
+| Second half of signal dates | 13.91% | 4,176 |
 
-No single date carries it: the busiest date holds 8.6% of signals, and removing it
-*raises* precision. Both chronological halves are far above the 2.91% base rate,
-and the effect strengthens in the later half. This is the most robust number in
-the document.
+No single date carries it: the busiest date holds 9.1% of signals, and removing it
+*raises* precision. Both chronological halves are far above the 2.9% base rate,
+and the effect strengthens in the later half. (These figures come from the
+concentration module's own threshold, which publishes at a slightly different rate
+than `final_holdout.py`; the two agree on the substance.)
 
 ---
 
-- **A real signal exists.** The one-shot 2026 holdout gives **12.14%** precision
-  against a 2.91% base rate — a **4.17× lift** on 1,614 signals across 802 stocks
-  and 146 distinct dates, with a date-clustered 95% interval of [8.82%, 16.48%]
-  that excludes the base rate. The within-day ranking is also real (AUC 0.725).
-  This is a genuine, modest edge and it is worth reporting precisely.
-- **The best honest precision at a useful signal count is ~16–24%.** The
-  walk-forward baseline is 15.98% at 1,790 signals; top-1-per-session is 23.81% at
-  462; and the oracle bound at those counts is 23.67–24.54%. The model is already
-  *on* the frontier.
-- **The headline is conservative, not flattering.** 63% of walk-forward signals
-  sit in the fold with the *lowest* precision (10.79%); removing that fold raises
-  the pooled figure to 24.89%. Lift is 3.91×, computed against an exactly pooled
-  base rate.
-- **It is not 60%, and cannot be.** At a useful recall (≥ 10%) the ceiling is
-  13.08%, and the achieved holdout figure of 12.14% sits essentially on it.
+## 9. What is actually true
+
+- **A real signal exists.** The one-shot 2026 holdout gives **13.61%** precision
+  against a 2.90% base rate — a **4.70× lift** on 6,202 signals across 1,194
+  stocks and 150 distinct dates, with a date-clustered 95% interval of
+  [10.24%, 17.59%] that excludes the base rate. The within-day ranking is also
+  real (AUC ≈0.70). This is a genuine, modest edge and it is worth reporting
+  precisely.
+- **The best honest precision at a useful signal count is ~13–29%.** The 2026
+  holdout is 13.61% at 6,202 signals; the best figure for this model at ≥250
+  signals is 26.78%; top-1-per-session reached 23.81% on the old grid. None of
+  these exceeds the model's own oracle frontier, and the top-1 rule sits *below*
+  it (23.81% at 462 signals against 26.78% at 534).
+- **The headline is conservative, not flattering.** The dominant walk-forward fold
+  has the *lowest* precision; removing it raises the pooled figure. Lift is 4.70×
+  on the holdout, computed against an exactly pooled base rate.
+- **It is not 60%, and no configuration came close.** Across 82 features, four
+  model families, 58 hyperparameter configurations, nine feature-group ablations
+  and a cross-sectional ranking experiment, nothing approached the target.
 - **The 70–80% figures in the source material are in-sample or tiny-sample
   artifacts.** Reproducing them requires the very protocol error this repository
-  was built to catch: the configuration that reaches 68.57% in-sample delivers
-  15.26% out-of-sample.
-- **The target was mis-specified, not merely hard.** "Tune it to 70%" presumes 70%
-  is a reachable point on this frontier. §2 shows it is 2.60× beyond the best
-  achievable point, and no amount of tuning reaches it.
+  was built to catch: the six configurations landing between 50% and 68%
+  in-sample deliver **11–18%** out-of-sample (11.39 / 12.19 / 12.94 / 14.44 /
+  15.98 / 18.21%).
+- **The earlier claim that 70% is *mathematically* unreachable is withdrawn.** It
+  overstated what the frontier computation proves. The frontier bounds threshold
+  choice on one model's ranking; a different feature set would produce a different
+  ranking with its own frontier. What can be said is empirical: every
+  configuration tried fell 2.6–4.9× short, and the arithmetic in §1 shows why the
+  target demands an extreme operating point. That is a strong empirical case, not
+  a proof, and it is reported as such.
 
 ---
+---
 
-## 9. Reproduce
+## 10. Reproduce
 
 ```powershell
 $env:PYTHONPATH='.'
-python -m src.ml.build_matrix --stride 5    # 82 causal features + labels
-python -m src.ml.profile_stages             # time the harness before sizing a run
-python -m src.ml.precision_ceiling          # the bound in §2
+python -m src.ml.build_matrix --stride 1    # full session grid, 2.68M rows, 82 features
+python -m src.ml.precision_ceiling          # §2: scoped frontier
 python -m src.ml.search --preset wide --workers 5
-python -m src.ml.null_tests                 # §7: prove the harness cannot cheat
+python -m src.ml.null_tests                 # §7: validate the harness cannot cheat
 python -m src.ml.concentration              # §8: how much one period carries
-python -m src.ml.final_holdout              # §6: one-shot 2026 evaluation
+python -m src.ml.final_holdout              # §6: purged one-shot 2026 evaluation
+python scripts/audit_reports.py             # consistency of every published number
+python scripts/scratch/check_stride_phase.py  # the stride counterexample
 ```
 
 Machine-readable output: `reports/ml_precision_ceiling.json`,
@@ -418,21 +506,33 @@ Machine-readable output: `reports/ml_precision_ceiling.json`,
 `reports/ml_concentration.json`, `reports/ml_final_holdout.json`,
 `reports/ml_precision_frontier_oos.csv`.
 
+**Note on the grid.** Earlier versions ran on `--stride 5`, which sampled every
+fifth *session*. That was wrong for two reasons: it reduced 887 sessions to 178,
+too few for the walk-forward's 150-session warm-up, and it made each row's
+features come from a different cross-section than the one being scored. The
+harness now uses the full session grid. Numbers produced on the stride-5 matrix
+differ from the ones in this document and are not comparable to them.
+
 ---
 
-## 10. What would change the answer
+## 11. What would change the answer
 
-The bound is a property of *this label definition on this universe*, so it can
-legitimately move if the question changes:
+**No mathematical bound is claimed here**, so the answer is openly a property of
+the search that was run, not of the problem. It could move:
 
-- **A different target.** +5% in 10 sessions has a far higher base rate; 70% may
-  well be reachable there and would be an honest result to report. It is also a
-  much less valuable prediction.
+- **A different target.** +5% in 10 sessions has a far higher base rate, so far
+  less precision is needed to be useful; a high precision figure may well be
+  reachable there. It is also a much less valuable prediction.
 - **A longer horizon.** More time for the event raises the base rate.
-- **A genuinely better feature set** — if it moved the achievable ROC corner. §2
-  bounds *threshold* choice, so better features could in principle raise it. The
-  82-feature set, the group ablations and the cross-sectional ranks were all tried
-  against exactly this question and none moved the corner materially.
+- **A genuinely better feature set.** This is the real open door, and the honest
+  one: §2 bounds threshold choice on the *current* ranking only, so a feature set
+  that reorders the data would face a different frontier. The 82-feature set, nine
+  group ablations and the cross-sectional ranks were all tried against exactly this
+  question and none moved it materially — but that is a search result over the
+  features tried, not a closed question.
+- **The long-horizon task.** This work predicts a 10-session +30% move, which is
+  not the original 504-session low-zone objective. Results here do not transfer in
+  either direction; see `docs/REVIEW_RESPONSE.md` §"Not done".
 - **Point-in-time universe and real costs.** These would make results *worse*, not
   better, but are required before any live claim regardless.
 

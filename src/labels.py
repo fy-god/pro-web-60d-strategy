@@ -330,11 +330,118 @@ def _empty_report(censored: int = 0, raw: int = 0) -> dict:
     return report
 
 
+# --- Baseline provenance -----------------------------------------------------
+#
+# TWO different code paths publish a quantity called "the natural base rate", and
+# they census two different row sets. The numbers are not interchangeable:
+#
+#   backtest_lowzone.main          -> "panel"    every resolved bar of the layer
+#                                                 table (no stride, no minimum
+#                                                 history)
+#   scan_all.population_baselines  -> "scanned"  only the bars a scan actually
+#                                                 evaluated (_seq >= VISIBLE_BARS,
+#                                                 then every stride-th bar)
+#
+# Measured on this panel (data/panel_daily.parquet, 2,680,715 bars, 3,193 codes,
+# 2023-01-03..2026-08-31), the two row sets give:
+#
+#   regime    panel                          scanned
+#   webpro    2,648,785 @ 3.0893%            493,246 @ 3.0348%
+#   low60     2,489,247 @ 0.0725%            461,416 @ 0.0752%
+#   low504    1,108,219 @ 4.2099%            187,729 @ 4.6956%
+#
+# so a lift computed against one baseline and a hit rate taken from the other is
+# internally inconsistent. Use the "scanned" figure to divide a *scanned* signal's
+# hit rate by, because a signal can only be emitted at a point the scan visited;
+# the "panel" figure is a different, unconditional quantity.
+#
+# On this panel the `_seq >= min_history` filter is also a calendar filter: 2,853
+# of 3,193 codes are present on the first session, so their 60th bar is
+# 2023-04-04 and NO row satisfies `_seq >= 60 and date < 2023-04-04`. Dropping
+# each stock's first 60 bars therefore drops the 2023-Q1 warm-up window, which is
+# why the filter moves `low504` (a 504-session horizon, whose window endpoint is
+# fixed by the observation date) far more than it moves `webpro`.
+#
+# NOTE: every published payload stays keyed BY REGIME at the top level. Consumers
+# such as render_results.baselines() iterate `for regime, d in data.items()` and
+# index `d["evaluated_points"]`, so a top-level provenance key would raise
+# KeyError. Keep provenance blocks inside each regime's dict.
+POPULATIONS = {
+    "panel": (
+        "Full resolved panel: every bar of the layer table with a resolvable "
+        "forward outcome. No stride sampling and no minimum-history filter, so "
+        "this includes each stock's first bars and the earliest sessions."
+    ),
+    "scanned": (
+        "Scanned evaluation grid: only the bars a strategy was actually scored "
+        "at, i.e. per-stock bar index _seq >= min_history and then _seq % stride "
+        "== 0. A signal can only be emitted here, so this is the population a "
+        "scanned hit rate must be divided by."
+    ),
+}
+
+
+def population_provenance(
+    population: str,
+    *,
+    stride: int = 1,
+    min_history: int = 0,
+    frame: pd.DataFrame | None = None,
+    rows: int | None = None,
+    date_min=None,
+    date_max=None,
+) -> dict:
+    """Describe the row set a base rate was measured over.
+
+    Attach the result to every published base-rate payload so a reader cannot
+    mistake the scanned grid for the full panel. ``population`` is a key of
+    :data:`POPULATIONS`; callers either pass ``frame`` (the exact rows that were
+    censused) or the already-aggregated ``rows``/``date_min``/``date_max``.
+    """
+    if population not in POPULATIONS:
+        raise ValueError(
+            f"unknown population {population!r}; expected one of {sorted(POPULATIONS)}"
+        )
+    out = {
+        "population": population,
+        # Stable slug, so two payloads can be compared without parsing prose.
+        "population_id": (
+            f"{population}_stride{int(stride)}_minhist{int(min_history)}"
+        ),
+        "population_definition": POPULATIONS[population],
+        "stride": int(stride),
+        "min_history": int(min_history),
+    }
+    if frame is not None:
+        if len(frame):
+            out["rows"] = int(len(frame))
+            out["date_min"] = pd.Timestamp(frame["date"].min()).strftime("%Y-%m-%d")
+            out["date_max"] = pd.Timestamp(frame["date"].max()).strftime("%Y-%m-%d")
+        else:
+            out["rows"] = 0
+    elif rows is not None:
+        # `rows` is the same count the payload publishes as `candidates` /
+        # `evaluated_points`; equal values prove the block describes that row set.
+        out["rows"] = int(rows)
+    if date_min is not None:
+        out["date_min"] = pd.Timestamp(date_min).strftime("%Y-%m-%d")
+    if date_max is not None:
+        out["date_max"] = pd.Timestamp(date_max).strftime("%Y-%m-%d")
+    return out
+
+
 def baseline_rates(frame: pd.DataFrame, horizon: int = HORIZON_DEFAULT) -> dict:
     """Natural base rates across the whole resolved candidate population.
 
     A precision number is uninterpretable without this: 4% precision looks very
     different against a 1.6% base rate than against a 0.2% one.
+
+    This censuses the **"panel"** population: every resolved bar passed in, with
+    no stride sampling and no minimum-history filter. It is currently not called
+    by any code path; ``backtest_lowzone.main`` inlines the same computation and
+    ``scan_all.population_baselines`` computes the "scanned" variant. If you
+    revive it, attach :func:`population_provenance` so the payload says which row
+    set it counted.
     """
     live = frame[frame["label_resolved"]]
     n = len(live)

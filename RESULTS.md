@@ -10,10 +10,13 @@ Every number below is regenerated from the backtest output CSVs by `python -m sr
 | `low60` | 60 sessions, **4x** (i.e. +300%) | 461,416 | 0.0752% | 0.0748% |
 | `low504` | 504 sessions, **4x** | 187,729 | 4.6956% | 2.4855% |
 
+These are measured on the **scanned evaluation grid**: per-stock bar index `_seq >= 60` and then every 5th bar. That is the population the strategies were actually scored on, so it is the correct denominator for every lift below. It is *not* the whole panel — because almost every stock is present on the first session, the `_seq >= 60` filter also drops the 2023-Q1 warm-up window, which is why the scanned rate sits above the full-panel rate for `low504`. `reports/lowzone_baselines.json` publishes the full-panel figures (different populations, different numbers); a lift must not mix the two. See [README.md §5](README.md#5-results). (This file predates the `population` block now emitted by `src.scan_all`; the row set is inferred from the fact that `webpro_baselines.json` is written by `population_baselines`. Re-run `python -m src.scan_all --stride 5` to record it explicitly.)
 
-## Web Pro family — 36 strategies, full universe
 
-Horizon 10 sessions, target +30%, entry at the next session's open, signals de-duplicated at a 60-session cooldown. **Lift** is the hit rate divided by the natural base rate of 3.035%: a lift of 1.0 means the strategy is indistinguishable from picking at random.
+
+## Web Pro family — 36 strategies registered, 35 signalled
+
+Horizon 10 sessions, target +30%, entry at the next session's open, signals de-duplicated at a 60-session cooldown. **Lift** is the hit rate divided by the natural base rate of 3.035% *on the scanned evaluation grid* (the population above, and the grid these strategies were scored on): a lift of 1.0 means the strategy is indistinguishable from picking at random.
 
 | # | Strategy | Signals | Hits | **Hit rate** | Base rate | Lift | Wilson 95% low | Stocks | Dates |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -52,6 +55,11 @@ Horizon 10 sessions, target +30%, entry at the next session's open, signals de-d
 | 33 | `strict_accumulation_base_v2` | 27398 | 928 | **3.39%** | 3.035% | 1.12x | 3.18% | 3189 | 674 |
 | 34 | `strict_oversold_rebound_v2` | 31754 | 930 | **2.93%** | 3.035% | 0.97x | 2.75% | 3186 | 689 |
 | 35 | `rsi_mean_reversion` | 12553 | 351 | **2.80%** | 3.035% | 0.92x | 2.52% | 3147 | 535 |
+
+_Base rate_ here is the **scanned evaluation grid** figure, matching the grid these strategies were scored on. The 60-day low-zone table below uses a base rate censused over the **full resolved panel** instead, because those versions are evaluated on every resolved bar rather than on a thinned grid. Both are internally consistent, but the two base-rate columns are **not interchangeable**: the same `webpro` contract reads 3.035% on the scanned grid and 3.089% on the full panel.
+
+
+_The family declares **36** strategies; the table below ranks the **35 that emitted at least one signal**. `accumulation_base` fired **zero** times over the whole evaluated universe, so it has no row in `reports/webpro_hit_rates.csv` and cannot be ranked. Absence here means "never triggered", not "excluded"; it is still exercised by the 100-card reproduction in `README.md` §3._
 
 
 ## What a holder actually earns — the hit-rate inversion

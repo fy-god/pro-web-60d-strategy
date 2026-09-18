@@ -283,11 +283,26 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Baseline over the FULL resolved panel (no stride, no minimum history).
+    #
+    # This is NOT the same row set as `reports/webpro_baselines.json`, which
+    # scan_all.population_baselines computes over the *scanned* grid only
+    # (_seq >= VISIBLE_BARS, then every stride-th bar). Both payloads publish a
+    # key called `bull_rate`; they differ by ~1.8% (webpro), ~3.6% (low60) and
+    # ~10.3% (low504) in relative terms on this panel. Every payload therefore
+    # carries a `population` block so the two cannot be confused. See the
+    # "Baseline provenance" note in src/labels.py.
     baselines = {}
     for regime in labels.REGIMES:
         resolved = frame[frame[f"label_resolved__{regime}"]]
         base = float(resolved[f"label_bull__{regime}"].fillna(0).mean())
-        baselines[regime] = {"candidates": int(len(resolved)), "bull_rate": base}
+        baselines[regime] = {
+            "candidates": int(len(resolved)),
+            "bull_rate": base,
+            "population": labels.population_provenance(
+                "panel", stride=1, min_history=0, frame=resolved,
+            ),
+        }
         for tier in range(1, 6):
             sub = resolved[resolved["recall_tier"] >= tier]
             baselines[regime][f"tier_ge_{tier}_rate"] = (
@@ -301,6 +316,12 @@ def main() -> None:
         for version in lowzone.VERSIONS:
             signals, report = run_version(frame, version, regime=regime)
             report["baseline_rate"] = baselines[regime]["bull_rate"]
+            # Travel with the value: a `baseline_rate` read out of this CSV in
+            # isolation must say which row set it censused, because
+            # reports/webpro_baselines.json publishes a *different* base rate
+            # under the same concept (see the note above).
+            report["baseline_population"] = baselines[regime]["population"]["population"]
+            report["baseline_population_id"] = baselines[regime]["population"]["population_id"]
             if np.isfinite(report.get("bull_precision", np.nan)) and baselines[regime]["bull_rate"] > 0:
                 report["lift_vs_baseline"] = (
                     report["bull_precision"] / baselines[regime]["bull_rate"]

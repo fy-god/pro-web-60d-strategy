@@ -327,6 +327,11 @@ def load_true_rates() -> dict[str, dict]:
                 "rate": float(row.bull_precision_deduped__webpro),
                 "baseline": float(row.baseline__webpro),
                 "lift": float(row.lift__webpro),
+                # Name the row set the base rate was censused over: the low-zone
+                # family below uses a different one, and an unlabelled "base rate"
+                # on one page cannot be compared with the other page.
+                "population": str(getattr(row, "baseline_population__webpro", "") or
+                                  "scanned grid (stride 5, _seq >= 60)"),
                 "protocol": "full universe, deduped signals",
             }
     lowzone = REPO_ROOT / "reports" / "lowzone_hit_rates.csv"
@@ -340,6 +345,8 @@ def load_true_rates() -> dict[str, dict]:
                 "rate": float(row.bull_precision),
                 "baseline": float(row.baseline_rate),
                 "lift": float(row.lift_vs_baseline),
+                "population": str(getattr(row, "baseline_population_id", "") or
+                                  "full resolved panel (no stride, no min-history)"),
                 "protocol": ("per-year in-sample fit (NOT cross-year)"
                              if bool(row.in_sample) else "walk-forward, prior-year threshold"),
             }
@@ -358,6 +365,7 @@ def write_index(rendered: dict[str, list[dict]], path: Path) -> None:
                 f"<span class='stat real'>measured hit rate "
                 f"<b>{info['hits']}/{info['signals']} = {info['rate']*100:.2f}%</b> "
                 f"&nbsp;|&nbsp; base rate {info['baseline']*100:.3f}% "
+                f"<span class='pop'>({html.escape(info['population'])})</span> "
                 f"&nbsp;|&nbsp; lift <b>{info['lift']:.2f}&times;</b> "
                 f"&nbsp;|&nbsp; {html.escape(info['protocol'])}</span>"
             )
@@ -388,6 +396,7 @@ def write_index(rendered: dict[str, list[dict]], path: Path) -> None:
         "h2{margin:34px 0 4px;border-left:6px solid #1769aa;padding-left:10px;font-size:19px}"
         ".stat{display:block;font-size:14px;color:#475569;margin:0 0 4px 16px}"
         ".stat.real b{color:#0f172a}.stat.warn{color:#b45309}"
+        ".stat .pop{color:#64748b;font-size:12px}"
         ".note{font-size:12px;color:#b45309;margin:0 0 10px 16px}"
         ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:18px}"
         "figure{margin:0;padding:8px;border-radius:10px;background:#fff;box-shadow:0 1px 4px #0002}"

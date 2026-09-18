@@ -16,6 +16,51 @@ REPORTS = REPO / "reports"
 OUT = REPO / "RESULTS.md"
 
 
+def _webpro_family_ids() -> list[str]:
+    """Strategy ids declared by the vendored family, or [] if unavailable."""
+    try:
+        from experts.registry import STRATEGY_IDS
+    except Exception:  # noqa: BLE001 - the count is cosmetic, never fatal
+        return []
+    return list(STRATEGY_IDS)
+
+
+def webpro_coverage_note(frame: "pd.DataFrame") -> str:
+    """Name how many declared strategies actually produced a row.
+
+    A strategy whose score never crosses its threshold emits no signal, so it
+    has no row in `webpro_hit_rates.csv` (which is built by grouping *emitted*
+    signals). Silently ranking 35 of 36 against a heading that says 36 would
+    read as full coverage, so the gap is stated from the data rather than
+    hard-coded.
+    """
+    declared = _webpro_family_ids()
+    present = set(frame["strategy_id"])
+    ranked = len(present)
+    if not declared:
+        return (f"_This table ranks the {ranked} strategies that emitted at least "
+                f"one signal; any strategy that never fired has no row here._\n")
+    missing = [s for s in declared if s not in present]
+    total = len(declared)
+    if not missing:
+        return (f"_All {total} declared strategies emitted at least one signal and "
+                f"appear below._\n")
+    note = (
+        f"_The family declares **{total}** strategies; the table below ranks the "
+        f"**{ranked} that emitted at least one signal**. "
+        + ", ".join(f"`{m}`" for m in missing)
+        + (" fired **zero** times over the whole evaluated universe, so it has no "
+           "row in `reports/webpro_hit_rates.csv` and cannot be ranked. Absence "
+           "here means \"never triggered\", not \"excluded\"; it is still "
+           "exercised by the 100-card reproduction in `README.md` §3._\n"
+           if len(missing) == 1 else
+           " fired **zero** times over the whole evaluated universe, so they have "
+           "no rows in `reports/webpro_hit_rates.csv` and cannot be ranked. "
+           "Absence here means \"never triggered\", not \"excluded\"._\n")
+    )
+    return note
+
+
 def webpro_table() -> str:
     path = REPORTS / "webpro_hit_rates.csv"
     if not path.exists():
@@ -34,7 +79,40 @@ def webpro_table() -> str:
             f"| {r.bull_wilson_low__webpro*100:.2f}% "
             f"| {r.distinct_stocks__webpro} | {r.distinct_dates__webpro} |"
         )
+    lines.append("")
+    panel_rate = _lowzone_panel_baseline("webpro")
+    scanned_rate = f"{frame['baseline__webpro'].iloc[0]*100:.3f}%"
+    lines.append(
+        "_Base rate_ here is the **scanned evaluation grid** figure, matching the "
+        "grid these strategies were scored on. The 60-day low-zone table below uses "
+        "a base rate censused over the **full resolved panel** instead, because those "
+        "versions are evaluated on every resolved bar rather than on a thinned grid. "
+        "Both are internally consistent, but the two base-rate columns are **not "
+        "interchangeable**: the same `webpro` contract reads "
+        f"{scanned_rate} on the scanned grid"
+        + (f" and {panel_rate} on the full panel" if panel_rate else "")
+        + ".\n"
+    )
     return "\n".join(lines) + "\n"
+
+
+def _lowzone_panel_baseline(regime: str) -> str:
+    """The full-panel base rate for ``regime``, as a percentage string.
+
+    Read from the low-zone CSV so the cross-reference in the Web Pro table stays
+    true if the panel or the regimes change; empty string if unavailable, in which
+    case the calling sentence just omits the contrast.
+    """
+    path = REPORTS / "lowzone_hit_rates.csv"
+    if not path.exists():
+        return ""
+    frame = pd.read_csv(path)
+    if "baseline_rate" not in frame.columns or "regime" not in frame.columns:
+        return ""
+    sub = frame[frame["regime"] == regime]
+    if sub.empty:
+        return ""
+    return f"{sub['baseline_rate'].iloc[0]*100:.3f}%"
 
 
 def lowzone_table() -> str:
@@ -80,6 +158,61 @@ def baselines() -> str:
             f"| `{regime}` | {labels.get(regime, regime)} | {d['evaluated_points']:,} "
             f"| {d['bull_rate']*100:.4f}% | {d['joint_rate']*100:.4f}% |"
         )
+    # Name the row set. `reports/lowzone_baselines.json` publishes a base rate for
+    # the same three regimes over the *full* panel, and the two disagree by up to
+    # ~10% in relative terms, so an unqualified "the base rate" is ambiguous.
+    #
+    # Prefer the payload's own `population` block. If it is absent the file predates
+    # that block, and this file *is* written by scan_all.population_baselines, so the
+    # population is the scanned grid by construction — state that rather than stay
+    # silent, or a reader of an un-regenerated RESULTS.md is back to the ambiguity.
+    pop = None
+    spans = []
+    for d in data.values():
+        blk = d.get("population")
+        if not isinstance(blk, dict):
+            continue
+        if pop is None:
+            pop = blk
+        # Each contract resolves over its own span (a 504-session window runs out
+        # of future bars far earlier than a 10-session one), so the note quotes the
+        # union rather than whichever regime happens to come first.
+        if blk.get("date_min"):
+            spans.append(str(blk["date_min"]))
+        if blk.get("date_max"):
+            spans.append(str(blk["date_max"]))
+    if pop is None:
+        pop = {
+            "population": "scanned",
+            "stride": 5,
+            "min_history": 60,
+            "date_min": None,
+            "date_max": None,
+        }
+        note = (" (This file predates the `population` block now emitted by "
+                "`src.scan_all`; the row set is inferred from the fact that "
+                "`webpro_baselines.json` is written by `population_baselines`. "
+                "Re-run `python -m src.scan_all --stride 5` to record it "
+                "explicitly.)")
+    else:
+        note = ""
+    span = ""
+    if spans:
+        span = f" over {min(spans)} .. {max(spans)}"
+    lines.append("")
+    lines.append(
+        f"These are measured on the **scanned evaluation grid**: per-stock bar "
+        f"index `_seq >= {pop['min_history']}` and then every "
+        f"{pop['stride']}th bar{span}. That is the population the strategies "
+        f"were actually scored on, so it is the correct denominator for every "
+        f"lift below. It is *not* the whole panel — because almost every stock "
+        f"is present on the first session, the `_seq >= {pop['min_history']}` "
+        f"filter also drops the 2023-Q1 warm-up window, which is why the "
+        f"scanned rate sits above the full-panel rate for `low504`. "
+        f"`reports/lowzone_baselines.json` publishes the full-panel figures "
+        f"(different populations, different numbers); a lift must not mix the "
+        f"two. See [README.md §5](README.md#5-results).{note}\n"
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -127,12 +260,17 @@ def main() -> None:
         "`python -m src.render_results`, so it cannot drift from the data.\n",
         "## Natural base rates (the population each strategy is scored against)\n",
         baselines(),
-        "\n## Web Pro family — 36 strategies, full universe\n",
+        "\n## Web Pro family — 36 strategies registered, 35 signalled\n",
         "Horizon 10 sessions, target +30%, entry at the next session's open, "
         "signals de-duplicated at a 60-session cooldown. **Lift** is the hit rate "
-        "divided by the natural base rate of 3.035%: a lift of 1.0 means the "
-        "strategy is indistinguishable from picking at random.\n",
+        "divided by the natural base rate of 3.035% *on the scanned evaluation "
+        "grid* (the population above, and the grid these strategies were scored "
+        "on): a lift of 1.0 means the strategy is indistinguishable from picking "
+        "at random.\n",
         webpro_table(),
+        webpro_coverage_note(pd.read_csv(REPORTS / "webpro_hit_rates.csv")
+                             if (REPORTS / "webpro_hit_rates.csv").exists()
+                             else pd.DataFrame({"strategy_id": []})),
         "\n## What a holder actually earns — the hit-rate inversion\n",
         "Hit rate is the share of signals whose forward **maximum high** touches "
         "+30% within 10 sessions. It says nothing about what happens on the other "

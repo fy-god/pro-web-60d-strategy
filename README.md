@@ -25,7 +25,7 @@ Two independent strategy families, both taken from the same source archive
 
 | Family | Count | Source | Contract |
 | --- | ---: | --- | --- |
-| **Web Pro** | 36 | `exports/Luna_Max_Kline_Practice_Web_Pro_20260818/experts/` | 60 visible bars, 10-session horizon, +30% target |
+| **Web Pro** | 36 | `experts/` (vendored from `D:\xm\exports\Luna_Max_Kline_Practice_Web_Pro_20260818\experts\`) | 60 visible bars, 10-session horizon, +30% target |
 | **60-Day Low-Zone** (V00–V08) | 7 | `60日预测/09_bull_lowzone_model/` | causal 60-day low zone, nested L1–L5 tiers, 4x target |
 
 The Web Pro strategy source is vendored **byte-identical** under `experts/`, and
@@ -101,7 +101,7 @@ self-selected thresholds is not evidence of future performance.
 ## 4. Engine rules (each one fixes a documented past defect)
 
 `src/labels.py` and `src/features.py` implement these; `tests/test_engine.py`
-pins each with a test (9/9 passing).
+pins each with a test (10/10 passing).
 
 | Rule | Why |
 | --- | --- |
@@ -113,6 +113,7 @@ pins each with a test (9/9 passing).
 | Report **distinct stocks and distinct dates** alongside precision | "13 signals" was really 3 distinct market dates; one date carried 7 of 9 hits |
 | Wilson interval on every rate | 78% of 100 does not clear a 70% lower bound; ~79% does |
 | **Lift vs. base rate** reported for every precision | 4% precision means opposite things at a 1.6% vs 0.2% base rate |
+| Every base rate **names the row set it censused** | Two files published a `bull_rate` for the same regime over different populations; a lift built from one against the other is not a lift |
 
 ---
 
@@ -126,18 +127,59 @@ Full tables: [`RESULTS.md`](RESULTS.md), regenerated from the backtest CSVs by
 The population every strategy is scored against. Nothing here is interpretable
 without these.
 
-| Regime | Contract | Evaluated points | Natural success rate |
-| --- | --- | ---: | ---: |
-| `webpro` | 10 sessions, +30% | 493,246 | **3.0348%** |
-| `low60` | 60 sessions, 4x (+300%) | 461,416 | **0.0752%** |
-| `low504` | 504 sessions, 4x | 187,729 | **4.6956%** |
+| Regime | Contract | Evaluated points | Natural success rate | Population |
+| --- | --- | ---: | ---: | --- |
+| `webpro` | 10 sessions, +30% | 493,246 | **3.0348%** | scanned grid |
+| `low60` | 60 sessions, 4x (+300%) | 461,416 | **0.0752%** | scanned grid |
+| `low504` | 504 sessions, 4x | 187,729 | **4.6956%** | scanned grid |
+
+"Scanned grid" means the per-stock bar index `_seq >= 60`, then every 5th bar —
+the population the strategies in §5's Web Pro table were actually scored on, so
+it is the right denominator for those lifts. It is **not** the whole panel, and
+the difference is a difference in *period*, not just a thinned sample: 2,853 of
+3,193 codes are present on the first session (2023-01-03), so `_seq >= 60`
+implies `date >= 2023-04-04` and the filter removes the 2023-Q1 warm-up window.
+That window has a much lower 4x rate, which is why the `low504` figure is the one
+that moves most.
+
+Two files publish a base rate under the same name over **different row sets**:
+
+| Source | Population | `webpro` | `low60` | `low504` |
+| --- | --- | ---: | ---: | ---: |
+| `reports/webpro_baselines.json` | scanned grid (stride 5, `_seq >= 60`) | 3.0348% | 0.0752% | 4.6956% |
+| `reports/lowzone_baselines.json` | full resolved panel (no stride, no min-history) | 3.0893% | 0.0725% | 4.2099% |
+
+Neither is wrong — each faithfully censuses its own row set — but a hit rate from
+one family must be divided by the base rate from *its own* family. The Web Pro
+family is scored on the scanned grid; the 60-day low-zone family is evaluated on
+the full panel (see §5's low-zone table).
+
+To make that mechanical rather than a matter of remembering which script wrote
+which file, both emitters now attach a provenance block: a `population` object
+(`population`/`population_id`, `population_definition`, `stride`, `min_history`,
+`rows`, `date_min`, `date_max`) inside every per-regime baseline payload, and a
+`baseline_population_id` (or `baseline_population__<regime>`) column on every row
+of the two hit-rate CSVs. **The copies of those files currently on disk predate
+the change** — they were generated before the provenance fields existed, so they
+do not yet carry them; `scripts/scratch/report_integrity_extra.py` reports that
+and prints the two commands that add it. Nothing needs re-deriving: re-running the
+two producers rewrites the provenance and must reproduce every rate to full
+precision, because the row filters are unchanged.
 
 These were recomputed a second time from the raw panel by a separate script and
-matched to six decimal places.
+matched to six decimal places — against the scanned-grid file, which is the one
+that second script reproduces. (`scripts/scratch/baseline_population_census.py`
+rebuilds both row sets from the shard label columns alone and reproduces each
+published file to 1e-12.)
 
-### Web Pro family — 36 strategies, 3,193 stocks, 493,246 evaluated points
+### Web Pro family — 36 strategies registered, 35 signalled, 3,193 stocks, 493,246 evaluated points
 
-Top of the ranking, by lift over the 3.035% base rate:
+All 36 strategies in `experts/registry.py` are scanned, but `accumulation_base`
+produced **zero** signals on this universe, so it appears in none of the tables
+below and has no hit rate to report. The tables therefore rank 35 strategies.
+
+Top of the ranking, by lift over the 3.035% base rate (scanned grid — the same
+population these 35 strategies were evaluated on):
 
 | Strategy | Signals | Hits | Hit rate | Lift | Wilson 95% low |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -148,7 +190,15 @@ Top of the ranking, by lift over the 3.035% base rate:
 | `strict_gap_follow_through` | 2,586 | 342 | **13.23%** | 4.36x | 11.97% |
 | `gap_follow_through` | 3,198 | 398 | **12.45%** | 4.10x | 11.35% |
 
-All 36 are in `RESULTS.md`. **The best strategy reaches 19.17%, not 70–80%.**
+**The best strategy reaches 19.17%, not 70–80%.** Note that `RESULTS.md` ranks
+only the **35** strategies that fired at least once on this universe:
+`accumulation_base` emitted **zero** signals across all 493,246 evaluated
+stock-days, so it appears in no row of `reports/webpro_hit_rates.csv` (35 rows,
+not 36). Its `THRESHOLD = 0.90` applies to the mean of four components clipped to
+`[0, 1]`, so a signal needs all four — range compression, volume asymmetry,
+turnover stability and close-location improvement — to be near-maximal at once.
+It is still exercised by the 100-card reproduction in §3, where it predicts "yes"
+for 0 of 100 cards.
 
 Why this differs so sharply from the published 70–80% table: those numbers came
 from 5–22 hand-picked yes-predictions on a self-selected 100-card quiz, where
@@ -158,10 +208,11 @@ signal counts. `leader_momentum` keeps its 6.3x edge but at 106/553 — and it i
 the one strategy whose turnover input is a proxy (§2), so its exact level is the
 least trustworthy of the six.
 
-The bottom of the table matters just as much: `strict_oversold_rebound_v2`,
-`rsi_mean_reversion` and `strict_accumulation_base_v2` all score **below 1.0x
-lift** — they are worse than picking at random, despite two of them appearing in
-the published 70%+ table.
+The bottom of the table matters just as much: `strict_oversold_rebound_v2` and
+`rsi_mean_reversion` both score **below 1.0x lift** (0.97x and 0.92x) — they are
+worse than picking at random, and the first of them is the very strategy the
+published quiz scored at 70.59%. `strict_accumulation_base_v2` is the one strict
+variant that does clear the base rate, at 1.12x.
 
 ### 60-Day Low-Zone family — V00–V08
 
@@ -177,9 +228,20 @@ the published 70%+ table.
 | V02 | low60 (4x) | 8,237 | 12 | 0.15% | 2.01x | rule, L5 |
 | V07 | low60 (4x) | 4,968 | 7 | 0.14% | 1.94x | **in-sample fit** |
 
+The `Lift` column above is computed against `reports/lowzone_baselines.json`,
+i.e. the **full resolved panel** (no stride, no minimum history) — because these
+versions are evaluated on every resolved bar, not on a thinned scan grid. The
+Web Pro table earlier in this section uses the **scanned grid** rate instead. The
+same `webpro` contract therefore reads 3.035% in one table and 3.089% in the
+other; that is a population difference, not a drift, and it is why the low-zone
+`V00`/`webpro` lift (1.01x) differs in the third digit from what dividing by the
+scanned-grid rate would give (1.03x). Do not mix a base rate from one family with
+a hit rate from the other.
+
 **The 4x target is essentially unreachable.** Under the 60-session/4x contract
-the natural base rate is 0.0752% — the best version achieves 0.15% on 12 hits,
-with a Wilson lower bound of 0.083%. No version gets a hit rate above 0.15%.
+the natural base rate is 0.0752% on the scanned grid (0.0725% over the full
+panel) — the best version achieves 0.15% on 12 hits, with a Wilson lower bound of
+0.083%. No version gets a hit rate above 0.15%.
 
 **V07/V08's apparent advantage is the in-sample protocol.** Their thresholds are
 chosen on the evaluation year's own labels, exactly as the source project's V08
@@ -192,7 +254,7 @@ consistent with the independent audit's finding that V08's claimed
 ### What this means
 
 1. **No strategy in either family reaches 70%.** Across 43 strategy versions and
-   1,286,000+ evaluated stock-days, the ceiling is 19.17%, and the honest
+   1,142,391 evaluated stock-days, the ceiling is 19.17%, and the honest
    walk-forward low-zone ceiling is 4.37%.
 2. **The 4x-in-60-sessions target has effectively no signal.** Base rate 0.0752%;
    the best lift is 2.0x on 12 hits, which is not distinguishable from noise.
@@ -245,6 +307,23 @@ python scripts/audit_reports.py                  # check every published number
 
 Requires `pandas`, `numpy`, `scikit-learn`, `pyarrow`, `matplotlib`.
 Set `PWS_DATA_ROOT` to relocate the raw OHLCV source.
+
+**If you only need the baseline provenance fields** (§5) added to the reports on
+disk, you do not need the full pipeline above — re-run just the two producers that
+write the base rates:
+
+```bash
+python -m src.scan_all --stride 5      # rewrites webpro_baselines.json + webpro_hit_rates.csv
+python -m src.backtest_lowzone         # rewrites lowzone_baselines.json + lowzone_hit_rates.csv
+python -m src.render_results           # fold the new prose into RESULTS.md
+python scripts/audit_reports.py        # still 111 checks, 0 problems
+```
+
+Both must be re-run with the *same* arguments as the original run (`--stride 5`
+for the scan; `src.backtest_lowzone`'s defaults for the low-zone family), or the
+numbers will move for a legitimate reason and the audit's cross-file identity
+checks will fail. Expect every rate to be reproduced bit-for-bit and only the new
+columns/blocks to appear.
 
 ---
 
@@ -357,80 +436,90 @@ sweeps passed 0 of 48 variants. So the honest expectation for unseen data is
 
 ---
 
-## 10. Can the strategies be tuned to 70%? No — and it is now a measured bound
+## 10. Can the strategies be tuned to 70%? No configuration reached it
 
 The requested target was "tune it to 70%, and don't report back below 60%". Full
-analysis in [`TARGET_70PCT.md`](TARGET_70PCT.md). The short version is that 70% is
-not a reachable point on this frontier, so no amount of tuning reaches it.
+analysis in [`TARGET_70PCT.md`](TARGET_70PCT.md); the response to an external
+review that corrected part of it is in
+[`docs/REVIEW_RESPONSE.md`](docs/REVIEW_RESPONSE.md).
 
-**The arithmetic.** For base rate π, recall *r* and false-positive rate *f*,
-precision is `πr / (πr + (1-π)f)`. Requiring 70% at a 10% recall forces the
-false-positive rate below **0.18%** of a population that is 95.9% negative.
+**What is claimed, and what is not.** An earlier version of this section claimed
+70% was *mathematically* unreachable, based on a computed precision frontier. An
+external review correctly showed that overstated the computation: the frontier
+bounds threshold choice on **one fitted model's ranking**, not the achievable
+performance of all models. A different feature set produces a different ranking
+with its own frontier. **That claim is withdrawn.** What stands is empirical:
+across 82 features, four model families, 58 hyperparameter configurations, nine
+feature-group ablations and a cross-sectional ranking experiment, nothing came
+close.
 
-**The measured oracle.** `src/ml/precision_ceiling.py` computes, on the true
-out-of-sample labels, the best precision achievable at *any* threshold. Because it
-uses the true labels, no model or threshold choice can exceed it:
+**The arithmetic still explains the difficulty**, and needs no model. For base
+rate π, recall *r* and false-positive rate *f*, precision is
+`πr / (πr + (1-π)f)`. Demanding 70% at 10% recall caps the false-positive rate at
+**0.18%** of a population that is 95.9% negative. That is an extreme operating
+point; it is a statement about what the target *requires*, not about what is
+achievable.
 
-| Minimum signals | Max precision | Recall |
-| ---: | ---: | ---: |
-| 250 | 24.54% | 0.57% |
-| 1,000 | 21.11% | 1.91% |
-| 5,000 | 14.43% | 7.79% |
-| 10,000 | 12.56% | 11.38% |
+**What was measured**, with purge and embargo and thresholds fitted on training
+folds only, on the full session grid:
 
-**A 70% target is 2.60× that ceiling.** At a useful recall (≥10%) the ceiling is
-13.08%.
+| Configuration | In-sample | **Out-of-sample** | Signals | Folds above base |
+| --- | ---: | ---: | ---: | ---: |
+| **Random Forest, 2% publication** | 43.57% | **20.84%** | 22,867 | 4/4 |
+| HGB (previous baseline) | 49.48% | **16.44%** | 12,143 | 4/4 |
+| ExtraTrees | 26.53% | 15.53% | 23,611 | 4/4 |
+| Logistic | 22.39% | 15.08% | 11,777 | 4/4 |
+| Best of this model, ≥250 signals | — | **26.78%** | — | — |
+| Top-1 per session (stride-5 grid) | 31.22% | **23.81%** | 462 | — |
+| **One-shot 2026 holdout, purged** | — | **13.61%** | 6,202 | — |
 
-**What was actually achieved**, all with purge and embargo and thresholds fitted
-on training folds only:
+The in-sample column is the mechanism behind every published "70%": configurations
+reaching 43–53% in-sample deliver 15–21% out-of-sample.
 
-| Configuration | In-sample | **Out-of-sample** | Signals |
-| --- | ---: | ---: | ---: |
-| HGB, 82 features, 2% publication | 50.60% | **15.98%** | 1,790 |
-| ExtraTrees, 2% | 56.26% | **18.21%** | 368 |
-| Top-1 per session | 31.22% | **23.81%** | 462 |
-| **One-shot 2026 holdout** | — | **12.14%** | 1,614 |
-
-The in-sample columns are the mechanism behind every published "70%": the
-configuration reaching 68.57% in-sample delivers 15.26% out-of-sample.
+**The Random Forest result is the strongest in this project, and it is stronger
+for a structural reason.** It has both the highest out-of-sample precision
+(20.84%) and *balanced* folds — 22.88 / 18.36 / 18.06 / 20.71% on 11,210 / 7,365
+/ 1,545 / 2,747 signals. The HGB baseline, by contrast, leans on a single fold
+(83.8% of its signals sit in fold 1, at its lowest precision). A result that holds
+across four folds with no dominant period is much better evidence than a higher
+number concentrated in one. The README quote above for the walk-forward baseline
+is therefore the RF figure, not HGB.
 
 **The 23.81% is not better than 15.98%.** It comes from publishing 462 signals
-instead of 1,790. Against an oracle global threshold allowed to tune itself on the
-test block at the same budget, the ratios are 0.95–1.02 with paired
+instead of 1,790. Against an oracle global threshold allowed to tune itself on
+the test block at the same budget, the ratios are 0.95–1.02 with paired
 date-clustered intervals containing zero — statistically indistinguishable. It is
-an operating-point effect, exactly as the bound predicts.
-
-**The 15.98% is conservative.** 63% of its signals sit in the fold with the
-*lowest* precision (10.79%), so removing that fold raises the pooled figure to
-24.89%. Its lift is **3.91×**, against a base rate pooled as a ratio of sums
-(total positives over total test rows).
-
-**The best single change found anywhere: drop the `position` feature family**,
-which lifts precision to 17.10% on 1,661 signals — and it improves *all four
-folds*, so it is not an operating-point artifact. The 60/120/250-session
-position, drawdown and distance-to-high features therefore actively hurt, even
-though "low position in the 60-day range" is the central premise of the original
-low-zone strategies. It is still 4.09× short of 70%.
+an operating-point effect.
 
 **The harness was validated before any of this was believed**
 (`src/ml/null_tests.py`, plus a 14-variant battery in `outputs/ml/audit/`): ten
 different ways of destroying the feature–label relationship all collapse to
 2.99–6.28% (lift 0.88–1.21×), while two positive controls that plant a real
 signal recover 39.05% (9.47×) and 19.42% (4.71×), both on 4/4 folds. No feature
-exceeds AUC 0.68. The real result sits ~25 SD above chance. Verdict:
-**trustworthy** — the numbers are real, and they are simply not 70%.
+exceeds AUC 0.68. Verdict: **trustworthy**.
 
-The one genuine, defensible result is the **one-shot 2026 holdout: 12.14%
-precision on 1,614 signals across 802 stocks and 146 distinct dates, a 4.17× lift
-whose date-clustered 95% interval [8.82%, 16.48%] excludes the base rate.** That
-is a real, modest edge. Reporting it honestly is more useful than a fabricated 70%.
+**The one genuine, defensible result** is the purged 2026 holdout: **13.61%
+precision on 6,202 signals across 1,194 stocks and 150 distinct dates, a 4.70×
+lift whose date-clustered 95% interval [10.24%, 17.59%] excludes the base rate.**
+That is a real, modest edge. It is also not 60%, and reporting it honestly is more
+useful than a fabricated number.
+
+**Three defects an external review found in this track, all fixed:** the holdout
+leaked (training labels whose 10-session outcome window crossed into 2026 —
+6,333 rows, 1.46% of training); label arithmetic used a float32 entry price, which
+flipped rows sitting exactly on the target boundary; and `iloc[::stride]` sampled
+every fifth *session*, making each stock's sampling phase depend on unrelated
+stocks and leaving too few sessions to build the walk-forward at all. Details and
+the corrected numbers are in [`docs/REVIEW_RESPONSE.md`](docs/REVIEW_RESPONSE.md).
 
 ```powershell
-python -m src.ml.build_matrix --stride 5
-python -m src.ml.precision_ceiling     # the bound
-python -m src.ml.search --preset wide  # 58 configurations
-python -m src.ml.null_tests            # prove the harness cannot cheat
-python -m src.ml.final_holdout         # one-shot 2026 evaluation
+python -m src.ml.build_matrix --stride 1       # full session grid, 2.68M rows
+python -m src.ml.precision_ceiling             # scoped frontier (§2)
+python -m src.ml.null_tests                    # prove the harness cannot cheat
+python -m src.ml.final_holdout                 # purged one-shot 2026 evaluation
+python -m src.ml.concentration                 # how much one period carries
+python scripts/audit_reports.py                # check every published number
+python scripts/scratch/check_stride_phase.py   # the stride counterexample
 ```
 
 ---

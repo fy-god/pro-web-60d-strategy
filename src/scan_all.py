@@ -149,6 +149,14 @@ def scan_all(stride: int, workers: int | None, codes_limit: int = 0,
             report[f"lift__{regime}"] = (
                 precision / base if base and precision == precision else float("nan")
             )
+            # Travel with the value: every `baseline__*` in this file comes from
+            # the scanned grid. reports/lowzone_hit_rates.csv carries the same
+            # two column names but its `baseline_rate` censuses the full panel,
+            # so a reader must be able to tell the families apart without
+            # re-deriving which script wrote the file.
+            report[f"baseline_population__{regime}"] = (
+                baselines[regime]["population"]["population_id"]
+            )
         rows.append(report)
 
     report_frame = pd.DataFrame(rows)
@@ -159,6 +167,12 @@ def scan_all(stride: int, workers: int | None, codes_limit: int = 0,
 
     summary = {
         "stride": stride,
+        "min_history": MIN_HISTORY,
+        # Restated here because `stride` alone does not identify the population:
+        # min_history is what removes the pre-2023-04-04 warm-up window.
+        "population": labels.population_provenance(
+            "scanned", stride=stride, min_history=MIN_HISTORY,
+        ),
         "regimes": {k: {"horizon": v[0], "target_return": v[1], "strict_low": v[2]}
                     for k, v in labels.REGIMES.items()},
         "cooldown": 60,
@@ -209,13 +223,28 @@ def _scan_one(path: str) -> tuple[pd.DataFrame, dict, dict]:
 
 
 def population_baselines(shard_paths: list[str], stride: int) -> dict:
-    """Natural outcome rate over every evaluated point, per regime.
+    """Natural outcome rate over the SCANNED evaluation grid, per regime.
+
+    This is the population the strategies were actually scored on, so it is the
+    correct denominator for a lift. It is deliberately *not* the same row set as
+    ``backtest_lowzone.main``'s baseline, which censuses the full resolved panel:
+    here a row survives only if the scan would have visited it —
+    ``_seq >= MIN_HISTORY`` and then every ``stride``-th bar — whereas
+    ``backtest_lowzone`` applies no stride and no minimum history. On this panel
+    that is a difference in the *period* covered, not just a thinned sample:
+    2,853 of 3,193 codes are present on the first session, so ``_seq >= 60``
+    implies ``date >= 2023-04-04`` and the filter removes the 2023-Q1 warm-up
+    window. The two payloads therefore disagree by ~1.8% (webpro), ~3.6% (low60)
+    and ~10.3% (low504) in relative terms, and every payload carries a
+    ``population`` block naming the row set it counted. See the "Baseline
+    provenance" note in src/labels.py.
 
     Read shard by shard and only the label columns, so this never holds the full
     panel in memory. Applying the same stride as the scan matters: the base rate
     must be measured on the same population the strategies were scored over.
     """
-    totals = {r: {"n": 0, "bull": 0, "joint": 0} for r in labels.REGIMES}
+    totals = {r: {"n": 0, "bull": 0, "joint": 0, "lo": None, "hi": None}
+              for r in labels.REGIMES}
     for path in shard_paths:
         cols = ["code", "date"] + [
             f"{c}__{r}" for r in labels.REGIMES
@@ -232,6 +261,16 @@ def population_baselines(shard_paths: list[str], stride: int) -> dict:
             totals[regime]["n"] += int(len(resolved))
             totals[regime]["bull"] += int(resolved[f"label_bull__{regime}"].fillna(0).sum())
             totals[regime]["joint"] += int(resolved[f"label_joint__{regime}"].fillna(0).sum())
+            if len(resolved):
+                # Tracked per regime, not globally: each contract has its own
+                # resolvable span (a 504-session window runs out of future bars
+                # far earlier than a 10-session one), so a single shared window
+                # would misdescribe at least two of the three populations.
+                lo, hi = resolved["date"].min(), resolved["date"].max()
+                if totals[regime]["lo"] is None or lo < totals[regime]["lo"]:
+                    totals[regime]["lo"] = lo
+                if totals[regime]["hi"] is None or hi > totals[regime]["hi"]:
+                    totals[regime]["hi"] = hi
     out = {}
     for regime, t in totals.items():
         out[regime] = {
@@ -240,6 +279,10 @@ def population_baselines(shard_paths: list[str], stride: int) -> dict:
             "joint_rate": t["joint"] / t["n"] if t["n"] else float("nan"),
             "horizon": labels.REGIMES[regime][0],
             "target_return": labels.REGIMES[regime][1],
+            "population": labels.population_provenance(
+                "scanned", stride=stride, min_history=MIN_HISTORY,
+                rows=t["n"], date_min=t["lo"], date_max=t["hi"],
+            ),
         }
     return out
 
