@@ -36,6 +36,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import csv as _csv
 import json
 import re
 import statistics
@@ -231,8 +232,6 @@ def check_cross_report(f: Findings) -> None:
     # smaller subset. That is exactly the kind of claim that should be executable
     # rather than prose.
     # ------------------------------------------------------------------
-    import csv as _csv
-
     def load_csv(name: str) -> list[dict]:
         path = REPORTS / name
         if not path.exists():
@@ -1203,6 +1202,147 @@ def check_prose(f: Findings, verbose: bool) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 4b. The frontier numbers: ceiling and recall-floor tables
+# ---------------------------------------------------------------------------
+def _frontier_rows(name: str) -> list[dict]:
+    """Read a precision-frontier CSV from reports/."""
+    path = REPORTS / name
+    if not path.exists():
+        LOAD_ERRORS.append(f"reports/{name} is referenced by the audit but missing")
+        return []
+    with path.open(encoding="utf-8", newline="") as fh:
+        return list(_csv.DictReader(fh))
+
+
+def check_frontier(f: Findings) -> None:
+    """Verify the numbers TARGET_70PCT.md calls its ceiling.
+
+    These are the document's central claim -- how good the best achievable
+    precision is -- and until now nothing compared them to any artifact. The
+    payload exists in ml_precision_ceiling.json and the frontier CSVs.
+    """
+    print("\n[4b] precision ceiling and recall-floor tables")
+
+    ceiling = load("ml_precision_ceiling.json")
+    text = (ROOT / "TARGET_70PCT.md").read_text(encoding="utf-8") \
+        if (ROOT / "TARGET_70PCT.md").exists() else ""
+
+    if ceiling:
+        by_min = ceiling.get("practical_ceiling_by_min_signals") or {}
+        # The published floor table: minimum signals -> max precision, pooled and
+        # rank-normalised.
+        pairs = []
+        for floor in ("250", "1000", "2000", "5000", "10000"):
+            row = by_min.get(floor)
+            if row:
+                pairs.append((int(floor),
+                              row.get("max_precision_raw"),
+                              row.get("max_precision_rank")))
+        for floor, raw, rank in pairs:
+            if raw is None:
+                continue
+            raw_pct, rank_pct = raw * 100, (rank or 0) * 100
+            # The document prints these to two decimals in its floor table.
+            needle = f"| {floor:,} | {raw_pct:.2f}%"
+            f.check(needle in text,
+                    f"TARGET_70PCT.md floor table states {floor:,} -> "
+                    f"{raw_pct:.2f}% (report says {raw:.6f})")
+            if rank is not None:
+                f.check(f"{rank_pct:.2f}%" in text,
+                        f"TARGET_70PCT.md states the rank-normalised ceiling "
+                        f"{rank_pct:.2f}% for {floor:,} signals")
+
+        # THE headline ceiling. README and TARGET both lead with it.
+        top = ceiling.get("practical_ceiling_250plus_raw")
+        top_rank = ceiling.get("practical_ceiling_250plus_rank")
+        if top is not None:
+            val = f"{top * 100:.2f}"
+            for doc in ("TARGET_70PCT.md", "README.md"):
+                p = ROOT / doc
+                if p.exists():
+                    f.check(val in p.read_text(encoding="utf-8"),
+                            f"{doc} states the headline ceiling {val}% "
+                            f"(report says {top!r})")
+        if top_rank is not None:
+            f.check(f"{top_rank * 100:.2f}" in text,
+                    f"TARGET_70PCT.md states the rank ceiling "
+                    f"{top_rank * 100:.2f}% (report says {top_rank!r})")
+
+        # The absolute maximum is what makes 70% unreachable, so it must be
+        # consistent with the floor table's own maximum.
+        absolute = ceiling.get("absolute_max_precision_oos")
+        if absolute is not None and top is not None:
+            f.check(abs(absolute - top) < 5e-4,
+                    f"ml_precision_ceiling absolute max {absolute:.6f} agrees "
+                    f"with the >=250-signal ceiling {top:.6f}")
+
+    # The recall-floor table lives in the document but is computed from the OOS
+    # frontier: for each recall floor, the single global row with the highest
+    # precision among those meeting the floor, pooled. Established by
+    # scripts/scratch/_probe_recall_floor.py, which reproduces all six published
+    # pairs exactly; a per-fold variant does not, so the rule is asserted here
+    # rather than assumed.
+    #
+    # This parses the DOCUMENT's rows and compares them to the frontier. An
+    # earlier version compared the frontier against hard-coded constants, which
+    # verified the CSV but could not notice the document changing -- the check
+    # would have passed with the table deleted.
+    oos = _frontier_rows("ml_precision_frontier_oos.csv")
+    if oos and text:
+        floors = [(0.50, "50%"), (0.30, "30%"), (0.20, "20%"),
+                  (0.10, "10%"), (0.05, "5%"), (0.02, "2%")]
+        # Locate the recall-floor table: data rows are `| <floor> | <pct> | <n> |`.
+        doc_rows: list[tuple[str, float, int]] = []
+        for line in text.splitlines():
+            if line.count("|") < 3:
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) < 3:
+                continue
+            m = re.match(r"^[≥>=]*\s*(\d+)%$", cells[0])
+            p = re.match(r"^([\d.]+)%$", cells[1])
+            n = re.match(r"^([\d,]+)$", cells[2])
+            if m and p and n:
+                doc_rows.append((m.group(1), float(p.group(1)),
+                                 int(n.group(1).replace(",", ""))))
+        f.check(len(doc_rows) >= 4,
+                f"TARGET_70PCT.md recall-floor table parses "
+                f"({len(doc_rows)} data rows found)")
+        seen = set()
+        expect = (("50", 11.46, 43989), ("30", 13.42, 23834),
+                  ("20", 14.15, 15436), ("10", 16.64, 7493),
+                  ("5", 19.42, 3831), ("2", 28.57, 735))
+        for label, want_pct, want_n in expect:
+            row = next((r for r in doc_rows if r[0] == label), None)
+            if row is None:
+                continue
+            seen.add(label)
+            _label, got_pct, got_n = row
+            # Independently recompute the frontier value for this floor.
+            floor_frac = int(label) / 100.0
+            cand = [r for r in oos if float(r["recall"]) >= floor_frac]
+            best = max(cand, key=lambda r: float(r["precision"])) if cand else None
+            if best is None:
+                f.check(False,
+                        f"TARGET_70PCT.md states a recall-floor >= {label}% row "
+                        f"but the frontier has no row meeting it")
+                continue
+            exp_pct = float(best["precision"]) * 100
+            exp_n = int(best["n_published"])
+            f.check(
+                abs(got_pct - exp_pct) < 0.02 and abs(got_n - exp_n) < 2,
+                f"TARGET_70PCT.md recall-floor >= {label}% row is "
+                f"{got_pct:.2f}% / {got_n:,}; the frontier gives "
+                f"{exp_pct:.2f}% / {exp_n:,}",
+            )
+        missing = {"50", "30", "20", "10", "5", "2"} - seen
+        if missing:
+            f.check(False,
+                    f"TARGET_70PCT.md recall-floor table is missing rows for "
+                    f"{sorted(missing)}")
+
+
+# ---------------------------------------------------------------------------
 # 5. Markdown structure
 # ---------------------------------------------------------------------------
 def check_markdown_structure(f: Findings) -> None:
@@ -1306,6 +1446,7 @@ def main() -> int:
     check_pooling(f)
     check_cross_report(f)
     check_prose(f, args.verbose)
+    check_frontier(f)
     check_markdown_structure(f)
     check_no_orphan_reports(f)
 
