@@ -1576,6 +1576,21 @@ def check_frontier(f: Findings) -> None:
             f.check(n_variants == 14 and n_null == 11 and n_pos == 2,
                     f"nulls_audit.json holds 1 real + {n_null} null variants + "
                     f"{n_pos} positive controls ({n_variants} total)")
+            # Section 7's own numbers come from the stride-5 matrix while the
+            # document's framing elsewhere is the dense grid, so the section must
+            # say which grid it is on. nulls_audit.json records the matrix
+            # explicitly; the note is required, not optional.
+            recorded = str(nulls.get("matrix") or "")
+            f.check("s5" in recorded,
+                    f"nulls_audit.json records the stride-5 matrix it used "
+                    f"(found {recorded!r})")
+            if "s5" in recorded:
+                f.check("stride-5" in text,
+                        "TARGET_70PCT.md discloses that section 7's figures are "
+                        "on the stride-5 grid")
+                f.check("281,227" in text,
+                        "TARGET_70PCT.md states section 7's stride-5 "
+                        "out-of-sample row count (281,227)")
             f.check(f"{n_null} null variants" in text
                     or f"eleven different ways" in text,
                     f"TARGET_70PCT.md states the null-variant count "

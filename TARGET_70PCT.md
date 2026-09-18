@@ -327,6 +327,18 @@ It is also **13.61%, not 70%.**
 
 ## 7. Is the measurement itself trustworthy?
 
+> **Grid provenance for this section.** Every figure below was measured on the
+> **stride-5** grid (`outputs/ml/matrix_h10_t30_s5.parquet`, 536,143 rows, of
+> which 281,227 fall in the four out-of-sample test blocks). `nulls_audit.json`
+> records that matrix explicitly; `null_ceiling.json`, `selection_ceiling.json`,
+> `feature_auc_scan.json` and `leakage_audit.json` carry no provenance field but
+> their row counts and per-fold test sizes (67,248 / 68,438 / 72,262 / 73,279) are
+> the stride-5 fold totals. Sections 5 and 6 use the **dense stride-1** grid
+> (2,680,715 rows). Both grids are valid and their base rates differ by 0.04%
+> relative (4.0878% stride-5 vs 4.0894% dense), so no conclusion here turns on the
+> choice — but a reader comparing this section's 281,227 rows against section 5's
+> dense framing should know they are different populations.
+
 Two independent null batteries were run. The larger one
 (`outputs/ml/audit/nulls_audit.json`, 2,906 s, 1 real control + 11 null variants +
 2 positive controls) destroys the feature–label relationship in eleven different
