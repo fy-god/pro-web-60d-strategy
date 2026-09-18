@@ -4,519 +4,36 @@
   "final_holdout_start": "2026-01-01",
   "n_configs": 19,
   "n_failed": 0,
-  "oos_base_rate": 0.04087800957945005,
+  "oos_base_rate": 0.04089445099884012,
   "ranked": [
     {
       "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5017852652753332,
-      "oos_signals": 1661,
-      "oos_precision": 0.17098133654425046,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.045970875874084494,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.005092866294634443,
-      "oos_lift": 4.182721671218679,
+      "insample_signals": 99437,
+      "insample_precision": 0.49481581302734395,
+      "oos_signals": 16838,
+      "oos_precision": 0.18529516569663856,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.035429375656479634,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.005465075342360487,
+      "oos_lift": 4.531058888696025,
       "per_fold_oos": [
-        0.11741293532338308,
-        0.23713235294117646,
-        0.325,
-        0.3333333333333333
+        0.17420596727622714,
+        0.24703344120819848,
+        0.21232876712328766,
+        0.3321917808219178
       ],
       "per_fold_signals": [
-        1005,
-        544,
-        40,
-        72
+        14546,
+        1854,
+        146,
+        292
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_position",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "volume",
-        "limitup",
-        "candle",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5061101332662811,
-      "oos_signals": 1863,
-      "oos_precision": 0.16049382716049382,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.0440647474521311,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0031867378726810475,
-      "oos_lift": 3.9261654080431625,
-      "per_fold_oos": [
-        0.11092577147623019,
-        0.2351851851851852,
-        0.27906976744186046,
-        0.3333333333333333
-      ],
-      "per_fold_signals": [
-        1199,
-        540,
-        43,
-        81
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_kdj",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "volume",
-        "limitup",
-        "position",
-        "candle",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5038471209454363,
-      "oos_signals": 1887,
-      "oos_precision": 0.160042395336513,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04532568951251037,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0044476799330603195,
-      "oos_lift": 3.9151220175105723,
-      "per_fold_oos": [
-        0.10539845758354756,
-        0.22895622895622897,
-        0.34782608695652173,
-        0.3375
-      ],
-      "per_fold_signals": [
-        1167,
-        594,
-        46,
-        80
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_volume",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "limitup",
-        "position",
-        "candle",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5060095549409103,
-      "oos_signals": 1790,
-      "oos_precision": 0.15977653631284916,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.044631187722484096,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.003753178143034046,
-      "oos_lift": 3.908618300074255,
-      "per_fold_oos": [
-        0.10786914235190097,
-        0.23191094619666047,
-        0.3111111111111111,
-        0.3333333333333333
-      ],
-      "per_fold_signals": [
-        1131,
-        539,
-        45,
-        75
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_all",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5035956751320091,
-      "oos_signals": 1539,
-      "oos_precision": 0.1572449642625081,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.046130628355640656,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.005252618776190605,
-      "oos_lift": 3.8466883754916816,
-      "per_fold_oos": [
-        0.1053763440860215,
-        0.23031496062992127,
-        0.26666666666666666,
-        0.26744186046511625
-      ],
-      "per_fold_signals": [
-        930,
-        508,
-        15,
-        86
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_volatility",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volume",
-        "limitup",
-        "position",
-        "candle",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.502791048529042,
-      "oos_signals": 1768,
-      "oos_precision": 0.15328054298642535,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.043246752979094485,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.002368743399644435,
-      "oos_lift": 3.7497066164268826,
-      "per_fold_oos": [
-        0.10324232081911262,
-        0.22933884297520662,
-        0.3111111111111111,
-        0.373134328358209
-      ],
-      "per_fold_signals": [
-        1172,
-        484,
-        45,
-        67
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_candle",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "volume",
-        "limitup",
-        "position",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5056575308021122,
-      "oos_signals": 1736,
-      "oos_precision": 0.15264976958525345,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04311295892433825,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0022349493448882013,
-      "oos_lift": 3.7342759874001454,
-      "per_fold_oos": [
-        0.0994718309859155,
-        0.23142250530785563,
-        0.3333333333333333,
-        0.3333333333333333
-      ],
-      "per_fold_signals": [
-        1136,
-        471,
-        45,
-        84
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_limitup",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "volume",
-        "position",
-        "candle",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.21257229067136033,
-      "oos_signals": 4213,
-      "oos_precision": 0.1492997863755044,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.03848780545427455,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.002390204125175502,
-      "oos_lift": 3.65232524556576,
-      "per_fold_oos": [
-        0.0951417004048583,
-        0.18313253012048192,
-        0.14629629629629629,
-        0.17110266159695817
-      ],
-      "per_fold_signals": [
-        988,
-        830,
-        1080,
-        1315
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_only_cross",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.21629368871008298,
-      "oos_signals": 8153,
-      "oos_precision": 0.14792101067091867,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04041361660109392,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0004643929783561332,
-      "oos_lift": 3.6185962132872693,
-      "per_fold_oos": [
-        0.15496938294865756,
-        0.14192495921696574,
-        0.12796610169491526,
-        0.15315315315315314
-      ],
-      "per_fold_signals": [
-        4246,
-        1839,
-        1180,
-        888
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_only_volatility",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "volatility"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5047523258737742,
-      "oos_signals": 2093,
-      "oos_precision": 0.14763497372193024,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.046317606386854934,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.005439596807404884,
-      "oos_lift": 3.611598882645901,
-      "per_fold_oos": [
-        0.10215482841181166,
-        0.20857142857142857,
-        0.21428571428571427,
-        0.27380952380952384
-      ],
-      "per_fold_signals": [
-        1253,
-        700,
-        56,
-        84
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_momentum",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "volatility",
-        "volume",
-        "limitup",
-        "position",
-        "candle",
-        "kdj",
-        "market",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.3752577319587629,
-      "oos_signals": 3380,
-      "oos_precision": 0.14615384615384616,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.043702152651659484,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.002824143072209434,
-      "oos_lift": 3.575366013596703,
-      "per_fold_oos": [
-        0.12150943396226416,
-        0.19090909090909092,
-        0.1085899513776337,
-        0.171875
-      ],
-      "per_fold_signals": [
-        1325,
-        990,
-        617,
-        448
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 4,
-      "config": "abl_drop_market",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "momentum",
-        "volatility",
-        "volume",
-        "limitup",
-        "position",
-        "candle",
-        "kdj",
-        "cross"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.5028413376917275,
-      "oos_signals": 2210,
-      "oos_precision": 0.1425339366515837,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.0414089496661989,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0005309400867488517,
-      "oos_lift": 3.4868120566035956,
-      "per_fold_oos": [
-        0.09865470852017937,
-        0.2366412213740458,
-        0.275,
-        0.3058823529411765
-      ],
-      "per_fold_signals": [
-        1561,
-        524,
-        40,
-        85
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
       "config": "abl_drop_cross",
@@ -537,110 +54,515 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 19886,
-      "insample_precision": 0.4575580810620537,
-      "oos_signals": 3102,
-      "oos_precision": 0.13668600902643455,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.036054962975963174,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.004823046603486876,
-      "oos_lift": 3.343754024049853,
+      "insample_signals": 99437,
+      "insample_precision": 0.49496666230879854,
+      "oos_signals": 13376,
+      "oos_precision": 0.17389354066985646,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.0367639026984829,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.004130548300357223,
+      "oos_lift": 4.25225272433144,
       "per_fold_oos": [
-        0.17375132837407015,
-        0.17848970251716248,
-        0.017985611510791366,
-        0.039647577092511016
+        0.15331041968162085,
+        0.26430517711171664,
+        0.19553072625698323,
+        0.3627450980392157
       ],
       "per_fold_signals": [
-        1882,
-        437,
-        556,
-        227
+        11056,
+        1835,
+        179,
+        306
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
-      ],
-      "folds_above_base": 3,
-      "config": "abl_only_market",
-      "model": "hgb",
-      "label": "label_high",
-      "target_rate": 0.02,
-      "feature_groups": [
-        "market"
-      ],
-      "params": {}
-    },
-    {
-      "n_folds": 4,
-      "insample_signals": 19916,
-      "insample_precision": 0.17674231773448484,
-      "oos_signals": 8404,
-      "oos_precision": 0.12827225130890052,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04378889507511851,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0029108854956684596,
-      "oos_lift": 3.1379280113820607,
-      "per_fold_oos": [
-        0.1444866920152091,
-        0.11422845691382766,
-        0.1104589114194237,
-        0.14711033274956217
-      ],
-      "per_fold_signals": [
-        2893,
-        2495,
-        1874,
-        1142
-      ],
-      "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
-      "config": "abl_only_candle",
+      "config": "abl_drop_momentum",
       "model": "hgb",
       "label": "label_high",
       "target_rate": 0.02,
       "feature_groups": [
-        "candle"
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
       ],
       "params": {}
     },
     {
       "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.2977118430978124,
-      "oos_signals": 4143,
-      "oos_precision": 0.12647839729664495,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.044617381722256835,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.003739372142806785,
-      "oos_lift": 3.0940449057536163,
+      "insample_signals": 99437,
+      "insample_precision": 0.49501694540261676,
+      "oos_signals": 11497,
+      "oos_precision": 0.16586935722362356,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03618738282166512,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.004707068177174999,
+      "oos_lift": 4.05603579880136,
       "per_fold_oos": [
-        0.0891640866873065,
-        0.14430577223088922,
-        0.11003236245954692,
-        0.20222929936305734
+        0.14803625377643503,
+        0.24204702627939143,
+        0.21333333333333335,
+        0.3443708609271523
       ],
       "per_fold_signals": [
-        1615,
-        1282,
-        618,
-        628
+        9599,
+        1446,
+        150,
+        302
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_limitup",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.4948359262648712,
+      "oos_signals": 12143,
+      "oos_precision": 0.16437453677015565,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.035856570438308234,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.005037880560531886,
+      "oos_lift": 4.0194826622031865,
+      "per_fold_oos": [
+        0.1455814410694977,
+        0.2472375690607735,
+        0.2108843537414966,
+        0.336
+      ],
+      "per_fold_signals": [
+        10173,
+        1448,
+        147,
+        375
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_all",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.49481581302734395,
+      "oos_signals": 12550,
+      "oos_precision": 0.16382470119521914,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03685650043958471,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.004037950559255411,
+      "oos_lift": 4.006037425465515,
+      "per_fold_oos": [
+        0.1445339024153652,
+        0.23782234957020057,
+        0.2013888888888889,
+        0.3465909090909091
+      ],
+      "per_fold_signals": [
+        10309,
+        1745,
+        144,
+        352
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_kdj",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.49464485050836215,
+      "oos_signals": 11070,
+      "oos_precision": 0.16178861788617885,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03772863894104306,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.0031658120577970628,
+      "oos_lift": 3.9562486825111707,
+      "per_fold_oos": [
+        0.1399098083427283,
+        0.2400461627236007,
+        0.18439716312056736,
+        0.3312883435582822
+      ],
+      "per_fold_signals": [
+        8870,
+        1733,
+        141,
+        326
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_candle",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.49123565674748837,
+      "oos_signals": 11205,
+      "oos_precision": 0.15796519410977242,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03749322539860598,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.003401225600234141,
+      "oos_lift": 3.8627537539079015,
+      "per_fold_oos": [
+        0.13230221430955824,
+        0.2560187903699354,
+        0.19594594594594594,
+        0.31607629427792916
+      ],
+      "per_fold_signals": [
+        8987,
+        1703,
+        148,
+        367
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_volume",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.211581202168207,
+      "oos_signals": 38378,
+      "oos_precision": 0.15149304288915524,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.041300868978387834,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.00040641797954771297,
+      "oos_lift": 3.704488975618037,
+      "per_fold_oos": [
+        0.15723170988825638,
+        0.14906090543914885,
+        0.12725434013146805,
+        0.164946034725481
+      ],
+      "per_fold_signals": [
+        18972,
+        9211,
+        5933,
+        4262
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_volatility",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "volatility"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.2079407061757696,
+      "oos_signals": 21149,
+      "oos_precision": 0.15140195753936356,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.038459436822342194,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.0024350141764979266,
+      "oos_lift": 3.702261647763843,
+      "per_fold_oos": [
+        0.10101195952161914,
+        0.19409486931268152,
+        0.14875876444949782,
+        0.16907216494845362
+      ],
+      "per_fold_signals": [
+        5435,
+        4132,
+        5277,
+        6305
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_cross",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.494061566620071,
+      "oos_signals": 9832,
+      "oos_precision": 0.15073230268510984,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03633512580726391,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.004559325191576209,
+      "oos_lift": 3.6858864467794183,
+      "per_fold_oos": [
+        0.12575366063738158,
+        0.2610410094637224,
+        0.20261437908496732,
+        0.34507042253521125
+      ],
+      "per_fold_signals": [
+        8127,
+        1268,
+        153,
+        284
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_position",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.4939408871949073,
+      "oos_signals": 8108,
+      "oos_precision": 0.15009866798223975,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.043997218382105074,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.003102767383264954,
+      "oos_lift": 3.6703920535941896,
+      "per_fold_oos": [
+        0.11170903692707367,
+        0.2120017520805957,
+        0.265625,
+        0.3064516129032258
+      ],
+      "per_fold_signals": [
+        5389,
+        2283,
+        64,
+        372
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_volatility",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "market",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.3586793648239589,
+      "oos_signals": 16798,
+      "oos_precision": 0.14888677223478985,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03937674097993079,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.001517710018909331,
+      "oos_lift": 3.6407573301084954,
+      "per_fold_oos": [
+        0.13716814159292035,
+        0.21178850043340075,
+        0.09533648170011806,
+        0.16940987555198717
+      ],
+      "per_fold_signals": [
+        7458,
+        3461,
+        3388,
+        2491
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_drop_market",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "momentum",
+        "volatility",
+        "volume",
+        "limitup",
+        "position",
+        "candle",
+        "kdj",
+        "cross"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99437,
+      "insample_precision": 0.28177640113840924,
+      "oos_signals": 19338,
+      "oos_precision": 0.13558796152652808,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.04250068963233421,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.0016062386334940865,
+      "oos_lift": 3.315558913613334,
+      "per_fold_oos": [
+        0.10139715036657905,
+        0.16315484245118886,
+        0.11639439906651108,
+        0.18415051311288483
+      ],
+      "per_fold_signals": [
+        7229,
+        5173,
+        3428,
+        3508
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
       "config": "abl_only_momentum",
@@ -654,32 +576,71 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 20595,
-      "insample_precision": 0.13265355668851664,
-      "oos_signals": 8182,
-      "oos_precision": 0.12185284771449524,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04561627465490577,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0047382650754557165,
-      "oos_lift": 2.9808899446941854,
+      "insample_signals": 99486,
+      "insample_precision": 0.1710290895201335,
+      "oos_signals": 41436,
+      "oos_precision": 0.13485857708273,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.04256315729119954,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.0016687062923594204,
+      "oos_lift": 3.297723133306153,
       "per_fold_oos": [
-        0.08235294117647059,
-        0.14543446244477173,
-        0.1218568665377176,
-        0.14136807817589578
+        0.15652229218342556,
+        0.12706491651040272,
+        0.10495049504950495,
+        0.13827433628318583
       ],
       "per_fold_signals": [
-        2380,
-        2716,
-        1551,
-        1535
+        15723,
+        11199,
+        9090,
+        5424
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
+      "config": "abl_only_candle",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "candle"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 101192,
+      "insample_precision": 0.12739149339868763,
+      "oos_signals": 40195,
+      "oos_precision": 0.12225401169299664,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.043785055594888926,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.0028906045960488055,
+      "oos_lift": 2.989501233222671,
+      "per_fold_oos": [
+        0.08218958182839714,
+        0.15204382638010958,
+        0.12667239474653247,
+        0.1364577938891766
+      ],
+      "per_fold_signals": [
+        12459,
+        11865,
+        8147,
+        7724
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
       "config": "abl_only_limitup",
@@ -693,32 +654,32 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.1350766909730953,
-      "oos_signals": 7399,
-      "oos_precision": 0.09514799297202324,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04821504160797711,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.007337032028527063,
-      "oos_lift": 2.327608265443909,
+      "insample_signals": 99438,
+      "insample_precision": 0.12049719423158149,
+      "oos_signals": 39285,
+      "oos_precision": 0.09728904161893853,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.048622663802433914,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.007728212803593794,
+      "oos_lift": 2.3790279424877943,
       "per_fold_oos": [
-        0.0695322376738306,
-        0.10342393222732087,
-        0.08910103420843278,
-        0.10943833236826868
+        0.06931947788619947,
+        0.11157401380028642,
+        0.07849205232803488,
+        0.11240614143225372
       ],
       "per_fold_signals": [
-        1582,
-        2833,
-        1257,
-        1727
+        7891,
+        15362,
+        7109,
+        8923
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
       "config": "abl_only_volume",
@@ -732,32 +693,32 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 19885,
-      "insample_precision": 0.21890872516972593,
-      "oos_signals": 6099,
-      "oos_precision": 0.09214625348417774,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.039506039411183524,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0013719701682665258,
-      "oos_lift": 2.254176620441445,
+      "insample_signals": 99451,
+      "insample_precision": 0.21670973645312766,
+      "oos_signals": 36900,
+      "oos_precision": 0.09113821138211382,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03759151917421303,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.003302931824627091,
+      "oos_lift": 2.228620488992474,
       "per_fold_oos": [
-        0.041918429003021146,
-        0.15534738485558158,
-        0.10753768844221105,
-        0.12340425531914893
+        0.06516984983233708,
+        0.14102984585109873,
+        0.11360718870346598,
+        0.11367321203386777
       ],
       "per_fold_signals": [
-        2648,
-        1281,
-        995,
-        1175
+        20577,
+        6098,
+        4674,
+        5551
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 4,
       "config": "abl_only_position",
@@ -771,34 +732,73 @@
     },
     {
       "n_folds": 4,
-      "insample_signals": 19888,
-      "insample_precision": 0.12183226065969428,
-      "oos_signals": 4654,
-      "oos_precision": 0.07692307692307693,
-      "oos_base_rate": 0.04087800957945005,
-      "oos_base_rate_by_signals": 0.04199250856192011,
-      "oos_base_rate_unweighted": 0.041242904627034,
-      "oos_base_rate_max_abs_diff": 0.0011144989824700621,
-      "oos_lift": 1.8817715861035278,
+      "insample_signals": 99461,
+      "insample_precision": 0.45470083751420154,
+      "oos_signals": 13658,
+      "oos_precision": 0.07621906574901156,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.03674921785152632,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.004145233147313798,
+      "oos_lift": 1.8637997060083615,
       "per_fold_oos": [
-        0.028445006321112517,
-        0.12201154163231658,
-        0.0872093023255814,
-        0.09009009009009009
+        0.07355052457205964,
+        0.1576598909271195,
+        0.016637478108581436,
+        0.06291390728476821
       ],
       "per_fold_signals": [
-        1582,
-        1213,
-        860,
-        999
+        9055,
+        2017,
+        2284,
+        302
       ],
       "per_fold_base": [
-        0.02947299547941946,
-        0.08016014494871271,
-        0.02669452824444383,
-        0.028643949835559984
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
       ],
       "folds_above_base": 3,
+      "config": "abl_only_market",
+      "model": "hgb",
+      "label": "label_high",
+      "target_rate": 0.02,
+      "feature_groups": [
+        "market"
+      ],
+      "params": {}
+    },
+    {
+      "n_folds": 4,
+      "insample_signals": 99974,
+      "insample_precision": 0.10788805089323224,
+      "oos_signals": 23189,
+      "oos_precision": 0.07550994005778602,
+      "oos_base_rate": 0.04089445099884012,
+      "oos_base_rate_by_signals": 0.041713969347550645,
+      "oos_base_rate_unweighted": 0.04126791445650607,
+      "oos_base_rate_max_abs_diff": 0.000819518348710524,
+      "oos_lift": 1.846459316935877,
+      "per_fold_oos": [
+        0.03473448722477334,
+        0.11019849418206708,
+        0.09218384835107764,
+        0.09138172365526895
+      ],
+      "per_fold_signals": [
+        8493,
+        5844,
+        3851,
+        5001
+      ],
+      "per_fold_base": [
+        0.029958391948440515,
+        0.08014798709496423,
+        0.026432681210960526,
+        0.028532597571658984
+      ],
+      "folds_above_base": 4,
       "config": "abl_only_kdj",
       "model": "hgb",
       "label": "label_high",
