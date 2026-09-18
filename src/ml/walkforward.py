@@ -581,6 +581,16 @@ def save_report(name: str, payload: dict) -> Path:
     whatever matrix happens to sit in the output directory: guessing would stamp
     a confident, wrong grid, which is worse than stamping nothing.
     """
+    # `name` is a bare stem: the "ml_" prefix and ".json" suffix are added here.
+    # A caller passing "ml_concentration.json" therefore wrote
+    # reports/ml_ml_concentration.json.json, which no reader looks at and which
+    # silently left the real report untouched. Reject the whole shape rather than
+    # writing a plausible-looking file nobody will find.
+    if name.startswith("ml_") or name.endswith(".json") or "/" in name or "\\" in name:
+        raise ValueError(
+            f"save_report takes a bare stem like 'concentration', got {name!r}; "
+            f"it writes reports/ml_{{name}}.json"
+        )
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = REPORT_DIR / f"ml_{name}.json"
     enriched = dict(payload)

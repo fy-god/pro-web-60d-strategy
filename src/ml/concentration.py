@@ -181,7 +181,7 @@ def main() -> None:
         "second_half_signals": int(len(second)),
     }
 
-    wf.save_report("ml_concentration.json", summary)
+    wf.save_report("concentration", summary)
     print(f"\nwrote {REPORT_DIR / 'ml_concentration.json'}")
 
 
