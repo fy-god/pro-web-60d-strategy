@@ -267,6 +267,41 @@ def check_cross_report(f: Findings) -> None:
     if f.verbose:
         print("  (checked the published CSV denominators)")
 
+    # ------------------------------------------------------------------
+    # live_readiness.json -- the report that answers "can this be traded at
+    # all?", and previously no check read it.
+    # ------------------------------------------------------------------
+    lr = load("live_readiness.json")
+    if lr:
+        rows = lr.get("expectancy") or []
+        f.check(bool(rows), f"live_readiness carries expectancy rows ({len(rows)})")
+        for row in rows:
+            label = row.get("label", "?")
+            cost = row.get("cost_bps_round_trip")
+            gross, net = row.get("gross_mean_return"), row.get("net_mean_return")
+            if cost is not None and gross is not None and net is not None:
+                # Net must be gross less the stated round-trip cost. This is the
+                # report's central arithmetic claim and nothing verified it.
+                expected = gross - float(cost) / 10_000.0
+                f.check(
+                    abs(net - expected) < 1e-9,
+                    f"live_readiness '{label}': net {net:.6f} == gross {gross:.6f} "
+                    f"- {cost}bp ({expected:.6f})",
+                )
+            sig, res = row.get("signals"), row.get("resolved")
+            if sig is not None and res is not None:
+                f.check(
+                    int(res) <= int(sig),
+                    f"live_readiness '{label}': resolved {res} <= signals {sig}",
+                )
+            a, b = row.get("net_p10"), row.get("net_p90")
+            if a is not None and b is not None:
+                f.check(a <= b,
+                        f"live_readiness '{label}': net_p10 {a:.4f} <= net_p90 {b:.4f}")
+        intrad = lr.get("intraday") or {}
+        f.check(bool(intrad), "live_readiness carries the intraday assessment")
+
+
     # Every report that carries a base rate must agree on which grid it came
     # from. Mixing grids silently is the failure mode that produced the stale
     # 15.98% in an earlier revision of the documents.
@@ -821,10 +856,23 @@ def check_markdown_structure(f: Findings) -> None:
 def check_no_orphan_reports(f: Findings) -> None:
     print("\n[6] report inventory")
     on_disk = {p.name for p in REPORTS.glob("*.json")}
-    print(f"  ({len(on_disk)} JSON reports present)")
+    csvs = {p.name for p in REPORTS.glob("*.csv")}
+    print(f"  ({len(on_disk)} JSON reports, {len(csvs)} CSVs present)")
     for name in sorted(on_disk):
         load(name)  # surface JSON errors early
     f.check(True, f"{len(on_disk)} reports parse")
+
+    # Which published artifacts does this audit actually read? A report that no
+    # check names is published and unverified, which is how nine of them --
+    # including live_readiness.json, which carries the intraday answer -- sat
+    # outside every check while the audit reported no problems. This check does
+    # not verify their contents; it makes their absence from the audit visible.
+    src = Path(__file__).read_text(encoding="utf-8")
+    referenced = set(re.findall(r"[\"']([A-Za-z0-9_]+\.(?:json|csv))[\"']", src))
+    unreferenced = sorted((on_disk | csvs) - referenced)
+    for name in unreferenced:
+        f.note(f"reports/{name} is published but no check reads it")
+    print(f"  ({len(unreferenced)} published artifact(s) outside every check)")
 
 
 def main() -> int:
