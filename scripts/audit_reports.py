@@ -1663,6 +1663,56 @@ def check_frontier(f: Findings) -> None:
                             f"TARGET_70PCT.md states {cid} precision "
                             f"{r['oos_precision']*100:.2f}%")
 
+    # ------------------------------------------------------------------
+    # The smaller null battery, reports/ml_null_tests.json.
+    #
+    # TARGET_70PCT.md:389-391 quotes three numbers from it -- permuted labels
+    # 3.11% vs 3.08% base, noise features 4.06% vs 4.09%, and "no feature
+    # exceeding AUC 0.68". The report was opened by the audit only for its
+    # `stride` field, so none of those claims had ever been compared to it. They
+    # are all correct; this binds them so a regeneration that moves them is caught.
+    # ------------------------------------------------------------------
+    small = load("ml_null_tests.json")
+    if small and text:
+        pl = small.get("permuted_labels") or {}
+        prec, base = pl.get("oos_precision") or [], pl.get("oos_base_rate") or []
+        if prec and base:
+            mp, mb = sum(prec) / len(prec), sum(base) / len(base)
+            f.check(f"{mp*100:.2f}%" in text,
+                    f"TARGET_70PCT.md quotes the small battery's mean permuted "
+                    f"precision {mp*100:.2f}%")
+            f.check(f"{mb*100:.2f}%" in text,
+                    f"TARGET_70PCT.md quotes the small battery's mean permuted "
+                    f"base rate {mb*100:.2f}%")
+            # The document claims the nulls sit at the base rate; that is the
+            # substance of "reached the same conclusion", so require it.
+            f.check(all(abs(p - b) < 0.01 for p, b in zip(prec, base)),
+                    f"ml_null_tests.json permuted-label precisions sit at their "
+                    f"base rates (max gap "
+                    f"{max(abs(p-b) for p, b in zip(prec, base))*100:.3f} pp)")
+        nf = small.get("noise_features") or {}
+        if nf:
+            f.check(f"{nf['oos_precision']*100:.2f}%" in text,
+                    f"TARGET_70PCT.md quotes the noise-feature precision "
+                    f"{nf['oos_precision']*100:.2f}%")
+            f.check(f"{nf['oos_base_rate']*100:.2f}%" in text,
+                    f"TARGET_70PCT.md quotes the noise-feature base rate "
+                    f"{nf['oos_base_rate']*100:.2f}%")
+        fa = small.get("feature_auc") or {}
+        top = fa.get("top") or []
+        if top:
+            items = (list(top.items()) if isinstance(top, dict)
+                     else [(t.get("feature"), t.get("auc")) for t in top])
+            auc_max = max(a for _, a in items if a is not None)
+            # The document's claim is "no feature exceeding AUC 0.68". Require the
+            # payload to support it AND the document to state the bound, so
+            # neither can drift silently.
+            f.check(auc_max <= 0.68,
+                    f"ml_null_tests.json's best feature AUC is {auc_max:.4f}, "
+                    f"within the 0.68 bound the document states")
+            f.check("AUC 0.68" in text or "0.68" in text,
+                    "TARGET_70PCT.md states the AUC bound for the small battery")
+
 
 # ---------------------------------------------------------------------------
 # 5. Markdown structure
