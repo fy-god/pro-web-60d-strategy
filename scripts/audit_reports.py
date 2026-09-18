@@ -1995,21 +1995,33 @@ def check_frontier(f: Findings) -> None:
         # The two grids must be distinguishable in the reports themselves.
         wide_rep = load("ml_search_wide.json")
         abl_rep = load("ml_search_ablation.json")
-        # §4's search table is stride-5: it must be the report whose baseline row
-        # is 1,790 signals, and §5's baseline must be the SAME number.
-        wide_1790 = None
+        # §4's search table is now DENSE stride-1 (it was stride-5 before the
+        # report was regenerated). Its identifying row is the 22,867-signal RF
+        # row, which must ALSO be the winner in ml_search_models.json -- the two
+        # presets agreeing on their winner is the strongest cross-report signal
+        # this table can give.
+        wide_top = None
         if wide_rep:
+            f.check(int(wide_rep.get("stride") or 0) == 1,
+                    f"ml_search_wide.json records stride 1 for §4's table "
+                    f"(says {wide_rep.get('stride')!r})")
             for r in wide_rep.get("ranked") or []:
-                if int(r.get("oos_signals") or 0) == 1790:
-                    wide_1790 = r
-        f.check(wide_1790 is not None,
-                "ml_search_wide.json contains the 1,790-signal baseline row that "
-                "§4's search table and §5 report")
-        if wide_1790 is not None:
-            pct = float(wide_1790["oos_precision"]) * 100
-            f.check(abs(pct - 15.98) < 0.01,
-                    f"the 1,790-signal row is 15.98% ({pct:.2f}%)")
-        # The ablation table is dense: its `all 82 features` row is 16.44% /
+                if int(r.get("oos_signals") or 0) == 22867:
+                    wide_top = r
+        f.check(wide_top is not None,
+                "ml_search_wide.json contains the 22,867-signal row §4's search "
+                "table publishes")
+        if wide_top is not None:
+            pct = float(wide_top["oos_precision"]) * 100
+            f.check(abs(pct - 20.84) < 0.01,
+                    f"the 22,867-signal row is 20.84% ({pct:.2f}%)")
+            f.check(int(wide_top.get("folds_above_base") or 0) == 4
+                    and int(wide_top.get("n_folds") or 0) == 4,
+                    "§4's best row is 4/4 folds, which the document states")
+            f.check("| RF, 2% publication | 43.57% | **20.84%** | 22,867 | 4/4 |"
+                    in dtext,
+                    "TARGET_70PCT.md §4's table prints the 20.84%/22,867/4-4 row")
+        # The ablation table is dense too, and its all-features row is 16.44% /
         # 12,143. In the ablation report that row is named `abl_all` (the preset
         # prefixes every config with `abl_`), NOT `fam_hgb_0` -- the earlier
         # version of this check looked for the search preset's name and failed on
@@ -2032,27 +2044,36 @@ def check_frontier(f: Findings) -> None:
             # And the document must print that row under its ablation label.
             f.check("all 82 features" in dtext,
                     "TARGET_70PCT.md labels the ablation all-features row")
-        # §5's report must be stride-5, by row count, and must agree with the
-        # 1,790 baseline it prints. A crosssec report on the dense grid would
-        # carry 2,680,715 rows and cannot be compared to the stride-5 baseline.
+        # §5's report must be stride-5, by row count, and its own baseline must be
+        # a number that report actually contains. A crosssec report on the dense
+        # grid would carry 2,680,715 rows, and its 1,790 figure would then be a
+        # different population from the one it was measured on.
         xs_rep = load("ml_crosssec_final.json")
         if xs_rep:
             res0 = (xs_rep.get("results") or {}).get("fam_hgb_0") or {}
             n_rows = int(res0.get("n_rows") or 0)
             f.check(n_rows == 281227,
                     f"ml_crosssec_final.json (§5) is the stride-5 population "
-                    f"({n_rows:,} rows, expected 281,227) so it shares a grid with "
-                    f"§4's search table")
+                    f"({n_rows:,} rows, expected 281,227)")
             gt = res0.get("global_threshold") or {}
-            if gt.get("n_signals") is not None and wide_1790 is not None:
+            if gt.get("n_signals") is not None:
                 f.check(int(gt["n_signals"]) == 1790,
-                        f"§5's baseline signal count ({gt['n_signals']}) equals "
-                        f"the 1,790 row §4's search table publishes")
+                        f"§5's baseline signal count ({gt['n_signals']}) is the "
+                        f"1,790 the document prints")
+                bpct = float(gt["precision"]) * 100
+                f.check(abs(bpct - 15.98) < 0.01,
+                        f"§5's baseline precision is 15.98% ({bpct:.2f}%)")
         # The document must not make the retracted global assignment.
         f.check("Sections 5 and 6 use the **dense stride-1**" not in dtext,
                 "TARGET_70PCT.md does not assign §5 to the dense grid")
         f.check("Which sections are on which grid" in dtext,
                 "TARGET_70PCT.md states the grid per section")
+        # §4 must no longer print the retired stride-5 rows as if current.
+        for gone in ("| HGB (baseline), 2% publication | 50.60% | **15.98%** | 1,790",
+                     "| ExtraTrees, 0.5% publication | 56.26% | **18.21%** | 368"):
+            f.check(gone not in dtext,
+                    f"TARGET_70PCT.md does not print the retired stride-5 row "
+                    f"{gone[:48]!r} as a current result")
 
     # ------------------------------------------------------------------
     # `ma{w}_slope` is mislabelled AND algebraically redundant (EML-HIGH-4).

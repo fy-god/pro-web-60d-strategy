@@ -159,31 +159,52 @@ Three mechanisms, none of which requires any bound to be understood:
 
 ## 4. What the parallel search did find
 
-Full results in `reports/ml_search_wide.json` (58 configurations, 5 workers). The
-consistent picture, showing **both** numbers per configuration so the gap is
-visible:
+Full results in `reports/ml_search_wide.json` (58 configurations, 5 workers, on the
+**dense stride-1** grid — 2,680,715 rows). The consistent picture, showing **both**
+numbers per configuration so the gap is visible:
 
 | Configuration | In-sample | **Out-of-sample** | Signals | Folds above base |
 | --- | ---: | ---: | ---: | ---: |
-| ExtraTrees, 0.5% publication | 56.26% | **18.21%** | 368 | 3/4 |
-| ExtraTrees, 0.5% publication | 47.05% | **16.50%** | 515 | 3/4 |
-| HGB (baseline), 2% publication | 50.60% | **15.98%** | 1,790 | 4/4 |
-| ExtraTrees, 2% publication | 40.89% | **15.72%** | 3,913 | 4/4 |
-| HGB wide, 2% publication | 68.57% | 15.26% | 996 | 4/4 |
-| RF, 2% publication | 42.07% | 14.70% | 3,892 | 4/4 |
+| RF, 2% publication | 43.57% | **20.84%** | 22,867 | 4/4 |
+| HGB, 2% publication | 58.12% | **19.44%** | 7,721 | 4/4 |
+| Logistic, 0.5% publication | 43.49% | **19.13%** | 2,766 | 4/4 |
+| ExtraTrees, 2% publication | 41.92% | **18.99%** | 20,102 | 4/4 |
+| ExtraTrees, 0.5% publication | 60.77% | **17.76%** | 1,571 | 3/4 |
+| HGB, 2% publication | 71.01% | 17.09% | 673 | 2/2 |
+
+This table was previously six **stride-5** rows (a 15.98% baseline on 1,790 signals
+and others). The report is now regenerated on the dense grid the project defaults
+to, so those rows no longer exist and the numbers above replace them. The
+conclusion is unchanged and in one respect strengthened — the best dense
+configuration, RF at 22,867 signals, is now the same row as `fam_rf_5` in
+`ml_search_models.json` (43.57%/20.84%/22,867), so the two search presets agree
+exactly on their winner rather than producing different "best" numbers.
 
 Three things stand out.
 
-1. **The best configuration is 18.21% at 368 signals, and it is 3/4 folds — worse
-   on consistency than the baseline's 4/4.** It is not a better strategy; it is a
-   luckier draw on a smaller sample. The baseline is the more trustworthy result.
-2. **The in-sample/OOS gap is 1.2×–5.8×.** The very configuration that reaches
-   68.57% in-sample delivers 15.26% out-of-sample (4.5×); the widest ratio in the
-   56 ranked configurations is 5.8×, and the narrowest 1.2×. This ratio *is* the
+1. **The best configuration is 20.84% at 22,867 signals and 4/4 folds.** On this
+   grid it is not a thin-sample artifact: it is the largest signal count in the top
+   six and it is consistent across every fold. It is the strongest result in the
+   project, and it is 3.4× short of 70%.
+2. **The in-sample/OOS gap is 1.02×–5.84×.** The configuration reaching 71.01%
+   in-sample delivers 17.09% out-of-sample (4.2×); the widest ratio in the 58
+   ranked configurations is 5.84×, the narrowest 1.02×. This ratio *is* the
    mechanism behind every published "70%".
-3. **The search's top row is a trap.** A configuration scored **33.33%** — on
-   **3 signals**. In-sample it was 91.60%. Reporting that as a 33% strategy would
+3. **The thin-signal caution still applies, and the earlier 3-signal trap is
+   gone.** The former top row — 33.33% on **3 signals** with 91.60% in-sample — was
+   removed by the minimum-signal and fold-support filter added to `search.py`, and
+   `ranked_unfiltered` retains it for inspection. The caution survives at a larger
+   scale: the 71.01%-in-sample row above publishes only 673 signals across 2 folds,
+   and is **not** a 4/4 result. Reporting it as a 71% or even a 17% strategy would
    be the same error as reporting 70% on 13 cases.
+
+**One caveat on this table.** The wide report mixes two label definitions — 34 rows
+on `label_high` (future high touches +30%) and 24 on `label_close` (the close does)
+— whose base rates differ (≈4.09% vs ≈2.65%). Cross-label precision comparison is
+not like-for-like, so the table above is restricted to `label_high` rows, which is
+also the label the ablation table and every headline result use. The
+highest-precision `label_close` row (20.43% on 2,408 signals) is excluded for that
+reason, not because it is wrong.
 
 Feature-group ablations were also run, with the group table corrected after an
 initial bug (prefix matching made seven "different" ablations resolve to the same
@@ -356,20 +377,23 @@ It is also **13.61%, not 70%.**
 >
 > **Which sections are on which grid.** This is stated per section, because an
 > earlier version of this note assigned §5 and §6 to the dense grid and §5 is not
-> dense:
+> dense, and because §4 has since changed:
 >
 > | Section | Grid | Rows | How to tell |
 > | --- | --- | ---: | --- |
-> | §4, the 58-config search table | **stride-5** | 281,227 OOS | `ml_search_wide.json`; the 1,790-signal baseline row |
-> | §4, the feature-group ablation table | **dense stride-1** | 2,680,715 | `ml_search_ablation.json`; `fam_hgb_0` at 16.44%/12,143 signals |
+> | §4, the 58-config search table | **dense stride-1** | 2,680,715 | `ml_search_wide.json` `stride` = 1, `matrix` = `matrix_h10_t30_s1.parquet`; the 22,867-signal RF row |
+> | §4, the feature-group ablation table | **dense stride-1** | 2,680,715 | `ml_search_ablation.json`; the all-features row at 16.44%/12,143 signals |
 > | §5, cross-sectional top-K | **stride-5** | 281,227 OOS | `ml_crosssec_final.json` `n_rows` = 281,227, `n_test_sessions` = 462 |
 > | §6, the 2026 holdout | **dense stride-1** | 2,680,715 | `ml_final_holdout.json` `stride` = 1 |
 >
-> §5's baseline (1,790 signals / 15.98%) and §4's wide-table baseline are the same
-> stride-5 row, so §5's comparison is like-for-like. §4 contains both grids: its
-> search table is stride-5 and its ablation table is dense, which is why the two
-> tables' `fam_hgb_0`-equivalent rows read 15.98%/1,790 and 16.44%/12,143
-> respectively without either being wrong.
+> §4's search table was **regenerated onto the dense grid** and its six published
+> rows changed as a result; the previous table quoted stride-5 rows (a 15.98%
+> baseline on 1,790 signals) that the regenerated report no longer contains.
+> §5 remains on stride-5 and its baseline is the **crosssec run's own** global
+> threshold — 1,790 signals at 15.98% on that grid — which is why §5 still shows
+> 15.98% while §4 now shows 16.44%/12,143 for the same configuration: the same
+> model on two different populations, each compared only against its own baseline.
+> No cross-grid subtraction is made anywhere.
 
 Two independent null batteries were run. The larger one
 (`outputs/ml/audit/nulls_audit.json`, 2,906 s, 1 real control + 11 null variants +
