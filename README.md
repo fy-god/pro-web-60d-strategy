@@ -298,7 +298,7 @@ python -m src.tradeability                       # can the signals be filled?
 python -m src.live_readiness                     # realised expectancy net of costs
 python -m src.hitrate_vs_expectancy              # hit rate vs. what it earns
 python -m src.render_results                     # regenerate RESULTS.md
-python -m src.ml.build_matrix --stride 5         # ML feature matrix (82 causal features)
+python -m src.ml.build_matrix --stride 1         # ML feature matrix (82 causal features)
 python -m src.ml.precision_ceiling               # the 70% bound (§10)
 python -m src.ml.null_tests                      # validate the harness cannot cheat
 python -m src.ml.final_holdout                   # one-shot 2026 evaluation
@@ -417,6 +417,19 @@ The mechanism is plain in the conditional columns: winners are held to their
 +30% touch (+22% to +29%) while losers run to the horizon close (−7% to −12%).
 These are high-variance, negatively-skewed signals. A 20% chance of +30% does not
 compensate for an 80% chance of −11.5%.
+
+**Two files count signals differently — do not compare them directly.**
+`hitrate_vs_expectancy.csv` counts raw strategy signals, while
+`tradeability_by_strategy.csv` counts raw signals plus the forward windows that
+were censored at the data edge. For 34 of the 35 shared strategies the second
+count is larger, and the difference is exactly the censored count from
+`webpro_hit_rates.csv` (`atr_trend_follow` is 38,463 against 37,800, a difference
+of 663 = `censored_signals__webpro`). `unfillable` is a different and smaller
+subset again (992 for that strategy, 2.58%): signals that were kept but could not
+be entered. Both denominators are defensible and each file is internally
+consistent, but a hit rate from one and a signal count from the other will not
+reconcile. §9.2's fillability figures come from the tradeability file; the table
+above comes from the expectancy file.
 
 ### 9.4 What would be required first
 
