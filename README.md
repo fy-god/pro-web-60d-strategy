@@ -388,27 +388,38 @@ of a one-minute candle and the fill window is the next minute". That is a
 one-minute strategy with a one-minute holding latency. This one is a daily
 strategy. They are not interchangeable.
 
-### 9.2 15.8% of the best strategy's signals cannot be bought
+### 9.2 15.9% of the best strategy's signals cannot be bought
 
 A share that gaps to its price limit at the open has no sellers, so the stated
 entry — the next open — does not exist. The original project's entry test
 (`next_day_volume > 0 and next_day_open > 0`) accepts such bars as valid, which
 biases its precision upward. Measuring it on the actual emitted signals
-(`src/tradeability.py`, 646,718 signals):
+(`src/tradeability.py`, 646,718 emitted of which 637,499 have a resolved forward
+window):
 
 | Strategy | Signals | Unfillable | Share | One-word limit boards | Hit rate as reported | Excluding unfillable |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `leader_momentum` | 619 | 98 | **15.83%** | 32 | 20.52% | **18.23%** |
-| `strict_gap_follow_through` | 3,172 | 430 | 13.56% | 171 | 14.06% | 12.33% |
-| `gap_follow_through` | 4,022 | 487 | 12.11% | 193 | 12.85% | 11.17% |
-| `strict_leader_momentum_v2` | 3,261 | 368 | 11.28% | 123 | 15.85% | 14.62% |
+| `leader_momentum` | 616 | 98 | **15.91%** | 32 | 20.62% | **18.34%** |
+| `strict_gap_follow_through` | 3,137 | 425 | 13.55% | 167 | 14.22% | 12.46% |
+| `gap_follow_through` | 3,978 | 480 | 12.07% | 189 | 13.00% | 11.29% |
+| `strict_leader_momentum_v2` | 3,239 | 366 | 11.30% | 122 | 15.96% | 14.72% |
 
-Family-wide: **10,976 of 646,718 signals (1.70%) are unfillable**, of which 4,410
-are one-word limit boards where the entire session is pinned. Concretely, the
+Family-wide: **10,410 of 637,499 resolved signals (1.63%) are unfillable**, of which
+4,304 are one-word limit boards where the entire session is pinned. Concretely, the
 highest-hit-rate strategy in the whole family loses **2.3 percentage points** of
 its headline precisely because the best signal is the one you cannot get filled
 on. ST names are treated as 10% boards for lack of status data, so their true 5%
 limit makes this an **underestimate**.
+
+**These figures exclude censored signals, and that is a fix.** Until
+`src/tradeability.py` was corrected, this table divided by all 646,718 emitted
+signals and scored each censored one as a miss via `label_bull.fillna(0)`, against
+the project's own stated rule (`src/labels.py`: "censored rows are excluded from
+every denominator, never counted as 0"). That both understated every rate and made
+the file disagree with `hitrate_vs_expectancy.csv` for a reason other than sample
+size. Every rate here is now a proportion of the resolved count, and the emitted
+and censored totals travel beside it (`signals_raw`, `censored`) so the ledger
+reconciles.
 
 ### 9.3 The headline number is inverted against what you earn
 
@@ -438,18 +449,20 @@ The mechanism is plain in the conditional columns: winners are held to their
 These are high-variance, negatively-skewed signals. A 20% chance of +30% does not
 compensate for an 80% chance of −11.5%.
 
-**Two files count signals differently — do not compare them directly.**
-`hitrate_vs_expectancy.csv` counts raw strategy signals, while
-`tradeability_by_strategy.csv` counts raw signals plus the forward windows that
-were censored at the data edge. For 34 of the 35 shared strategies the second
-count is larger, and the difference is exactly the censored count from
-`webpro_hit_rates.csv` (`atr_trend_follow` is 38,463 against 37,800, a difference
-of 663 = `censored_signals__webpro`). `unfillable` is a different and smaller
-subset again (992 for that strategy, 2.58%): signals that were kept but could not
-be entered. Both denominators are defensible and each file is internally
-consistent, but a hit rate from one and a signal count from the other will not
-reconcile. §9.2's fillability figures come from the tradeability file; the table
-above comes from the expectancy file.
+**The two signal-count files now reconcile — they did not before the fix.**
+`hitrate_vs_expectancy.csv` reports the resolved signal count, and
+`tradeability_by_strategy.csv` divides by the same resolved count, so their
+`signals` columns are equal for **all 35** shared strategies (they differed for 34
+of 35 while tradeability divided by the emitted count). The emitted total is still
+reported, as `signals_raw`, and the identity
+`signals_raw − censored == signals` holds for every row:
+`atr_trend_follow` is 38,463 emitted less 663 censored = 37,800 resolved, which is
+exactly what `hitrate_vs_expectancy.csv` and `webpro_hit_rates.csv`
+(`signals_raw__webpro`) both show. `unfillable` is a different and smaller subset
+again — 943 for that strategy, 2.49% of the resolved count — and is not a
+censoring quantity: signals that *were* scored but could not be entered at the
+next open. §9.2's fillability figures come from the tradeability file; the table
+above comes from the expectancy file; the denominators now agree.
 
 ### 9.4 What would be required first
 

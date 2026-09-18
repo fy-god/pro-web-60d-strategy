@@ -477,13 +477,34 @@ def check_cross_report(f: Findings) -> None:
                 "webpro_hit_rates.csv")
         bad_relation = []
         for sid in shared:
-            expected = (int(raw[sid]["signals_raw__webpro"])
-                        + int(raw[sid]["censored_signals__webpro"]))
-            if int(trade[sid]["signals"]) != expected:
-                bad_relation.append(sid)
+            emitted = (int(raw[sid]["signals_raw__webpro"])
+                       + int(raw[sid]["censored_signals__webpro"]))
+            # tradeability now divides by the RESOLVED count, so its `signals`
+            # equals emitted MINUS censored, not emitted. This check previously
+            # asserted `== emitted`, i.e. it encoded the very denominator bug the
+            # review found (unresolved outcomes scored as failures while still
+            # counted); it went red the moment the bug was fixed, which is the
+            # check doing its job in reverse.
+            if int(trade[sid]["signals_raw"]) != emitted:
+                bad_relation.append((sid, "raw", int(trade[sid]["signals_raw"]),
+                                     emitted))
+                continue
+            censored = int(trade[sid]["censored"])
+            if int(trade[sid]["signals"]) != emitted - censored:
+                bad_relation.append((sid, "resolved",
+                                     int(trade[sid]["signals"]),
+                                     emitted - censored))
         f.check(not bad_relation,
-                f"tradeability signals == raw + censored for every shared strategy "
-                f"({len(bad_relation)} violate: {bad_relation[:4]})")
+                f"tradeability signals == emitted - censored for every shared "
+                f"strategy ({len(bad_relation)} violate: {bad_relation[:3]})")
+        # The censored count must reconcile across the two files, or one of them
+        # is describing a different row set.
+        cens_mismatch = [s for s in shared
+                         if int(trade[s]["censored"])
+                         != int(raw[s]["censored_signals__webpro"])]
+        f.check(not cens_mismatch,
+                f"tradeability and webpro_hit_rates agree on the censored count "
+                f"({len(cens_mismatch)} differ: {cens_mismatch[:4]})")
         # `unfillable` must be a subset of the counted signals, and never equal
         # the raw/censored difference (the two are different quantities and the
         # prose says so).
@@ -507,8 +528,122 @@ def check_cross_report(f: Findings) -> None:
         f.check(not bad_rate,
                 f"hit rates lie in [0,1] ({bad_rate[:4]})")
 
+        # ------------------------------------------------------------------
+        # The denominator fix changed what these three files MEAN, so the
+        # relations between them are pinned here rather than left to prose.
+        # Before the fix `tradeability.signals` was the emitted count; it is now
+        # the RESOLVED count, which makes it equal to the other two files'
+        # `signals` for all 35 shared strategies. That agreement is the cleanest
+        # available proof that the three CSVs describe one population.
+        # ------------------------------------------------------------------
+        if all("signals" in trade[s] and "signals_raw" in trade[s]
+               and "censored" in trade[s] for s in shared):
+            emit_bad, res_bad, agree = [], [], []
+            for sid in shared:
+                t = trade[sid]
+                emitted = int(t["signals_raw"])
+                censored = int(t["censored"])
+                resolved = int(t["signals"])
+                if resolved != emitted - censored:
+                    res_bad.append(sid)
+                w_raw = int(raw[sid]["signals_raw__webpro"])
+                w_cen = int(raw[sid]["censored_signals__webpro"])
+                if emitted != w_raw + w_cen:
+                    emit_bad.append(sid)
+                if resolved != int(hit[sid]["signals"]):
+                    agree.append(sid)
+            f.check(not res_bad,
+                    f"every tradeability row resolves its denominator "
+                    f"(signals_raw - censored == signals; {len(res_bad)} violate)")
+            f.check(not emit_bad,
+                    f"tradeability's emitted count equals webpro_hit_rates' "
+                    f"raw + censored ({len(emit_bad)} violate)")
+            f.check(not agree,
+                    f"tradeability and hitrate_vs_expectancy now agree on the "
+                    f"signal count for every shared strategy -- they did not "
+                    f"before the denominator fix ({len(agree)} still differ)")
+            # And the resolved count must be STRICTLY below the emitted count
+            # wherever censoring occurred, or the subtraction is a no-op and the
+            # fix silently did nothing.
+            censored_rows = [s for s in shared if int(trade[s]["censored"]) > 0]
+            f.check(len(censored_rows) >= 30,
+                    f"most strategies do have censored rows to exclude "
+                    f"({len(censored_rows)}/{len(shared)})")
+            no_op = [s for s in shared if int(trade[s]["censored"]) > 0
+                     and int(trade[s]["signals"]) >= int(trade[s]["signals_raw"])]
+            f.check(not no_op,
+                    f"no censored row was scored as if resolved ({no_op[:4]})")
+            # The report-level ledger must reconcile too.
+            tot_res = sum(int(trade[s]["signals"]) for s in shared)
+            tot_raw = sum(int(trade[s]["signals_raw"]) for s in shared)
+            tot_cen = sum(int(trade[s]["censored"]) for s in shared)
+            f.check(tot_res == tot_raw - tot_cen,
+                    f"the family ledger reconciles ({tot_raw:,} - {tot_cen:,} = "
+                    f"{tot_res:,})")
+
     if f.verbose:
         print("  (checked the published CSV denominators)")
+
+    # ------------------------------------------------------------------
+    # README section 9.2 publishes a table of tradeability figures BY HAND, and
+    # nothing checked it. After the denominator fix every cell of that table
+    # changed, so the numbers a reader sees were a manual transcription with no
+    # binding to the report they claim to come from. This binds them.
+    # ------------------------------------------------------------------
+    readme_path = ROOT / "README.md"
+    if readme_path.exists() and trade:
+        rtext = readme_path.read_text(encoding="utf-8")
+        # Each published row is (label, signals, unfillable, share%, one_word,
+        # hit_rate%, excluding%). Parsed out of the markdown so a wrong cell fails
+        # rather than being restated. The bold markers are OPTIONAL: only the
+        # first row of the table bolds both `share` and `excluding`, and a regex
+        # requiring them matched 1 of 4 rows -- which the count check below then
+        # caught, so the under-match was loud rather than silent.
+        row_re = re.compile(
+            r"^\|\s*`([a-z0-9_]+)`\s*\|\s*([\d,]+)\s*\|\s*([\d,]+)\s*\|\s*"
+            r"\*{0,2}([\d.]+)%\*{0,2}\s*\|\s*([\d,]+)\s*\|\s*([\d.]+)%\s*\|\s*"
+            r"\*{0,2}([\d.]+)%\*{0,2}\s*\|\s*$",
+            re.M)
+        parsed = row_re.findall(rtext)
+        f.check(len(parsed) >= 4,
+                f"README section 9.2 publishes a tradeability table "
+                f"({len(parsed)} rows parsed)")
+        for lab, sig, unf, share, owl, rate, ex in parsed:
+            row = trade.get(lab)
+            if row is None:
+                f.check(False, f"README 9.2 row `{lab}` exists in the report")
+                continue
+            want = {
+                "signals": (int(sig.replace(",", "")), int(row["signals"])),
+                "unfillable": (int(unf.replace(",", "")), int(row["unfillable"])),
+                "share%": (float(share), round(float(row["unfillable_pct"]) * 100, 2)),
+                "one_word_limit": (int(owl.replace(",", "")),
+                                   int(row["one_word_limit"])),
+                "hit_rate%": (float(rate), round(float(row["hit_rate"]) * 100, 2)),
+                "excl_unfillable%": (float(ex),
+                                     round(float(row["tradeable_hit_rate"]) * 100, 2)),
+            }
+            for field, (a, b) in want.items():
+                f.check(abs(a - b) < 0.005,
+                        f"README 9.2 `{lab}` {field} matches "
+                        f"tradeability_by_strategy.csv (says {a}, report {b})")
+        # The family-wide sentence.
+        if parsed:
+            tot_unf = sum(int(r["unfillable"]) for r in trade.values())
+            tot_res = sum(int(r["signals"]) for r in trade.values())
+            pct = tot_unf / tot_res * 100
+            f.check(f"{tot_unf:,} of {tot_res:,} resolved signals ({pct:.2f}%)"
+                    in rtext,
+                    f"README 9.2 states the family-wide total "
+                    f"({tot_unf:,} of {tot_res:,}, {pct:.2f}%)")
+        # The superseded framing must be gone: after the fix the two files agree,
+        # so the old "the second count is larger" claim is now false.
+        f.check("the second count is larger" not in rtext,
+                "README no longer claims tradeability counts more signals than "
+                "hitrate_vs_expectancy")
+        f.check("38,463 emitted less 663 censored = 37,800 resolved" in rtext,
+                "README's worked example uses the post-fix emitted/resolved "
+                "identity")
 
     # ------------------------------------------------------------------
     # live_readiness.json -- the report that answers "can this be traded at

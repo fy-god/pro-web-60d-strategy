@@ -1,0 +1,146 @@
+[
+  {
+    "variant": "strict_accumulation_base_v2",
+    "T": 0.462083,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_bollinger_release_v2",
+    "T": 0.952088,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_first_board_breakout_v2",
+    "T": 0.7,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_gap_follow_through",
+    "T": 0.75,
+    "declared": "gap_follow_through",
+    "imported": "__future__",
+    "base": "gap_follow_through",
+    "base_T": 0.72,
+    "direction": "tighter"
+  },
+  {
+    "variant": "strict_gap_follow_through_v2",
+    "T": 0.690867,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_leader_momentum_v2",
+    "T": 0.788535,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_obv_volume_price",
+    "T": 0.97,
+    "declared": "obv_volume_price",
+    "imported": "__future__",
+    "base": "obv_volume_price",
+    "base_T": 0.7,
+    "direction": "tighter"
+  },
+  {
+    "variant": "strict_obv_volume_price_v2",
+    "T": 0.969655,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_oversold_rebound_v2",
+    "T": 0.449606,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_platform_breakout",
+    "T": 0.65,
+    "declared": "platform_breakout",
+    "imported": "__future__",
+    "base": "platform_breakout",
+    "base_T": 0.8,
+    "direction": "LOOSER"
+  },
+  {
+    "variant": "strict_platform_breakout_v2",
+    "T": 0.607503,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_relative_strength",
+    "T": 0.96,
+    "declared": "relative_strength_rank",
+    "imported": "__future__",
+    "base": "relative_strength_rank",
+    "base_T": 0.72,
+    "direction": "tighter"
+  },
+  {
+    "variant": "strict_relative_strength_v2",
+    "T": 0.95137,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_turnover_weak_to_strong_v2",
+    "T": 0.70274,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  },
+  {
+    "variant": "strict_washout_complete",
+    "T": 0.72,
+    "declared": "washout_complete",
+    "imported": "__future__",
+    "base": "washout_complete",
+    "base_T": 0.82,
+    "direction": "LOOSER"
+  },
+  {
+    "variant": "strict_washout_complete_v2",
+    "T": 0.703662,
+    "declared": null,
+    "imported": "__future__",
+    "base": "__future__",
+    "base_T": "<ModuleNotFoundError>",
+    "direction": "?"
+  }
+]
