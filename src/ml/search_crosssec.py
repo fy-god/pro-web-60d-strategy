@@ -57,8 +57,28 @@ import pandas as pd
 from src.ml import crosssec as xs
 from src.ml import walkforward as wf
 
-# The published pooled baseline this work has to be compared against.
-POOLED_BASELINE_OOS_PRECISION = 0.15977653631284916
+# A PRIOR published baseline, kept only as a printed reference point.
+#
+# This value (15.98%) is the fam_hgb_0 pooled walk-forward precision measured on
+# the STRIDE-5 matrix (281,227 out-of-sample rows). The comparisons this module
+# makes do NOT use it: every delta is computed against the baseline produced by
+# the run in progress (`res["global_threshold"]["precision"]`), on the same
+# matrix, the same test rows and the same scores. That is the number that must be
+# used, and it is what `equal_budget_vs_baseline` already reads.
+#
+# It is named for its population so it cannot be mistaken for a like-for-like
+# figure. On the dense stride-1 grid the same config scores ~16.44%, so printing
+# 15.98% beside a dense-grid run would be a silent cross-population comparison.
+# `main()` now prints the difference explicitly, and the payload records the
+# provenance, so the two are never confused.
+PRIOR_STRIDE5_POOLED_BASELINE_OOS_PRECISION = 0.15977653631284916
+PRIOR_STRIDE5_BASELINE_PROVENANCE = {
+    "config": "fam_hgb_0",
+    "population": "stride-5",
+    "matrix": "matrix_h10_t30_s5.parquet",
+    "oos_rows": 281227,
+    "note": "printed for reference only; all deltas use the in-run baseline",
+}
 POOLED_BASELINE_CONFIG = "fam_hgb_0"
 POOLED_BASELINE_TARGET_RATE = 0.02
 
@@ -928,9 +948,15 @@ def report(res: dict, k_grid: tuple[int, ...], n_boot: int) -> None:
               f"excl0={p5['excludes_zero']}")
 
     g = res["global_threshold"]
+    prior = PRIOR_STRIDE5_POOLED_BASELINE_OOS_PRECISION * 100
+    now = g["precision"] * 100
     print(f"\n  harness global threshold@rate{POOLED_BASELINE_TARGET_RATE}: "
-          f"{g['n_signals']} sig, precision {g['precision'] * 100:.2f}% "
-          f"(published baseline {POOLED_BASELINE_OOS_PRECISION * 100:.2f}%)")
+          f"{g['n_signals']} sig, precision {now:.2f}%")
+    print(f"    in-run baseline for every delta above: {now:.2f}%")
+    print(f"    prior published stride-5 baseline    : {prior:.2f}% "
+          f"(different population; reference only)")
+    print(f"    difference                           : {now - prior:+.2f} pp "
+          f"-- expected if this run is on another grid")
 
     eb = res.get("equal_budget_vs_baseline")
     if eb:
@@ -1026,7 +1052,15 @@ def main() -> None:
         "final_holdout_start": xs.FINAL_HOLDOUT_START,
         "n_boot": n_boot, "seed": args.seed,
         "k_grid": list(k_grid), "percentile_grid": list(p_grid),
-        "pooled_baseline_oos_precision": POOLED_BASELINE_OOS_PRECISION,
+        # Both baselines, each labelled, because they are different populations
+        # and were previously indistinguishable in the payload. Every delta in
+        # `results` is computed against the in-run figure, not the prior one.
+        "pooled_baseline_oos_precision": PRIOR_STRIDE5_POOLED_BASELINE_OOS_PRECISION,
+        "prior_published_baseline": {
+            "value": PRIOR_STRIDE5_POOLED_BASELINE_OOS_PRECISION,
+            **PRIOR_STRIDE5_BASELINE_PROVENANCE,
+        },
+        "in_run_baseline_used_for_deltas": "results.<config>.global_threshold",
         "results": {},
     }
     for name in names:

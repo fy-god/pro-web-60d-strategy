@@ -1809,6 +1809,41 @@ def check_frontier(f: Findings) -> None:
                 f.check(f"{bp:.2f}%" in text,
                         f"TARGET_70PCT.md states the global-threshold baseline "
                         f"{bp:.2f}% (ml_crosssec_final)")
+            # EML-EML-P0-CROSSSEC-POP: the report must be internally consistent
+            # about WHICH population it measured, and the top-level
+            # `pooled_baseline_oos_precision` must not be a second, conflicting
+            # baseline. On the stride-5 run the two coincide exactly; if a future
+            # run is regenerated on the dense grid they diverge, and the payload
+            # must then say so rather than leaving 15.98% to be read as this run's
+            # baseline.
+            prior = xs.get("pooled_baseline_oos_precision")
+            inrun = gt.get("precision")
+            if prior is not None and inrun is not None:
+                rows_n = int(res.get("n_rows") or 0)
+                stride5 = rows_n == 281227
+                if stride5:
+                    f.check(abs(float(prior) - float(inrun)) < 1e-9,
+                            f"ml_crosssec_final's stride-5 run has "
+                            f"pooled_baseline_oos_precision equal to its own "
+                            f"global_threshold precision "
+                            f"({float(prior):.10f} vs {float(inrun):.10f})")
+                else:
+                    f.check(
+                        abs(float(prior) - float(inrun)) > 1e-9
+                        or "prior_published_baseline" in xs,
+                        f"ml_crosssec_final was measured on {rows_n:,} rows "
+                        f"(not the stride-5 281,227) and its prior baseline "
+                        f"{float(prior):.4f} differs from its in-run baseline "
+                        f"{float(inrun):.4f}; the payload must label which is "
+                        f"which")
+                f.check(rows_n > 0,
+                        f"ml_crosssec_final records its out-of-sample row count "
+                        f"({rows_n:,})")
+                # The document must not present the crosssec figures as
+                # like-for-like with a differently-derived baseline.
+                f.check("281,227" in text or "stride-5" in text,
+                        "TARGET_70PCT.md states the population section 5's "
+                        "cross-sectional numbers were measured on")
             # Table 2: the matched-budget oracle comparison. Its whole point is
             # that the ratios cluster at 1.00, so a ratio drifting away from 1 is
             # exactly what must not pass unnoticed.
