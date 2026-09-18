@@ -934,6 +934,70 @@ def check_cross_report(f: Findings) -> None:
         f.check(not bad_frac, f"lowzone precisions are proportions ({bad_frac[:3]})")
 
         # ------------------------------------------------------------------
+        # The low-zone leak disclosure. This is the most important thing in the
+        # README, because the published low-zone numbers ARE the leaked ones: the
+        # CSV legitimately still holds them (regenerating needs ~4 GB for the
+        # 586 MB layer cache) and the prose beside the table says so and gives the
+        # equal-footing counterfactual. Nothing previously bound the table to its
+        # own CSV, nor the disclosure to the numbers it discloses.
+        # ------------------------------------------------------------------
+        readme_p = ROOT / "README.md"
+        if readme_p.exists():
+            rtxt_lz = readme_p.read_text(encoding="utf-8")
+            lomap = {(r.get("version"), r.get("regime")): r for r in lz}
+            # The published table must equal the CSV, cell for cell.
+            rl_pat = re.compile(
+                r"^\|\s*(V\d\d)\s*\|\s*(webpro|low60 \(4x\)|low504)\s*\|"
+                r"\s*([\d,]+)\s*\|\s*([\d,]+)\s*\|\s*\*{0,2}([\d.]+)%", re.M)
+            rl = rl_pat.findall(rtxt_lz)
+            f.check(len(rl) >= 7,
+                    f"README publishes the low-zone table ({len(rl)} rows parsed)")
+            lz_mism = []
+            for v, reg, sig, hits, prec in rl:
+                reg_key = "low60" if reg.startswith("low60") else reg
+                row = lomap.get((v, reg_key))
+                if row is None:
+                    lz_mism.append((v, reg, "no CSV row"))
+                    continue
+                try:
+                    if int(sig.replace(",", "")) != int(row["signals_deduped"]):
+                        lz_mism.append((v, reg, f"signals {sig}"))
+                    if int(hits.replace(",", "")) != int(row["bull_hits"]):
+                        lz_mism.append((v, reg, f"hits {hits}"))
+                    if abs(float(prec)
+                           - float(row["bull_precision"]) * 100) >= 0.005:
+                        lz_mism.append((v, reg, f"{prec}%"))
+                except (KeyError, TypeError, ValueError):
+                    lz_mism.append((v, reg, "unparseable"))
+            f.check(not lz_mism,
+                    f"README's low-zone table equals lowzone_hit_rates.csv cell "
+                    f"for cell ({len(lz_mism)} mismatches: {lz_mism[:3]})")
+            # The disclosure must be present and must carry the corrected figure
+            # the source fix produced.
+            for needed in ("That comparison is not on equal footing",
+                           "The fallback has been removed",
+                           "| V03 (presented as honest walk-forward) | 4.37% | "
+                           "**2.87%** |"):
+                f.check(needed in rtxt_lz,
+                        f"README carries the low-zone leak disclosure "
+                        f"({needed[:42]!r})")
+            # The leaked row must still be stamped as NOT walk-forward, which is
+            # what makes the disclosure necessary rather than decorative.
+            v03 = lomap.get(("V03", "webpro"))
+            if v03 is not None:
+                try:
+                    f.check(abs(float(v03["bull_precision"]) * 100 - 4.37) < 0.01,
+                            "lowzone_hit_rates.csv still carries the leaked "
+                            "V03/webpro figure the README discloses as 4.37%")
+                    f.check(str(v03["in_sample"]).lower() in ("false", "0"),
+                            "the leaked V03/webpro row is still stamped "
+                            "in_sample=False, which is what makes the disclosure "
+                            "necessary")
+                except (KeyError, TypeError, ValueError):
+                    f.check(False, "the V03/webpro row carries its precision and "
+                                   "in_sample fields")
+
+        # ------------------------------------------------------------------
         # audit/README.md makes four numeric claims about THIS repository's own
         # backtest, in a table at lines 66-70, and no check reads that document
         # at all. They were unverified until now.
@@ -2528,11 +2592,23 @@ def check_frontier(f: Findings) -> None:
     req = (ROOT / "requirements.txt")
     if req.exists():
         rtext_req = req.read_text(encoding="utf-8")
+        # Parse the requirement NAMES, do not substring-search for them. A plain
+        # `pkg in text` is fooled by any longer name containing the shorter one --
+        # the mutation probe renamed the pandas requirement to `notpandas` and the
+        # check still passed, because "pandas" is a substring of "notpandas".
+        declared = set()
+        for line in rtext_req.splitlines():
+            s = line.strip()
+            if not s or s.startswith("#") or s.startswith("-"):
+                continue
+            m = re.match(r"([A-Za-z0-9][A-Za-z0-9._-]*)", s)
+            if m:
+                declared.add(m.group(1).lower().replace("_", "-"))
         for pkg in ("pandas", "numpy", "scikit-learn", "pyarrow", "scipy",
                     "matplotlib"):
-            f.check(pkg in rtext_req,
-                    f"requirements.txt names {pkg}, which the shipped code "
-                    f"imports")
+            f.check(pkg in declared,
+                    f"requirements.txt declares {pkg}, which the shipped code "
+                    f"imports (it declares {sorted(declared)})")
     # The vendored bundle must be present AND usable, i.e. the gate must be able
     # to read it without any environment variable set.
     cards = ROOT / "data" / "cards_100"

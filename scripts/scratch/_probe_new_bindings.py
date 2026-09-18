@@ -30,7 +30,12 @@ def run_audit(cwd: pathlib.Path) -> tuple[int, str]:
 
 
 def copy_repo() -> None:
-    """Copy only what the audit reads: text, reports and CSVs."""
+    """Copy what the audit reads: text, reports, CSVs, and the vendored bundle.
+
+    `data/` is needed for the vendored 100-card bundle (the audit requires it to
+    exist), and the parquet caches inside are skipped because they are large and
+    the audit never opens them.
+    """
     if WORK.exists():
         shutil.rmtree(WORK, ignore_errors=True)
     WORK.mkdir(parents=True)
@@ -41,7 +46,13 @@ def copy_repo() -> None:
             shutil.copytree(s, WORK / name,
                             ignore=shutil.ignore_patterns(
                                 "__pycache__", "*.parquet", "*.npz"))
-    for name in ("README.md", "TARGET_70PCT.md", "RESULTS.md", "cordis.yml"):
+    # The vendored card bundle, without the multi-hundred-MB caches.
+    cards = SRC / "data" / "cards_100"
+    if cards.exists():
+        (WORK / "data").mkdir(parents=True, exist_ok=True)
+        shutil.copytree(cards, WORK / "data" / "cards_100")
+    for name in ("README.md", "TARGET_70PCT.md", "RESULTS.md", "cordis.yml",
+                 "requirements.txt", "REPRODUCIBILITY.md", ".gitignore"):
         s = SRC / name
         if s.exists():
             shutil.copy2(s, WORK / name)
@@ -96,6 +107,38 @@ MUTATIONS = [
      "outputs/ml/audit/label_pairs_audit.json",
      r"is a PRE-FIX measurement",
      r"> 0 is a genuine defect"),
+    ("lowzone README signals cell",
+     "README.md",
+     r"(\| V03 \| webpro \| )26,897( \|)",
+     r"\g<1>99,999\g<2>"),
+    ("lowzone README precision cell",
+     "README.md",
+     r"(\| V03 \| webpro \| 26,897 \| 1,176 \| \*\*)4\.37(%)",
+     r"\g<1>9.99\g<2>"),
+    ("lowzone disclosure removed",
+     "README.md",
+     r"That comparison is not on equal footing",
+     "That comparison is fair"),
+    ("header callout percentage",
+     "README.md",
+     r"15\.91% of the highest-hit-rate",
+     "15.8% of the highest-hit-rate"),
+    ("cited script does not exist",
+     "README.md",
+     r"scripts/scratch/stride_verification\.py",
+     "scripts/scratch/check_stride_phase.py"),
+    ("hardcoded D:\\xm path returns",
+     "src/validate_cards.py",
+     r"WEBPRO_CARD_BUNDLE",
+     "SOME_OTHER_VAR"),
+    ("requirements.txt removed",
+     "requirements.txt",
+     r"pandas",
+     "notpandas"),
+    ("selection note re-hardcoded stale",
+     "outputs/ml/audit/selection_ceiling.json",
+     r"SD 1\.25%",
+     "SD ~0.7%"),
 ]
 
 print(f"\n{'mutation':<28}{'base':>6}{'mutated':>9}{'delta':>7}  verdict")
