@@ -107,11 +107,14 @@ def run_version(
         return pd.DataFrame(), {"version": version.version, "regime": regime, "signals": 0}
 
     rows = []
+    skipped: list[dict] = []
+    thresholds: dict[int, float] = {}
     for year in eval_years:
         test = pool[pool["year"] == year]
         if test.empty:
             continue
         train = pool[pool["year"] < year]
+        threshold_source = "not applicable (rule version)"
 
         if version.model == "rule":
             test = test.assign(score=1.0)
@@ -141,14 +144,52 @@ def run_version(
                 threshold = float(np.quantile(score, 1.0 - TARGET_RATE))
                 in_sample = True
             else:
+                # The prior-year quantile is the only honest source, so when it is
+                # unavailable the year must be SKIPPED, not silently scored on its
+                # own labels.
+                #
+                # This branch used to read `source = prior if prior is not None
+                # and len(prior) >= 50 else score`, i.e. it fell back to the
+                # evaluation year's own scores, and then stamped in_sample=False
+                # unconditionally. `_prior_year_scores` returns None whenever no
+                # prior year has a usable fit pool -- which for year=2024 is
+                # ALWAYS, because the panel starts 2023-01-03 and 2023's own prior
+                # pool is therefore empty. So every 2024 row of every `gain` and
+                # `competitive` version was thresholded on 2024's own 99th
+                # percentile while being published as out-of-sample.
+                #
+                # The damage was not confined to a flag: 2024 supplied 19.8% of
+                # V03/webpro's signals and 43.4% of V03/low60's, and V03/webpro
+                # hits 13.68% in 2024 against 2.84% in 2026. On equal footing it
+                # reads 2.865%, BELOW the 3.089% panel base rate, so the README's
+                # "the per-year tuning buys nothing" conclusion inverts: the
+                # correctly-flagged in-sample V07/V08 (3.551% / 3.721%) beat the
+                # version that was presented as the honest walk-forward one.
                 prior = _prior_year_scores(pool, year, version, regime)
-                source = prior if prior is not None and len(prior) >= 50 else score
-                threshold = float(np.quantile(source, 1.0 - TARGET_RATE))
+                if prior is None or len(prior) < 50:
+                    skipped.append({
+                        "year": int(year),
+                        "reason": "no usable prior-year scores to pick a "
+                                  "threshold; refusing to use the evaluation "
+                                  "year's own labels",
+                        "prior_rows": int(len(prior)) if prior is not None else 0,
+                    })
+                    continue
+                threshold = float(np.quantile(prior, 1.0 - TARGET_RATE))
+                threshold_source = (
+                    f"prior years {sorted(set(int(y) for y in pool.loc[pool['year'] < year, 'year'].unique()))}"
+                )
                 in_sample = False
 
         selected = test[test["score"] >= threshold].copy()
         selected["eval_year"] = year
         selected["in_sample"] = in_sample if version.model != "rule" else False
+        # Which year's scores chose this year's cutoff. A reader of the published
+        # CSV must be able to tell an honest walk-forward year from an in-sample
+        # one, and from a year that was dropped because neither was available.
+        selected["threshold_source"] = threshold_source
+        selected["eval_threshold"] = threshold
+        thresholds[int(year)] = threshold
         rows.append(selected)
 
     if not rows:
@@ -193,6 +234,13 @@ def run_version(
         "distinct_stocks": int(deduped["code"].nunique()) if n else 0,
         "distinct_dates": int(deduped["date"].nunique()) if n else 0,
         "in_sample": bool(signals["in_sample"].any()) if n else False,
+        # How each evaluated year got its cutoff, and which years were refused.
+        # `in_sample` alone was not enough: it was a hard-coded expectation rather
+        # than a record of the threshold path, so a year that picked its own
+        # cutoff through the fallback still read False.
+        "threshold_by_year": {str(k): float(v) for k, v in sorted(thresholds.items())},
+        "years_skipped": skipped,
+        "years_skipped_n": len(skipped),
         "score_auc_within_signals": auc,
         "candidates_pool": int(len(pool)),
         "hit_rate_pct": round(100 * hits / n, 2) if n else float("nan"),

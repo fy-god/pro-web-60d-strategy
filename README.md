@@ -243,19 +243,39 @@ the natural base rate is 0.0752% on the scanned grid (0.0725% over the full
 panel) — the best version achieves 0.15% on 12 hits, with a Wilson lower bound of
 0.083%. No version gets a hit rate above 0.15%.
 
-**V07/V08's apparent advantage is the in-sample protocol.** Their thresholds are
-chosen on the evaluation year's own labels, exactly as the source project's V08
-record does. Under that protocol they reach 4.23%/4.08% versus 4.37% for the
-honest walk-forward V03 — i.e. the per-year tuning buys *nothing*, and V03
-gained on the same footing as V07/V08 is still the better result. This is
-consistent with the independent audit's finding that V08's claimed
-`PASS_YEARWISE_IN_SAMPLE` rests on same-year fitting.
+**V07/V08's apparent advantage is the in-sample protocol — and V03's was too, in
+2024.** V07/V08 choose their thresholds on the evaluation year's own labels,
+exactly as the source project's V08 record does. Under that protocol they reach
+4.23%/4.08% versus 4.37% for V03. **That comparison is not on equal footing.**
+V03's 2024 block picked its cutoff the same in-sample way, because the panel starts
+2023-01-03: for `year=2024` the only prior year is 2023, whose own fitting pool is
+empty, so the prior-year quantile was unavailable and the code fell back to 2024's
+own scores while still stamping `in_sample=False`. 2024 supplies 19.8% of
+V03/webpro's signals and 43.4% of V03/low60's, and V03/webpro hits 13.68% in 2024
+against 3.13% (2025) and 2.84% (2026).
+
+The fallback has been removed: a year with no usable prior-year scores is now
+skipped, not silently scored on its own labels. Excluding the 2024 block so every
+version is read on the same footing reverses the conclusion:
+
+| version | as published | without the 2024 block |
+| --- | ---: | ---: |
+| V03 (presented as honest walk-forward) | 4.37% | **2.87%** |
+| V07 (in-sample, correctly flagged) | 4.23% | 3.55% |
+| V08 (in-sample, correctly flagged) | 4.08% | 3.72% |
+
+The published 4.37% is therefore not an honest walk-forward figure, and on equal
+footing V03 (2.87%) falls **below the 3.089% panel base rate** while the
+correctly-flagged in-sample versions beat it. The earlier "the per-year tuning buys
+nothing" reading does not survive; the direction reverses. This is consistent with
+the independent audit's finding that V08's claimed `PASS_YEARWISE_IN_SAMPLE` rests
+on same-year fitting.
 
 ### What this means
 
 1. **No strategy in either family reaches 70%.** Across 43 strategy versions and
-   1,142,391 evaluated stock-days, the ceiling is 19.17%, and the honest
-   walk-forward low-zone ceiling is 4.37%.
+   1,142,391 evaluated stock-days, the ceiling is 19.17%, and the walk-forward
+   low-zone ceiling on equal footing is 2.87% — below the base rate.
 2. **The 4x-in-60-sessions target has effectively no signal.** Base rate 0.0752%;
    the best lift is 2.0x on 12 hits, which is not distinguishable from noise.
 3. **Several published "winners" are below chance** on the full population.

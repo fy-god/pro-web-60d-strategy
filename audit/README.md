@@ -65,7 +65,7 @@ two agree:
 
 | Claim | Independent audit | This repo's backtest |
 | --- | --- | --- |
-| V08 yearwise numbers | in-sample, 3 of 4 years fail the 60% gate when the window is made directional | V07/V08 in-sample hits (4.23%/4.08%) do not beat the honest walk-forward V03 (4.37%) |
+| V08 yearwise numbers | in-sample, 3 of 4 years fail the 60% gate when the window is made directional | V07/V08 in-sample hits (4.23%/4.08%) are compared against V03 (4.37%), but V03's 2024 block also picked its cutoff in-sample; on equal footing V03 is 2.87%, below the 3.089% base rate, while V07/V08 are 3.55%/3.72% |
 | Honest low-zone ceiling | 12.5%–14.0% on frozen tests | 4.37% at the 10-session/+30% contract; 0.15% at the 60-session/4x contract |
 | Loss-alert gate | semantically vacuous | not used as a success criterion here; strict-low is reported as a rate, never as a gate |
 

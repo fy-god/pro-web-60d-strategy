@@ -554,6 +554,49 @@ def check_cross_report(f: Findings) -> None:
     # table no longer says what the documents claim it says.
     # ------------------------------------------------------------------
     lz = load_csv("lowzone_hit_rates.csv")
+    # ------------------------------------------------------------------
+    # No threshold may come from the evaluation year's own labels.
+    #
+    # This is the defect class the flags could not see. The `in_sample` column was
+    # checked against a hard-coded expectation, so a year that selected its cutoff
+    # from its OWN scores through a fallback and was stamped False anyway read as
+    # correct. That is what happened: for year=2024 the prior-year quantile was
+    # unavailable (the panel starts 2023-01-03, so 2023 has no fitting pool) and
+    # the code fell back to 2024's own scores, publishing 4.37% for V03/webpro
+    # against 2.87% on equal footing -- below the base rate.
+    #
+    # The published CSV cannot show this until it is regenerated (a run needs the
+    # 586 MB layer cache and ~4 GB resident), so the SOURCE is bound here: the
+    # fallback expression must not come back.
+    # ------------------------------------------------------------------
+    lz_src = ROOT / "src" / "backtest_lowzone.py"
+    if lz_src.exists():
+        lsrc = lz_src.read_text(encoding="utf-8")
+        # Comments record WHY the fallback was removed and therefore quote it
+        # verbatim; matching the raw text flagged correct code. Only executable
+        # lines count.
+        code_lines = [
+            ln for ln in lsrc.splitlines()
+            if not ln.lstrip().startswith("#")
+        ]
+        lcode = "\n".join(code_lines)
+        f.check("else score" not in lcode and "else test[" not in lcode,
+                "backtest_lowzone.py never falls back to the evaluation year's "
+                "own scores for its threshold")
+        f.check("prior if prior is not None" not in lcode,
+                "backtest_lowzone.py does not silently substitute the "
+                "evaluation year's scores when prior-year scores are missing")
+        f.check("years_skipped" in lcode,
+                "backtest_lowzone.py records the years it refused for want of "
+                "prior-year scores")
+        f.check("threshold_source" in lcode,
+                "backtest_lowzone.py stamps which years supplied each cutoff")
+        # The skip must be a real `continue`, not a recorded note followed by use.
+        m = re.search(r"skipped\.append\(\{(.{0,400}?)\n(\s*)continue",
+                      lcode, re.S)
+        f.check(m is not None,
+                "backtest_lowzone.py SKIPS a year whose prior-year threshold is "
+                "unavailable rather than scoring it on its own labels")
     # `if lz:` was fail-OPEN: a header-only file parses to an empty list, so every
     # lowzone check below was skipped and the run stayed green -- the probe that
     # truncated the CSV to its header caught this. The file is a published
@@ -680,19 +723,59 @@ def check_cross_report(f: Findings) -> None:
                             f"audit/README.md cites {vid} at {found[vid]}%; the "
                             f"ledger says {got:.2f}%")
                     # The in-sample flag is what stops an in-sample fit from being
-                    # read as a live result.
+                    # read as a live result -- but the flag alone was checked
+                    # against a hard-coded expectation, so it could not see a year
+                    # that picked its own cutoff through a fallback and was
+                    # stamped False anyway. That is exactly what happened: V03's
+                    # 2024 block thresholded on 2024's own scores because the
+                    # panel starts 2023-01-03, leaving 2023 without a fitting
+                    # pool. The flag is still bound to the framing, and the
+                    # threshold path is now bound separately below.
                     expect = vid != "V03"
                     is_in = str(row["in_sample"]).strip().lower() == "true"
                     f.check(is_in == expect,
                             f"lowzone ledger marks {vid} in_sample={is_in}, "
                             f"matching audit/README.md's framing "
                             f"(expected {expect})")
-                # The document's assertion: V07 and V08 do not beat V03.
+                    # The producer must record which years it refused for lack of
+                    # prior-year scores, and must not have silently used the
+                    # evaluation year's own labels for any of them.
+                    if "years_skipped" in row or "threshold_by_year" in row:
+                        skipped = str(row.get("years_skipped") or "")
+                        f.check(is_in or not skipped or skipped in ("", "[]"),
+                                f"lowzone ledger's honest rows ({vid}) skip no "
+                                f"year for want of prior scores (says {skipped})")
+                        if not is_in:
+                            f.check("2024" in skipped,
+                                    f"lowzone ledger records {vid} skipping 2024, "
+                                    f"the year with no usable prior-year scores "
+                                    f"(says {skipped})")
+                # The document's assertion, on the corrected equal footing: the
+                # as-published V07/V08 figures do not beat V03, but that
+                # comparison is NOT like-for-like, and the document must say so
+                # and give the no-2024 figures that reverse the direction.
                 if {"V03", "V07", "V08"} <= set(found):
                     for vid in ("V07", "V08"):
                         f.check(found[vid] < found["V03"],
                                 f"audit/README.md: {vid} ({found[vid]}%) does not "
-                                f"beat V03 ({found['V03']}%)")
+                                f"beat V03 ({found['V03']}%) as published")
+                    # The equal-footing numbers, from the document.
+                    m3 = re.search(r"V03 is ([\d.]+)%", claim_line)
+                    f.check(m3 is not None,
+                            "audit/README.md states V03's equal-footing rate")
+                    if m3:
+                        f.check(float(m3.group(1)) < 3.089,
+                                f"audit/README.md's equal-footing V03 "
+                                f"({m3.group(1)}%) is below the 3.089% base rate")
+                    m78 = re.search(r"V07/V08 are ([\d.]+)%/([\d.]+)%", claim_line)
+                    f.check(m78 is not None,
+                            "audit/README.md states V07/V08's equal-footing rates")
+                    if m3 and m78:
+                        a, b = float(m78.group(1)), float(m78.group(2))
+                        v3 = float(m3.group(1))
+                        f.check(a > v3 and b > v3,
+                                f"audit/README.md states the equal-footing "
+                                f"reversal (V07 {a}% / V08 {b}% beat V03 {v3}%)")
             # The 60-session/4x figure, also parsed from the document. The claim
             # sentence names the contract and the rate; the rate must be a value
             # the ledger's low60 rows actually contain.
