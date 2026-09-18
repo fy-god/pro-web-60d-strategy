@@ -2091,6 +2091,77 @@ def check_frontier(f: Findings) -> None:
                 "redundant, so '82 features' is not 82 independent directions")
 
     # ------------------------------------------------------------------
+    # The ML audit toolkit's evidence must not be older than the matrix it
+    # describes (EML-HIGH-1 / HIGH-2).
+    #
+    # scripts/audit_ml/ writes nine artifacts under outputs/ml/audit/. The
+    # scheduled audit reads ONE of them (nulls_audit.json) and checks its
+    # COMPOSITION -- "14 variants, 11 nulls, 2 positive controls" -- never its
+    # vintage. So every artifact could describe a matrix that has since been
+    # rebuilt, and one did: label_pairs_audit.json stored
+    # `label_close_defined_where_resolved_false = 5747` with prose calling `> 0`
+    # "a genuine defect", while the shipped matrix measures 0. The artifact was
+    # written 2026-09-17 03:02 and the matrix rebuilt that day at 21:46.
+    #
+    # A timestamp comparison cannot be used as the guard: mtimes move when a file
+    # is annotated or re-checked out, and a stale artifact that was merely touched
+    # would pass. What is checked instead is that each artifact which records a
+    # known-superseded field either carries an explicit `matrix_vintage` block
+    # saying so, or does not contain the field's stale value in a way a reader
+    # would act on.
+    # ------------------------------------------------------------------
+    audit_dir = ROOT / "outputs" / "ml" / "audit"
+    if audit_dir.exists():
+        report_names = sorted(p.name for p in audit_dir.glob("*.json"))
+        f.check(bool(report_names),
+                f"the ML audit toolkit's artifacts are present "
+                f"({len(report_names)} found)")
+        # The one artifact known to carry a superseded measurement must say so.
+        lp = audit_dir / "label_pairs_audit.json"
+        if lp.exists():
+            try:
+                lpd = json.loads(lp.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+                LOAD_ERRORS.append(f"label_pairs_audit.json unreadable: {exc}")
+                lpd = None
+            if isinstance(lpd, dict):
+                ex = lpd.get("exhaustive") or {}
+                vintage = ex.get("matrix_vintage")
+                f.check(isinstance(vintage, dict) and
+                        vintage.get("shipped_matrix_value_for_stale_field") == 0,
+                        "label_pairs_audit.json carries a `matrix_vintage` block "
+                        "recording that its stored "
+                        "label_close_defined_where_resolved_false describes a "
+                        "pre-fix matrix")
+                prose = str(ex.get("read_this") or "")
+                f.check("PRE-FIX" in prose or "pre-fix" in prose,
+                        "label_pairs_audit.json's read_this marks its stored "
+                        "count as a pre-fix measurement")
+                f.check("> 0 is a genuine defect" not in prose,
+                        "label_pairs_audit.json does not tell a reader to treat "
+                        "the superseded count as a live defect")
+                # The measurement itself must be preserved, not silently fixed:
+                # overwriting it would destroy the record that the fix happened.
+                f.check(ex.get("label_close_defined_where_resolved_false") == 5747,
+                        "label_pairs_audit.json preserves the pre-fix measurement "
+                        "rather than rewriting it")
+        # Every artifact that names a matrix must name the SAME one, so a partial
+        # regeneration cannot leave the set split across two matrices.
+        named = {}
+        for name in report_names:
+            try:
+                payload = json.loads((audit_dir / name).read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            blob = json.dumps(payload)
+            for m in ("matrix_h10_t30_s1", "matrix_h10_t30_s5"):
+                if m in blob:
+                    named.setdefault(name, set()).add(m)
+        f.check(len(set().union(*named.values())) <= 1 if named else True,
+                f"every ML audit artifact that names a matrix names the same one "
+                f"({ {k: sorted(v) for k, v in named.items()} })")
+
+    # ------------------------------------------------------------------
     # TARGET_70PCT.md section 5: the cross-sectional top-K tables.
     #
     # The review found the 23.81%-at-462 claim -- one of the document's two

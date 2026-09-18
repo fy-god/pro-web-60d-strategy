@@ -427,6 +427,18 @@
     "label_close_defined_where_resolved_false": 5747,
     "rows_with_fewer_than_horizon_forward_bars": 6386,
     "strict_gt_on_threshold_rows": 17,
-    "read_this": "`label_high`/`resolved`/`entry_open`/`fwd_max_*` must match to float32 precision. `label_close_defined_where_resolved_false` > 0 is a genuine defect in build_matrix: label_close is censored on `seen` (>=1 forward bar) instead of `resolved` (>=10)."
+    "read_this": "`label_high`/`resolved`/`entry_open`/`fwd_max_*` must match to float32 precision. NOTE ON `label_close_defined_where_resolved_false`: this artifact records 5747, which is a PRE-FIX measurement. The defect it named was real -- label_close was censored on `seen` (>=1 forward bar) instead of `resolved` (>=10) -- and it was fixed in c97de8c, after which the matrix was rebuilt, ~18h after this file was written. Measured on the SHIPPED matrix the value is 0: label_close is finite exactly where resolved == 1, over all 536,143 rows. Do NOT read the stored 5747 as a live defect; it describes a matrix that no longer exists. The count is retained rather than rewritten because overwriting a measurement would destroy the record that the fix happened. See `matrix_vintage`.",
+    "matrix_vintage": {
+      "matrix": "outputs/ml/matrix_h10_t30_s5.parquet",
+      "rows_at_measurement": 536143,
+      "artifact_written": "2026-09-17 03:02:26",
+      "matrix_rebuilt": "2026-09-17 21:46:51",
+      "stale_fields": [
+        "label_close_defined_where_resolved_false"
+      ],
+      "shipped_matrix_value_for_stale_field": 0,
+      "verified": "label_close.notna() == resolved on all 536,143 rows; label_close mean 0.020303647965192795 == meta base_rate_close",
+      "why_this_is_recorded": "The 4-hourly audit validates this artifact's COMPOSITION, never its vintage, so a stale measurement passes every check. The vintage block makes the staleness machine-visible."
+    }
   }
 }
