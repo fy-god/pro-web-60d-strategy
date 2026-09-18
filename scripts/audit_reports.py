@@ -1144,6 +1144,24 @@ def check_prose(f: Findings, verbose: bool) -> None:
     if verbose:
         print("  (tied headline tables to their source reports)")
 
+    # A document must not assert a specific audit-check count. The count changes
+    # whenever a check is added, so any such claim is stale by construction --
+    # README said "still 111 checks, 0 problems" while the audit ran 368 with
+    # 2 problems. Stating the current count would only move the problem, so the
+    # pattern is rejected outright.
+    for doc in ("README.md", "TARGET_70PCT.md", "RESULTS.md"):
+        path = ROOT / doc
+        if not path.exists():
+            continue
+        for line_no, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), 1
+        ):
+            m = re.search(r"\b(\d+)\s+checks\b", line)
+            if m and not _is_correction_prose(line):
+                f.check(False,
+                        f"{doc}:{line_no} asserts '{m.group(1)} checks', a moving "
+                        f"number; describe what is checked instead")
+
     # Retired figures, kept with the reason so the list doubles as a record of
     # corrections rather than a mystery. Only values that are retired in EVERY
     # context belong here; a value that is still current somewhere (15.98% is

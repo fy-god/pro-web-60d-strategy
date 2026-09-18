@@ -316,7 +316,7 @@ write the base rates:
 python -m src.scan_all --stride 5      # rewrites webpro_baselines.json + webpro_hit_rates.csv
 python -m src.backtest_lowzone         # rewrites lowzone_baselines.json + lowzone_hit_rates.csv
 python -m src.render_results           # fold the new prose into RESULTS.md
-python scripts/audit_reports.py        # still 111 checks, 0 problems
+python scripts/audit_reports.py        # check every published number
 ```
 
 Both must be re-run with the *same* arguments as the original run (`--stride 5`
