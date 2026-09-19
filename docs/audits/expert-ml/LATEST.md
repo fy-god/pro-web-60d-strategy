@@ -1,6 +1,24 @@
 # 专家 / ML 最新轮审
 
-## 最新完整报告：RSI 连续信息融合与本地研究队列
+## 最新独立复核：`06-02-02` 的 RSI 二值专家 0/100 经离线重算坐实
+
+- 完整报告：[`2026-09-20_07-26-54_JST.md`](./2026-09-20_07-26-54_JST.md)
+- `publication_kind`：`INDEPENDENT_RECHECK`。这是**独立复核报告**，不替代下方专项研究与执行方案。
+- `audit_time_jst`：`2026-09-20T07:26:54+09:00`
+- `reviewed_source_sha`：`8cadbd2a0210b2e2cfa475fb4a60ef46f3ed7155`
+- `reviewed_tree_sha`：`46886f7af77e96a3438bb1d4b9c38658c25d3b9e`（`git rev-parse HEAD^{tree}` 实测）
+- 本轮实际运行：`git merge --ff-only origin/main`（`efb6e1a..8cadbd2`，exit 0）；`python -m pytest tests/ -q -p no:cacheprovider` → **15 passed, exit 0**；仓库根同样 **15 passed, exit 0**（无计数差异）；离线重算 100 卡；矩阵列数核验；H504 算术复算。**本轮未复制上游报告的 `BLOCKED_ENV`**——本机 Python 与 pytest 均正常执行。
+- 源码层自 `32155eca` 起无任何变更（其间提交全为 `docs/` 与 `reports/AUDIT_STATUS.md`），故四条开放项按回归处理、不重复展开。
+- **独立重算坐实该报告核心声明**：用仓库**真实实现**（`ExpertCard.from_mapping` + `rsi_mean_reversion.predict`）重算 100 张真实卡 → `predicted_yes_count=0`，与归档 `scores.json` **一致**；`score min/mean/max = 0.0354 / 0.2095 / 0.4926`，距阈值 `0.68` 差 **0.1874**。归档算术对全部 36 策略自洽（`tp+fp+fn+tn=total=100`、`tp+fn=positive_count=50`、`accuracy=(tp+tn)/total`，0 处矛盾）。
+- **本轮对该报告的加强（新增机制分离）**：失活是**两层原因叠加**，不是单纯阈值偏高。(a) `rsi_oversold`（权重 **0.30**，`rsi_mean_reversion.py:46`）在本归档上**结构性近乎失效**——仅 3/100 张卡 RSI14≤45、0/100 张 ≤25，该项均值 **0.0037**、最大 **0.1388**；(b) 阈值 `0.68` 偏高，而其余四项满额仅 `0.70`。**阈值扫描在 `0.68/0.60/0.55/0.50` 下均为 0 次触发**，直到 `0.49` 才 1 次 → 「从不触发」对该归档**稳健**，**仅调阈值无效**已数值排除。
+- **定性维持**：策略实现与其自身 `FORMULA`（`:23-27` 对齐 `:59`/`:65`）一致，失活源于输入分布与阈值设计而非实现错误，故该报告「是研究发现、不是 P0/P1 代码 bug」可接受。36 个策略中 **6 个**预测为 0，RSI 是**离群者**。
+- 四条开放项经独立回归**全部仍在**：`EML-P1-RSI-META-LEAK`（**潜在**泄漏）、`EML-P1-EXECUTOR-NO-RESEARCH-QUEUE`、`EML-P2-LABEL-NOT-H504-CLOSE`、`EML-P2-PANEL-WRITE-SIDE-EFFECT`。
+- **新增：绕过分组过滤的调用点比上轮多两处** —— `src/ml/precision_ceiling.py:109`、`src/ml/null_tests.py:67`（另有已报的 `final_holdout.py:222`、`concentration.py:56`、`validate_rf.py:72`、`profile_stages.py:28`；`crosssec.py:86` 为正确调用）。全仓库**无**白名单兜底（`git grep -E "FeatureSpec|WHITELIST|allowlist" -- src/` 为空），`tests/` 亦**无**覆盖；唯一相关守卫 `check_groups()` 仅打印 `WARNING`（`search.py:249-252`）。
+- **`EML-P1-RSI-META-LEAK` 当前为潜在而非已泄漏**：两个真实矩阵均为 **91 列 = 82 特征 + 恰好 9 个 META 列**，无 `known_at`/`deadline`/`label_end`；82 特征与 `FEATURE_GROUPS` 并集精确相等。风险在未来追加时间合同列时兑现。
+- H504 时间支持独立复算**与前两轮一致**：`564 / 382 / 1069`，`overlap=False` → 仅 887 会话下正式 H504 时间外验证应记 `BLOCKED_DATA/AWAITING_EVIDENCE`，**禁止**随机切分成熟历史。
+- 状态三轴：`execution_status=COMPLETED`、`research_verdict=CONFIRMED`、`evidence_status=VERIFIED`、`evidence_type=SYNTHETIC`（`cards_100` 为 `evaluation.py:19-20` 硬构造的 50/50 练习集，非自然市场基率）。**本轮实股 H504 fit = 0，没有新增实股结果。**
+
+## 上一份完整报告：RSI 连续信息融合与本地研究队列
 
 - 完整报告：[`2026-09-20_06-02-02_JST.md`](./2026-09-20_06-02-02_JST.md)
 - `publication_kind`：`AUDIT_AND_RESEARCH_QUEUE_UPDATE`
