@@ -8,6 +8,8 @@
 - `reviewed_source_sha`：`5da1758e81d74f0dab42c7cdb21861e2caea4990`
 - `reviewed_tree_sha`：`a206b8a7cf57e3f485d7b07b8509c045975310fc`
 - `audit_base_sha`：`32155ecae1a0a0be1877b780df0da12354c347ea`
+- 报告发布提交：[`b18e081e8183378e465ca752a5e6a81b7d91710d`](https://github.com/fy-god/pro-web-60d-strategy/commit/b18e081e8183378e465ca752a5e6a81b7d91710d)
+- 报告 Git blob：`7d216fde893399224fd1714648b18ace05067a30`。已按 `ls-remote` 回读核验本地与 `origin/main` 一致，本次 diff 仅落在 `docs/audits/expert-ml/` 白名单内。
 - 本轮实际运行：`git merge --ff-only origin/main`（exit 0）；`python -m pytest tests/ -q -p no:cacheprovider` → **15 passed, exit 0**；两份独立数学复算脚本 exit 0；开放 PR = 0。
 - **源码层自 `32155eca` 起无任何变更**（6 个提交全为 `docs/`），故不重复展开既有未修项。
 - 独立复算**确认**：03-06-03 的反例数值精确吻合（13.207547→51.851852，N=−1.058869，E=+39.703173）；`RSI=50[1+(C_t−C_(t−14))/Σ|d|]` 成立；H504 时间可行性算术成立（最早开发起点 564 > 最后可完整评价起点 382 → **不存在合法成熟时间外折**）。
