@@ -1,5 +1,24 @@
 # 专家 / ML 最新轮审
 
+## 最新审计报告：对 03-06-03 RSI 分解报告的独立复核
+
+- 完整报告：[`2026-09-20_03-41-46_JST.md`](./2026-09-20_03-41-46_JST.md)
+- `publication_kind`：`CURRENT_EXPERT_ML_AUDIT`。这是**独立复核报告**，不替代下方专项研究，也不重复既有未修项。
+- `audit_time_jst`：`2026-09-20T03:41:46+09:00`
+- `reviewed_source_sha`：`5da1758e81d74f0dab42c7cdb21861e2caea4990`
+- `reviewed_tree_sha`：`a206b8a7cf57e3f485d7b07b8509c045975310fc`
+- `audit_base_sha`：`32155ecae1a0a0be1877b780df0da12354c347ea`
+- 本轮实际运行：`git merge --ff-only origin/main`（exit 0）；`python -m pytest tests/ -q -p no:cacheprovider` → **15 passed, exit 0**；两份独立数学复算脚本 exit 0；开放 PR = 0。
+- **源码层自 `32155eca` 起无任何变更**（6 个提交全为 `docs/`），故不重复展开既有未修项。
+- 独立复算**确认**：03-06-03 的反例数值精确吻合（13.207547→51.851852，N=−1.058869，E=+39.703173）；`RSI=50[1+(C_t−C_(t−14))/Σ|d|]` 成立；H504 时间可行性算术成立（最早开发起点 564 > 最后可完整评价起点 382 → **不存在合法成熟时间外折**）。
+- 新增发现 `EML-P2-RSI-REPORT-VACUOUS-IDENTITY`：该报告的"24,250 次转移满足 ΔRSI=N+E"是**望远镜式重言式**，对任意 F 恒成立，**不可能失败、零鉴别力**，不应计入已验证性质（报告已自认其为算术精度，故不算夸大）。
+- 新增发现 `EML-P2-REPORT-NONEXISTENT-ARTIFACT`：报告 L187 称"现有 `research_h504` 适配器"、L229 称"已有 `experiment_registry`"，实测该 SHA 下两者均为 **0 个路径**，且与其自身 L183 矛盾。
+- 独立加重 `EML-P1-RSI-META-LEAK`：`META_COLUMNS` 仅 9 名（`walkforward.py:58`），`feature_columns` 为黑名单式（`:108`），空分组直接放行全部列（`:300`），且 `final_holdout.py:222`、`concentration.py:56`、`validate_rf.py:72`、`profile_stages.py:28` 均绕过分组过滤。新增 `known_at`/`deadline` 将**静默成为模型输入**。
+- **未复现并降级**："朴素相减会产生负微小量"（03-06-03 第 3 节）在真实与 1e14~1e17 对抗输入下**均未复现越界**；改动需比值 ≳1e12 而真实约 1e3，余量约 9 个数量级 → 改标 `待验证风险`，不列 `已确认错误`。
+- 另确认 `EML-P2-LABEL-NOT-H504-CLOSE`（`labels.py:62/165/182/199` 为个股 bar + High 口径，从不比较 `close`）与 `EML-P2-PANEL-WRITE-SIDE-EFFECT`（`data_pipeline.py:114-118` 读函数内嵌写盘）。
+- **剔除一条子 agent 误判**："报告称已更新 LATEST 但该提交未更新"不成立——审计与索引分两提交发布是本仓既定惯例，`5da1758` 已更新。
+- 状态三轴：`execution_status=COMPLETED`、`research_verdict=INCONCLUSIVE`、`evidence_status=VERIFIED`（数学/引用部分）、`evidence_type=SYNTHETIC`。**本轮实股 fit = 0，没有新增实股结果。**
+
 ## 最新专项研究：RSI有效恢复与本地检验
 
 - 完整报告：[`2026-09-20_03-06-03_JST.md`](./2026-09-20_03-06-03_JST.md)
