@@ -8,6 +8,8 @@
 - `reviewed_source_sha`：`c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
 - `reviewed_tree_sha`：`4c4dff9c9f09af20e9a574033d650e7454e1b305`
 - `main_head_before_sync`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`（本地 `--ff-only` 同步至当前 HEAD）
+- 报告发布提交：`aed53c2da626666848ce06c08e336fb4b7039244`（已 `git ls-remote` 回读 MATCHED，`c9b90e3..aed53c2`）
+- 报告 blob：`9afda5c37623065ad486cf7d9d2dc14b52b17a19`
 - **上一轮报告自报沙箱 `ClientError`、未跑测试；本轮在**本机**实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 0.83s`，REAL exit 0**。这是本轮执行结果，不是转抄。**
 - **源码相对上一审计点未变**：`git diff --stat 1363e68..HEAD -- src/ experts/ tests/ scripts/` **为空**；远端只多两个 docs 提交（`0901b8c` 报告、`c9b90e3` 本文件），作者 `fy-god` 非 `audit-agent`。故所有开放源码项按「仍未修」处理。
 - **上一轮 4 条新增确认全部复现（0 证伪）**，但**第 3 条的 1 个子案例不成立**：报告称「同日 `close>4E` 且 `low<8` → joint=false」是 RED，实测**已 GREEN**（`label_joint=0.0`）。**该条不作为新增失败收录**。
