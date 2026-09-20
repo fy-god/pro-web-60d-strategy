@@ -1,5 +1,21 @@
 # 专家／ML最新研究与审计索引
 
+## 最新候选推进：H504 session-clock v2 + 本机真实迁移探针
+
+- 完整报告：[`2026-09-21_06-03-05_JST.md`](./2026-09-21_06-03-05_JST.md)。
+- 类型：`CANDIDATE_IMPLEMENTATION_AND_REGRESSION_UPDATE`；不是新的 H504 实股拟合成绩。
+- 时间：`2026-09-21T06:03:05+09:00`。
+- 被审默认分支：`0a7de768ca25078ad3970bbf11c43cf5d54a25c7`；tree：`fe257101cf683cbf81b94250ccc02ca29dc1d603`；Open PR=0。
+- 报告提交：[`ffa0bd1802ff3fee063b54858fd4979d28568f40`](https://github.com/fy-god/pro-web-60d-strategy/commit/ffa0bd1802ff3fee063b54858fd4979d28568f40)，报告 blob `00275ec720bdaa595268e50ce6389362d37ad27d`，已按返回提交回读。
+- 当前产品源码仍未改；本轮隔离沙箱把 H504 candidate 继续推进到 v2：早 success/risk 的 `label_known_at` 与 full-followup BCE 的 `training_eligible_at` 分离，避免“既抹掉已知事件”与“提前吸入早终止样本”两个相反错误。
+- 新增独立 market-session cooldown，108-session 两信号无需 filler 可保留 2 条；59 抑制、60 保留；signal date 不在 calendar 时 fail closed。
+- FeatureSpec 新增禁止 `target_price/risk_floor/training_eligible/candidate_id/signal_date/code/date` 等 oracle/metadata 字段，防止 candidate 自己引入 t+1 entry 泄漏。
+- fold-support 明确限定为“supplied calendar 上 full-followup BCE 支持”：H=504 的 dense 最低 `2H+2=1010`，不再外推为用户本机无更长历史，也不影响当前产品 H10。
+- 新增本机可执行 `inspect / label-sample / dedupe` CLI 与 `compare_product_vs_session_oracle.py` 迁移探针；优先选 gap 股票 + 稠密对照，输出 entry/no-entry/label 差异和逐行对账。
+- 本轮实际软件执行：**24 passed in 0.36s**；session probe：旧 frame-rank cooldown 对 108-session 间隔保留 1 条，新 market-calendar 版本保留 2 条；same-day risk-first 返回 `risk/0`。
+- 候选包 SHA-256=`e1956bde98856e7fd5ae17a7c4aa1a0bf6ed32a3d941f8c6fba9ea4282a70096`，相对上一候选 patch SHA-256=`31a1fd11a7984ec26142a4dac43d1015f3ebd3c753b7ddb59b1c1db4c2b776a8`；候选未写入远端产品树。
+- `real_market_fit_count=0`；用户本机 runtime 仍 `LOCAL_APPLY_PENDING`，单次三小时仍 `NOT_RUN/NO_RECEIPT`。下一轮优先验收本机 `data_inventory + fold_support + product_vs_oracle + start/execution receipt + 非文档代码/训练产物`。
+
 ## 最新独立审计：low504 在真实停牌面板上窗口错位
 
 - 完整报告：[`2026-09-21_03-50-40_JST.md`](./2026-09-21_03-50-40_JST.md)。
