@@ -90,7 +90,7 @@
 ## 最近一次完整独立源码复核（保留）
 
 - 报告：[`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
-- `reviewed_source_sha=c9b90e37f68c0419aef71d6508aa3d2dd5a6d18bf0`
+- `reviewed_source_sha=c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
 - 最终报告提交：[`eccc360585b1080b5cccd820a46848da06151cc2`](https://github.com/fy-god/pro-web-60d-strategy/commit/eccc360585b1080b5cccd820a46848da06151cc2)
 - 该次本地复核确认：真实panel存在943条个股行相邻但市场日不相邻entry边；48/49次真实dedupe调用受错误signal-frame时钟影响；H504 Close合同存在High/Close反转；FeatureSpec黑名单可接纳未来合同列。具体量级和反例以该报告为准。
 
