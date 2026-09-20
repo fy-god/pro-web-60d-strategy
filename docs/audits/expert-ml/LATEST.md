@@ -1,5 +1,23 @@
 # 专家／ML最新研究与审计索引
 
+## 最新独立审计：low504 在真实停牌面板上窗口错位
+
+- 完整报告：[`2026-09-21_03-50-40_JST.md`](./2026-09-21_03-50-40_JST.md)。
+- 类型：`INDEPENDENT_REGRESSION_AND_REAL_MARKET_DEFECT_QUANTIFICATION`；不是新的实股拟合成绩。
+- 时间：`2026-09-21T03:50:40+09:00`。
+- 被审默认分支：`59788d8a1ba17d3ba3c3f6098758b66f784c63ab`；本轮范围 `c0002b0..59788d8` 只有 `docs/` 变化（`.py`/`.ps1`/`.yml`/`.toml` 零改动）。
+- 主要新结论（真实 A 股面板：2,677,525 行 / 3,193 codes / 886 sessions）：
+  - `src/labels.py:124-128,161,196` 的入场与视界都在「行空间」，任务定义在「session 空间」，只有同股票守卫、没有相邻交易日守卫。
+  - `REGIMES["low504"]`（H=504）有 **12.2237%** 成熟行实际跨度 > 504 session（最长 590）；`low60` 有 **2.0631%**（最长 108）。
+  - 真实复牌案例 002656：信号行 2023-04-28 的 `entry_open` = 40 个 session 之后（2023-06-30）的复牌开盘价，不是 next market session open。
+  - `dedupe_signals`（`labels.py:233`）的冷却时钟取自**信号帧自身**的日期唯一值，稀疏帧下实测 **24→3**（按真实交易日应为 15），方向是**过度抑制**；`tests/test_engine.py:228-232` 明文承认并靠 `:243-248` 的填充股票掩盖。
+  - `META_COLUMNS`（`walkforward.py:58-61`）是默认放行黑名单，不含 `label_joint`/`future_bars`/`forward_*`/`entry_open__*`；今日矩阵未写入故非活跃泄漏，属结构性陷阱。
+- **否决性结论**：同批 `02-07-54` §2.3 的「887 session、H=504 → 0 个合法成熟折」**算术为真**（我独立复出，并补出闭式最小 N = 2H+2 = 1010，合法折数 = N−2H−1），但其「本仓库数据不足」的**解释不成立**：该模块从未合入产品树，产品实际矩阵是 `horizon=10`（`matrix_h10_t30_s1_meta.json`，887 sessions），且本仓库 `low504` 的 **95.81%** 标签是 timeout（真实面板重算，非引用陈旧工件），故兄弟仓库的「计划终点 → 实际可知时间」修法在此**不可迁移**，照搬会剔除 95.81% 样本、造成删失偏差。
+- 更正上轮我自己的一处错误：`EML-P2-TEST-KDJ-NESTED` 不是「嵌套不执行」，而是 `def` 行丢失、KDJ 断言**活在** `test_wilson_upper_bound_is_not_a_constant` 内部执行（AST：15 个模块级 `test_*`；`-s` 实跑同时打印两条 ok）。
+- 未修项：`EML-P0-AUDIT-FETCH-FAIL-PASS` 仍 OPEN，并给出精确语义 —— `note` 被显示（`:141`/`:159`）但**不参与** `verdict`（`:108`）与 `needs_attention`（`:344`），故 `git fetch` 失败时仍判 `PASS` 且不触发 attention。
+- 边界：本轮**无新模型拟合**，`real_market_fit_count = 0`；peer 候选包 zip/patch SHA-256 与 benchmark 数字**未复现**（文件不在仓库）；冻结树 `pytest -o addopts="" -p no:cacheprovider -q tests/` = **15 passed**。
+- 三项分离：程序修复 0；任务定义变更 0；真实模型增益 0。
+
 ## 最新候选实现：H504合同／FeatureSpec／fold-support／VIR已在沙箱落成
 
 - 完整报告：[`2026-09-21_02-07-54_JST.md`](./2026-09-21_02-07-54_JST.md)。
