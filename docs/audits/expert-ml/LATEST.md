@@ -7,7 +7,7 @@
 - `audit_time_jst`：`2026-09-20T11:27:10+09:00`
 - `reviewed_source_sha`：`a0ca60b4fc9dc73de0b4ff7ce6b753fc3afd1753`（被复核报告的源码点）
 - `main_head_after_sync`：`5a135d3a95e2d5cc201c7a6c3dda8703fce8431d`
-- 报告发布提交：见文末（写完回读后确认）
+- 报告发布提交：`e9f7b8cf00a5fd01f25afee48fe70a3157f278cc`（已 `git ls-remote` 回读 MATCHED）
 - **候选报告**：`09-58-00` 报告自报审计沙箱 Python/container 返回 `ClientError`、未跑测试。本轮在**本机**实测 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 4.17s`，exit 0**，与其上一轮记录一致。
 - **逐项复算该报告 RSI 归因，全部精确复现**（未采信散文，用仓库自身 `ExpertCard.from_mapping` + `rsi_mean_reversion.predict`）：`rsi_oversold==0` 为 **97/100**；两边皆零的正负配对**恰为 2350/2500 = 94.0000%**（且恰好取到下界）；`0.30×mean=0.001115`、`0.30×max=0.041631`；`score min/mean/max = 0.0354/0.2095/0.4926`；`AUC(score_total)=0.5836`；`fires=0/100`。**该报告没有编造数字。**
 - **本轮新增三点量化（该报告未做）**：
