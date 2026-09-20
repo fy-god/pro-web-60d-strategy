@@ -1,6 +1,39 @@
 # 专家 / ML 最新轮审
 
-## 最新专项研究：RSI归因纠偏、Wilder对照与恢复共识
+## 最新独立复核：RSI 归因算术复算无误，并补上「截断」这一定性关键
+
+- 完整报告：[`2026-09-20_11-27-10_JST.md`](./2026-09-20_11-27-10_JST.md)
+- `publication_kind`：`INDEPENDENT_RECHECK`
+- `audit_time_jst`：`2026-09-20T11:27:10+09:00`
+- `reviewed_source_sha`：`a0ca60b4fc9dc73de0b4ff7ce6b753fc3afd1753`（被复核报告的源码点）
+- `main_head_after_sync`：`5a135d3a95e2d5cc201c7a6c3dda8703fce8431d`
+- 报告发布提交：见文末（写完回读后确认）
+- **候选报告**：`09-58-00` 报告自报审计沙箱 Python/container 返回 `ClientError`、未跑测试。本轮在**本机**实测 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 4.17s`，exit 0**，与其上一轮记录一致。
+- **逐项复算该报告 RSI 归因，全部精确复现**（未采信散文，用仓库自身 `ExpertCard.from_mapping` + `rsi_mean_reversion.predict`）：`rsi_oversold==0` 为 **97/100**；两边皆零的正负配对**恰为 2350/2500 = 94.0000%**（且恰好取到下界）；`0.30×mean=0.001115`、`0.30×max=0.041631`；`score min/mean/max = 0.0354/0.2095/0.4926`；`AUC(score_total)=0.5836`；`fires=0/100`。**该报告没有编造数字。**
+- **本轮新增三点量化（该报告未做）**：
+  1. 94.0% 是「活动率上界」而非「影响量」：RSI 项的 AUC 边际贡献**为负**——去掉它 AUC **上升** `+0.0032`（≈8/2500 配对）；总分排序力几乎全来自单一分量 `nonpanic_volume`（单独 AUC **0.5828** vs 五项合计 **0.5836**；`drawdown` 单独仅 0.4728）。
+  2. Bootstrap 1000× 留一：五项 ΔAUC 的 95% CI **全部包含 0**——故「RSI 无增量」成立，但「其余四项有增量」**同样未被证明**；总分本身 z≈+1.44 亦不显著。该报告的因果口吻应降级为方向性提示。
+  3. 「AUC≈0.5 ⇒ RSI 无用」**不可判定**：`rsi_mean_reversion.py:46` 的 `_clip((45.0-rsi)/20.0)` 把 `rsi14>45` 压成恰好 0，而实测 **97/100 卡 `rsi14>45`**（min 42.22/max 100.00/mean 67.38）。连续 RSI 信息在进入 AUC **之前**已被销毁 97%，数据无法区分「无信息」与「有信息但被截断遮蔽」。
+- **新增覆盖缺口**：`experts.registry` 共 **36** 个策略，而 `tests/` 单文件 15 个测试中仅 1 个局部 import `experts`、只断言 **4 个**换手率代理策略——**覆盖率 4/36**，`rsi_mean_reversion` **无测试**（无任何测试断言上述截断行为）。**自我更正**：本报告初稿曾误称「零个测试 import `experts`」，实为 `test_engine.py:476-477` 确有 import，正确表述为 4/36；报告中已保留该更正记录。
+- **五项开放项全部 CONFIRMED（0 证伪 / 0 已修）**：`EML-P1-RSI-META-LEAK`（潜伏，今日暴露=0：两矩阵均 91 列、9/9 META、82 特征、`known_at/deadline/label_end` 均不存在；非分组过滤调用点 10 文件 13 处；无白名单）、`EML-P1-EXECUTOR-NO-RESEARCH-QUEUE`、`EML-P2-LABEL-NOT-H504-CLOSE`（`labels.py:62/182/193/199-201` 用 high；`close` 全文仅 1 次且在 `:11` docstring）、`EML-P2-PANEL-WRITE-SIDE-EFFECT`（潜伏，`data/panel_daily.parquet` 已存在故未触发）、`EML-P0-AUDIT-FETCH-FAIL-PASS`（**可执行证明**：fetch 失败 + audit 绿 → 仍发布 `PASS`）。
+- **该报告自身诚实**：明确声明沙箱 `ClientError`、明确不冒充 `15 passed`、其 `reviewed_tree_sha: 74cda26f…` 经我核验**恰等于 `a0ca60b^{tree}`**；「8cadbd2→a0ca60b 只有两次提交」经 `git rev-list --count` 核为 **2**。
+- **源码自上一实质节点未变**：`git diff --stat 8cadbd2..HEAD -- src/ experts/ tests/` **为空**，故只改 `docs/audits/expert-ml/2026-09-20_11-27-10_JST.md` 与 `LATEST.md`；`reports/AUDIT_STATUS.md` 未动。
+- `AUDIT_STATUS` 当前 `PASS / 629 checks / 0 problems / drift 0`（`a0ca60b` 所改），仅代表报告一致性，**不认证 H504**。
+
+### 本地执行优先级（沿用 `09-58-00` 的 WP-A1…WP-A8，本轮追加 WP-A3 强化）
+
+1. **WP-A1**：冻结 HEAD/dirty、读取真实实验台账与剩余预算，生成 `fold_support.json`；仅 887 sessions 时正式 H504 OOS 继续 `BLOCKED_DATA`。
+2. **WP-A2**：先做显式 FeatureSpec 白名单；`known_at/deadline/label_end/outcome/execution` 及未知新增列不得默认进 X，空 feature group 不得解释为「全部列」（对应 `EML-P1-RSI-META-LEAK`）。
+3. **WP-A3（本轮强化）**：生成 `cards100_rsi_attribution.*` 时**必须**逐卡附 **`rsi14` 原值**，并报告**截断率**与 `AUC(rsi14_raw)`；仅有 `rsi_oversold` 的产物**不得**被引用为 RSI 结论（依据：97% 被 `_clip` 截断）。
+4. **WP-A4/A5**：真实完整历史计算 SMA14、Wilder14、fresh3、rollout3、support_break_atr、RRC；分层输出。
+5. **WP-A6**：仅在存在合法 H504 开发折时跑表格配对；优先 `M2→M3`、`M2→M4`、`M5→M6`、`M6→M7`、`M8→M9`。
+6. **WP-A7**：仅当表格模型在多个开发块方向一致才跑 MLP/TCN RSI 增量。
+7. **WP-A8**：从开发错误切片只选一个机制做一次 paired retrain；无增益记 `COMPLETE_NEGATIVE`。
+8. **新增（本轮）**：任何分量去留以「配对 AUC 差的 95% CI 是否排除 0」为准（依据：五项 CI 全含 0）；并让 `rsi_mean_reversion` 等被漏掉的 32 个策略逐步进入 `tests/`。
+
+---
+
+## 上一份专项研究：RSI归因纠偏、Wilder对照与恢复共识
 
 - 完整报告：[`2026-09-20_09-58-00_JST.md`](./2026-09-20_09-58-00_JST.md)
 - `publication_kind`：`AUDIT_AND_RESEARCH_QUEUE_UPDATE`
