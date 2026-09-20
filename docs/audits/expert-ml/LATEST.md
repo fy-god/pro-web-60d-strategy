@@ -7,6 +7,7 @@
 - `audit_time_jst`：`2026-09-20T19:47:00+09:00`
 - `reviewed_source_sha`：`cb785b8983c2ae3a21e049d74cbff46c462e3901`（`origin/main`）
 - `reviewed_tree_sha`：`a7ee77503039a14bd15ed17f1d4c1d42703d6991`
+- 报告发布提交：[`bb5c7326096808919713c1df3665c6a41a09d097`](https://github.com/fy-god/pro-web-60d-strategy/commit/bb5c7326096808919713c1df3665c6a41a09d097)（已 `git ls-remote` 回读 MATCHED；diff 白名单仅本报告与本索引）
 - 审查区间 `c9b90e3..cb785b8` 共 **9 个提交**，其中 **2 份**是 `fy-god` 新写的报告（`17:31:44` ARR、`18:03:00` MEB）；`src/ experts/ tests/ scripts/ data/` 在该区间**零变更**。
 - 本轮为核验实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 4.45s`，REAL exit 0**；另写 62 个探针脚本 + 4 个只读子 agent。**本轮 H504 实股 fit = 0，无新增市场成绩**（`research_verdict = NO_NEW_REAL_MARKET_RESULT`）。
 - **【本轮最重要 · 已发布产物缺陷】`EML-P1-CLONE-DOUBLE-COUNT-PUBLISHED`**：`README.md:186-191` 与 `RESULTS.md:23-28` 的 "top 6 by lift" 表**6 行只对应 3 个机制**（`leader_momentum`／`relative_strength_rank`／`gap_follow_through` 各占 2 行；其中 4 行是 `strict_*` 克隆）。`reports/webpro_hit_rates.csv` **35 行中 16 行是克隆**。实测 **16 个 `strict_*` 的 raw score 与其 base 逐位相同（1600/1600 次比对，0 失败）**；36 个注册策略折叠后仅 **20 个独立家族**（11 个 base 各有 1–2 个克隆）。→ 克隆重复计数**已可见于发布文档**，不是未来风险。
