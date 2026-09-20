@@ -1,5 +1,20 @@
 # 专家／ML最新研究与审计索引
 
+## 最新候选实现：H504合同／FeatureSpec／fold-support／VIR已在沙箱落成
+
+- 完整报告：[`2026-09-21_02-07-54_JST.md`](./2026-09-21_02-07-54_JST.md)。
+- 类型：`CANDIDATE_IMPLEMENTATION_AND_EXECUTION_PLAN_UPDATE`；不是新的实股H504训练成绩。
+- 时间：`2026-09-21T02:07:54+09:00`。
+- 被审默认分支：`8b15edeea6118108cc08c31f323c9f6d70c6116f`；tree：`cabb75793be0a98dd249d16330f02320dc56eb57`。
+- 报告提交：[`ceaa994ccc724460bc5052a06e76c6335b8fc033`](https://github.com/fy-god/pro-web-60d-strategy/commit/ceaa994ccc724460bc5052a06e76c6335b8fc033)。
+- 报告blob：`12ed2db220e4588a1a5cfa0717d376e1da9ec6b9`，已按返回commit回读。
+- 当前源码相对`c0002b0e...`仍只有审计文档变化；Open PR=0；产品树仍没有`src/ml/research_h504/`。
+- 本轮当前隔离沙箱实际实现候选：独立市场日H504标签oracle、显式FeatureSpec白名单、成熟train→dev `fold_support`、VIR及price-only控制、train-only family ECDF/MEB。候选zip SHA256=`84fb4f97ee2efbf54f06c27316bad8dda19750929e1fe3fbd815544d732b53c7`，统一patch SHA256=`5d9110bac835a69c4322193996710ceb2469a498eb904999487d393e5f782022`；未写入远端产品源码。
+- 沙箱真实执行：16项候选单测通过；162,000行synthetic VIR吞吐与6次synthetic HGB接口fit/reload完成。全部明确为软件/合成验证，`real_market_fit_count=0`。
+- `fold_support`机器测试确认：887 market sessions、H=504时成熟train→更晚成熟dev split为0；1200-session合成日历可形成合法split。该结论用于阻止在当前887日上随机切分冒充H504 OOS。
+- VIR实现新增严格逐step market-session连续性检查，避免“重复一个session+跳过一个session”仍通过端点跨度检查；并保留`vir_novol`用于价格-only归因控制。
+- 用户本机runtime仍`LOCAL_APPLY_PENDING`，单次三小时`NOT_RUN`。当前远端runner仍`timeout=5400`，注册模板仍`PT2H30M`；没有本机start/execution receipt前不能说已接入或已跑三小时。
+
 ## 最新人工执行合同：单次连续三小时 v5
 
 - 完整任务书：[`2026-09-21_01-43-18_JST.md`](./2026-09-21_01-43-18_JST.md)。
@@ -24,7 +39,7 @@
 
 ### 四项状态分别验收
 
-- 云端自动任务prompt：本次已实际更新为三小时v5，原触发安排不变。
+- 云端自动任务prompt：已更新为三小时v5；后续轮次不再管理排程。
 - GitHub完整任务书：已发布并回读；本索引只更新文档指针。
 - 用户本机运行时／prompt接入：`LOCAL_APPLY_PENDING`，未由本对话修改或启动。
 - 用户本机单次三小时：`NOT_RUN`，不能把指令当成绩。
@@ -55,4 +70,4 @@
 - [RSI连续信息研究](./2026-09-20_06-02-02_JST.md)。
 - [RSI新增／滚出分解](./2026-09-20_03-06-03_JST.md)。
 
-> 最新人工执行合同、最近成功独立审计、远端文档发布、本地接入、真实研究结果分别记录。更长的超时只提供运行空间，不证明已经运行或提升模型。保留完整日志和候选/数据/代码指纹才能验收。
+> 最新候选实现、最新人工执行合同、最近成功独立审计、远端文档发布、本地接入、真实研究结果分别记录。更长的超时只提供运行空间，不证明已经运行或提升模型。保留完整日志和候选/数据/代码指纹才能验收。
