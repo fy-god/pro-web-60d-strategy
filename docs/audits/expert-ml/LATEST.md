@@ -1,5 +1,25 @@
 # 专家 / ML 最新轮审
 
+## 最新增量审计：先把 H504 主合同写成会失败的测试，再继续重训练
+
+- 完整报告：[`2026-09-20_13-57-11_JST.md`](./2026-09-20_13-57-11_JST.md)
+- `publication_kind`：`AUDIT_AND_EXECUTION_PLAN_UPDATE`
+- `audit_time_jst`：`2026-09-20T13:57:11+09:00`
+- `reviewed_source_sha`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`
+- `reviewed_tree_sha`：`ab838fb9124e8f0955da88fe16ca8da2e0e59c98`
+- 报告发布提交：[`0901b8c408616569f709f088ccec3bca90ed5ff5`](https://github.com/fy-god/pro-web-60d-strategy/commit/0901b8c408616569f709f088ccec3bca90ed5ff5)
+- 报告 blob：`23c8aa0de766cfe4b19955c29ffd8f8e97ae9458`，已按发布提交回读核验。
+- 新增确认 `EML-P1-TEST-COOLDOWN-FIXTURE-COUPLING`：当前 cooldown 边界测试明确用另一只股票的 filler signals 补齐日期网格；目标股票同样的两条信号，在“无 filler”与“有 filler”时可得到不同去重结果。底层 `EML-P0-COOLDOWN-GRID` 因而不仅缺测试，现有 fixture 还把错误耦合写进了预期语义。
+- 新增确认 `EML-P1-TEST-ENTRY-ROW-MASQUERADE`：`test_entry_is_next_open_not_close` 的 `rows[1]` 同时是下一条个股记录与下一市场日，无法区分用户要求与当前 `opens[1:]` 实现；必须增加“下一市场日停牌/缺bar、之后复牌”的 no-entry RED case。
+- 新增确认 `EML-P1-TEST-H504-CLOSE-CONTRACT-MISSING`：当前 labeler 和现有 target tests 都用未来 High；需要 `high>4E but close<=4E`、`close==4E`、`close>4E` 和 same-day risk-first 四个合同测试。
+- 新增 `EML-P2-TEST-KDJ-NESTED-IN-WILSON`：KDJ 跨年连续性代码当前缩进在 Wilson 测试函数尾部，不是独立 pytest case；应拆开，避免 Wilson 提前失败时跳过 KDJ 合同。
+- 研究执行器仍未落地：远端 `scripts/fixup_prompt.txt` 仍是“同报告即 NO_NEW_REPORT、只修 P0/P1”；从上一研究索引到当前 HEAD 只有 docs/status 三个提交。代码搜索未发现 `experiment_registry`、`fold_support`、`research_h504` 或 `FeatureSpec`；该搜索本身标 `incomplete_results=true`，因此结论仅限“远端尚无研究源码提交”，不推断用户本机未 push 状态。
+- 本轮沙箱实际尝试 container clone/shell 与 Python probe，均在工具启动层 `ClientError`；因此没有把上一轮本机 `15 passed` 冒充成本轮测试，也没有新 HGB/MLP/TCN/H504 fit。
+- 本地下一优先级已改成六个 RED contract tests + FeatureSpec leak test，然后修 TaskSpec/calendar/publication；并行实现 raw RSI/SMA-Wilder/fresh-rollout/RRC、真实历史 factor-health 与 `fold_support.json`。有合法 H504 dev fold 才跑 M0–M9；无合法折则保持 `BLOCKED_DATA`，继续真实因子诊断与 prospective ledger。
+- 下一轮优先验收：是否出现非 docs 的研究源码 commit、RED→GREEN 日志、独立 market calendar、no-entry、Close>4E/risk-first、FeatureSpec、`cards100_rsi_attribution` raw RSI、`fold_support`、experiment registry 与完整 dev predictions。
+
+---
+
 ## 最新独立复核：RSI 归因算术复算无误，并补上「截断」这一定性关键
 
 - 完整报告：[`2026-09-20_11-27-10_JST.md`](./2026-09-20_11-27-10_JST.md)
