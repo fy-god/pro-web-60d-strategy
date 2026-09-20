@@ -1,169 +1,71 @@
 # 专家 / ML 最新轮审
 
-## 最新独立复核：上一轮 4 条新增确认全部本机实跑复现，并证明其中 2 条在实股上可达
+## 最新专项研究与实施批次：ARR冻结锚点恢复
 
-- 完整报告：[`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
+- 完整报告：[`2026-09-20_17-31-44_JST.md`](./2026-09-20_17-31-44_JST.md)
+- `publication_kind`：`FOCUSED_FACTOR_IMPLEMENTATION_AND_SYNTHETIC_TRAINING`；专项源码核验、候选实现、软件测试及合成训练，不替代下方完整源码复核历史，不是实股模型升级。
+- `audit_time_jst`：`2026-09-20T17:31:44+09:00`
+- `reviewed_source_sha`：`b2fe93619f1b8c81733432abc0f9ce85503ae2fb`
+- `reviewed_tree_sha`：`b667755d4ff1bead2739acc70e71c4d145f0bf35`
+- 报告发布提交：[`f54db37ea66056463d5a2e8d4ff6b479b53d39b8`](https://github.com/fy-god/pro-web-60d-strategy/commit/f54db37ea66056463d5a2e8d4ff6b479b53d39b8)
+- 报告blob：`4fb8b7799bc721e2b5a1715f871b60e5c60d0409`；按发布commit回读，与本地完整报告Git blob一致。
+- 子批次：`EML-EXP-KDJ-PATH-001-REAL/ARR-02`；接续X17/X18、RSI-RER-01、RSI-CONT-02和RRC，保留旧台账。
+
+### 新机制与实际结果
+
+ARR在可知KDJ回踩开始冻结支撑S、前一日ATR尺度A和起点收盘C0；21市场日内保留累计损伤B及价格响应R。`ARR=sqrt(tanh(max(fresh3,0)/5)*tanh(max(Wilder_delta3,0)/5))*exp(-B)*tanh(R)`。它不是概率或硬发布门槛；冻结参考可能过时，动态参考也并非天然错误，需要同条件验证。
+
+实际完成候选版本`arr-1.0.1`、真实CSV分块扫描器、独立H504标签oracle和训练链。49项pytest通过；四种故障变异全部被语义红测捕获。共处理**1,048,576行合成OHLCV**，256个虚拟标的，411,211个活动锚点行；不是百万行实股行情。
+
+最终**12次合成fit**为6HGB、3MLP、3TCN，包括相同参数量/相同缺失mask的零ARR对照；修正前9次筛查单列保留，总实际fit21次。全部最终模型输出相同25,600评价候选，23,922可判定、1,678未知（含5个no-entry），重载预测最大差0。树模型与神经网络训练样本数不同，不直接比较算法胜负。
+
+**没有一致增量证据**：HGB新增ARR未被分裂使用；MLP与TCN的ARR版本都没有改善同容量零信息对照的log-loss/Brier。此前TCN raw对ARR的轻微改善不能归给因子。合成负结果不证实也不否定实股价值。实际市场fit=0，未执行市场校准/发布/Recall认证；用户本机未由本对话启动。
+
+真实cards文件可定位但连接器未返回正文、raw/blob失败，沙箱下载DNS失败；本轮未取得真实日线，不推断用户本机数据缺失。旧本地报告计数仅作为归档，不重包装为本轮复算。
+
+### 用户要求扩大后的本地批次
+
+累计上限调整为**360分钟、72次实际fit**，替代原180分钟/48fit，先扣除已有消耗，不额外重置。当前launcher90分钟，每次最多75分钟并留交接余量，跨次resume；不是强制耗时、不新增或修改排程、不启动背景无限循环。
+
+十包：真实数据/合法折 → 流式适配 → 因子/标签/FeatureSpec迁移 → 全量真实机制诊断 → 表格与2×2控制 → 已完成重复回踩承接探索 → 市场下跌韧性探索 → 同容量神经网络三臂 → 时间/股票稳定性与定向再训 → 独立校准/发布/台账交接。两个探索支线阻塞不影响独立主线工作。
+
+下轮优先核验：`data_inventory`、`fold_support`、真实`reference_drift/factor_health`、源码diff及RED→GREEN、raw/ARR/零值同mask三臂完整预测和checkpoint、`experiment_registry`累计消耗、错误切片与精确resume命令。同报告已读但有READY/INTERRUPTED任务时继续，不因修一个if就结束。
+
+## 最近一次完整独立源码复核（保留）
+
+- 报告：[`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
 - `publication_kind`：`INDEPENDENT_RECHECK_AND_CODE_AUDIT`
-- `audit_time_jst`：`2026-09-20T15:34:32+09:00`
 - `reviewed_source_sha`：`c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
 - `reviewed_tree_sha`：`4c4dff9c9f09af20e9a574033d650e7454e1b305`
-- `main_head_before_sync`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`（本地 `--ff-only` 同步至当前 HEAD）
-- 报告发布提交：`eccc360585b1080b5cccd820a46848da06151cc2`（首次提交 `aed53c2d…` 为报告初版；`eccc3605…` 补入 §3.3 对抗性证伪与量级上界；均已 `git ls-remote` 回读 MATCHED）
-- 报告 blob（最终）：`6243fcd62858d681e7a1382df30ab7915a454d48`（初版 blob 为 `9afda5c3…`）
-- **上一轮报告自报沙箱 `ClientError`、未跑测试；本轮在**本机**实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 0.83s`，REAL exit 0**。这是本轮执行结果，不是转抄。**
-- **源码相对上一审计点未变**：`git diff --stat 1363e68..HEAD -- src/ experts/ tests/ scripts/` **为空**；远端只多两个 docs 提交（`0901b8c` 报告、`c9b90e3` 本文件），作者 `fy-god` 非 `audit-agent`。故所有开放源码项按「仍未修」处理。
-- **上一轮 4 条新增确认全部复现（0 证伪）**，但**第 3 条的 1 个子案例不成立**：报告称「同日 `close>4E` 且 `low<8` → joint=false」是 RED，实测**已 GREEN**（`label_joint=0.0`）。**该条不作为新增失败收录**。
-- **新增 `EML-P0-ENTRY-ROW-ADJACENCY-ON-REAL-PANEL`（实股可达，本轮最重要）**：`src/labels.py:124-128` 的 `entry[:-1] = opens[1:]` 取的是**个股下一行**而非**下一市场日**。真实 `data/panel_daily.parquet`（2,680,715 行 / 3,193 股 / 887 session）中有 **943 条**边「个股行相邻但市场日不相邻」，涉及 **596 只股票（18.4%）**，**全部错误地拿到复牌日开盘**（应无 entry）。复牌跳空 **530 条 >5%、296 条 >9.5%（涨跌停级）**；**260 条（27.6%）落在 2026 年**即已发布 holdout 窗口。集中在 4 月下旬、逐年复现（与年报截止日 4/30 集中停牌一致），当日全市场参与股票数正常（3,172 / 3,150），故为个股停牌而非数据缺口。**这不是测试质量问题，是发布数字缺陷。**
-- **新增 `EML-P0-COOLDOWN-INDEPENDENT-CLOCK` 影响量化**：在真实已发布账本上复刻两时钟——合计 **49 次 `dedupe_signals` 调用 / 2,056,254 输入行**，帧时钟保留 557,960 vs 日历时钟 575,101，**48/49 次调用结果改变、净 +17,141 行**；影响 `reports/webpro_hit_rates.csv`、`reports/lowzone_hit_rates.csv` 与两个信号账本。硬数字是 48/49 与 +17,141；分组级 77.8% 仅作指示。
-- **`EML-P0-AUDIT-FETCH-FAIL-PASS` 本轮亲自可执行复现**：`scripts/scheduled_report_audit.py:108-109` 的 `ok = code == 0 and not unstable` 完全不看 `note`。把 `write_status()` 重定向到临时目录后实跑 → 输出 `| Verdict | **PASS** |` 与 `| Remote drift | git fetch failed (exit 128): schannel: ... |` 并存，且写「All consistency checks passed.」。
-- **H504 Close 合同 RED 套件（实跑 `3 failed, 1 passed`，exit 1）**：`high=41 close=39` → `label_bull=1.0`（应 false）；`close==40` → `1.0`（应 false）；反例 `close=41 high=39` → `0.0`（应 true，**判别器反转**）。`close` 在 `src/labels.py` 全文仅 **1 次且在 L11 docstring**；数值路径 `close`=0 / `high`=12。
-- **`EML-P1-RSI-META-LEAK` 仍在（潜伏）**：`src/ml/walkforward.py:58-61` 是 9 列黑名单；注入 10 个合同/未知列 → `feature_columns()` **全部接纳**，且 `select_features(cols, []) == list(cols)` 为 **True（空组=全部列）**。上一轮「10 文件 13 处」计数**未复现**（我基准为 17 处/12 文件），已降级标注；判定不依赖该计数。
-- **KDJ 嵌套确认（AST + 短路）**：`tests/test_engine.py:268` 函数体**止于 L319**，KDJ 块 L306-319 是其 4 空格缩进尾部，无独立 `def`；强制 Wilson 常量后 `AssertionError: 0.8` 且 stdout 为空 → KDJ 从未执行。`--collect-only` 真实 **15** 条，**无** KDJ 跨年 id。**「15 passed」≠ 15 条独立合同。**
-- **引用漂移（本轮修正）**：报告称 bull 在 `:188`、掩码 `:199-200`、per-stock 边界 `:226`、cooldown 规则 `:229`，真实为 **`:201` / `:212-213` / `:239` / `:242`**；`labels.py:62` 被引为 `high`，**实为 L118**（L62 是 `REGIMES["low504"]`）。`tests/` 内 docstring 的同类引用亦全部陈旧。
-- **研究队列在代码层完全不存在（完整搜索，强于上一轮）**：`experiment_registry`/`fold_support`/`research_h504`/`FeatureSpec`/`market_session_id`/`TaskSpec` 在 `src/ experts/ tests/` 命中 **全部为 0**（仅存在于 `docs/` 散文）；`src/ml/research_h504/` 不存在。故独立日历修复**尚无现成基础设施**。
-- **本仓库没有 `validate_latest.py` 闸门**：`docs/audits/` 下只有 `expert-ml/`；该文件在**全部可达历史**中从未存在（`git log --all --diff-filter=A` = 0 行）。不得为专家/ML 线声称该闸门。
-- **RSI 截断在真实卡上逐位复现**：100/100 解析成功；`rsi14>45` = **97/100**；`rsi_oversold==0` = 97/100；`rsi14 min/mean/max = 42.22/67.38/100.00`；`score = 0.0354/0.2095/0.4926`；**fires=0/100**。机制 `rsi_mean_reversion.py:46` `_clip((45.0-rsi)/20.0)` 把 `rsi>45` 压成恰好 0 → 连续 RSI 信息进 AUC **之前**已销毁 97%。本轮新增分量统计与加权公式核验（重建 score 最大绝对差 `0.000e+00`）。
-- **策略覆盖率 4/36**：`experts.registry.list_strategy_ids()` 真实返回 **36**；`tests/test_engine.py:468-482` 只断言 **4 个**换手率代理策略；`rsi_mean_reversion` **无测试**，无测试断言 `:46` 截断。
-- **`AUDIT_STATUS` 的 `13.61%` 是 H10/+30%**（`src/ml/search.py:219` `--horizon` 默认 10），**不是 H504**；该文件自述仅代表报告一致性，不认证 H504。
-- 本轮**没有**新增实股 H504 结果（`research_verdict = NO_NEW_REAL_MARKET_RESULT`）。
-- **对抗性证伪 4 次攻击全部失败，4 条结论存活，但量级必须同时披露**：A `dedupe` 耦合（3 个真实调用点全为多股票帧，每策略 distinct code 最少 62 / 中位 2,588）、B entry 行相邻（`src/features.py:148-174` 明确不为缺失 session 造 bar）、C High vs Close（`build_matrix.py:434` 的 `label_close` 是百分比 H10 第二列、非 `close>4E`；`git grep -ni goal` = 0 行；无 h504/4x 矩阵）、D 研究队列（被审 SHA 上完整搜索 4 个标识符**只在 `docs/` 下**，`':!docs'` 为空）全部 **SURVIVED**。**但**：A 对已发布去重后 bull precision 每策略最大移动仅 **|Δ| = 0.4588 pp**（均值 0.1219 pp）；B 只占已发布 646,718 行的 **≈0.086%**（943 条 gap 边中 139 条已进发布信号集，聚焦核查的 554 条 webpro 信号**全部**用了复牌日开盘）。→ **A/B 应按合同正确性修，不应期待精度跳变；只有 C 是真正无替代实现的 live 缺口。**
-- 下一轮优先验收：非 docs 研究源码 commit、独立 market calendar（`market_session_id`）、`entry` 按下一市场日 join、`dedupe_signals` 去 filler 依赖后仍 GREEN、H504 `Close>4E` 三条 RED→GREEN、KDJ 拆成独立 case（收集数 15→16）、FeatureSpec 白名单、`write_status` 让 fetch 失败参与判定、`cards100_rsi_attribution` 附 `rsi14` 原值与截断率。
+- 报告发布提交：`eccc360585b1080b5cccd820a46848da06151cc2`；blob `6243fcd62858d681e7a1382df30ab7915a454d48`。首次报告提交`aed53c2d…`，后补对抗性复核；历史文件未由本次改写。
+- 归档记录15个测试通过、943条个股行相邻但市场日不相邻边、cooldown时钟对照等；这些是该次本地结果，本次没有原面板复算。
+- 重要更正继续有效：同日`close>4E`且`low<0.8E`已有GREEN，不是新增失败；`close>high`非法OHLC不能当合法行情证据，新的合同测试先校验输入。
+- 本次专项与这份复核之后的HEAD变化仍主要是docs/status，不能把报告提交叫模型升级，也不能据远端没有代码提交断言本机没有未push改动。
 
----
+## 审计与研究历史导航
 
-## 上一份增量审计：先把 H504 主合同写成会失败的测试，再继续重训练
+|报告|用途与边界|
+|---|---|
+|[`2026-09-20_13-57-11_JST.md`](./2026-09-20_13-57-11_JST.md)|测试合同、cooldown filler、entry伪等价；部分结论随后由15:34报告复核与更正|
+|[`2026-09-20_11-27-10_JST.md`](./2026-09-20_11-27-10_JST.md)|RSI归因独立复核；card统计和区间为历史材料，不是H504成绩|
+|[`2026-09-20_09-58-00_JST.md`](./2026-09-20_09-58-00_JST.md)|RSI归因纠偏、SMA/Wilder和RRC对照|
+|[`2026-09-20_07-26-54_JST.md`](./2026-09-20_07-26-54_JST.md)|100张练习卡RSI专家不触发的本地重算|
+|[`2026-09-20_06-02-02_JST.md`](./2026-09-20_06-02-02_JST.md)|RSI-CONT-02连续信息融合与研究队列|
+|[`2026-09-20_03-41-46_JST.md`](./2026-09-20_03-41-46_JST.md)|RSI滚出分解独立复核；恒等式不是预测证据|
+|[`2026-09-20_03-06-03_JST.md`](./2026-09-20_03-06-03_JST.md)|RER候选、软件测试与TOY训练，不是实股增量|
+|[`2026-09-20_02-04-16_JST.md`](./2026-09-20_02-04-16_JST.md)|贯通研究批次v2主计划；新预算与ARR任务以17:31报告为准，保留原文|
+|[`2026-09-20_02-00-47_JST.md`](./2026-09-20_02-00-47_JST.md)|历史完整审计与研究推进；源码32155ecae1a0a0be1877b780df0da12354c347ea|
+|[`2026-09-19_22-04-07_JST.md`](./2026-09-19_22-04-07_JST.md)|历史发布认证链审计；源码82aefeb583ac6f039cc67ae2582c30803fc7cb32|
+|[`2026-09-19_18-00-42_JST.md`](./2026-09-19_18-00-42_JST.md)|历史fixup执行链审计；源码318fb47db474195176d101d32dad82bcea11d4e9|
+|[`2026-09-19_04-05-29_JST.md`](./2026-09-19_04-05-29_JST.md)|早期专家/ML基线与实施包|
+|[`2026-09-19_03-00-00_JST.md`](./2026-09-19_03-00-00_JST.md)|更早归档基线|
 
-- 完整报告：[`2026-09-20_13-57-11_JST.md`](./2026-09-20_13-57-11_JST.md)
-- `publication_kind`：`AUDIT_AND_EXECUTION_PLAN_UPDATE`
-- `audit_time_jst`：`2026-09-20T13:57:11+09:00`
-- `reviewed_source_sha`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`
-- `reviewed_tree_sha`：`ab838fb9124e8f0955da88fe16ca8da2e0e59c98`
-- 报告发布提交：[`0901b8c408616569f709f088ccec3bca90ed5ff5`](https://github.com/fy-god/pro-web-60d-strategy/commit/0901b8c408616569f709f088ccec3bca90ed5ff5)
-- 报告 blob：`23c8aa0de766cfe4b19955c29ffd8f8e97ae9458`，已按发布提交回读核验。
-- 新增确认 `EML-P1-TEST-COOLDOWN-FIXTURE-COUPLING`：当前 cooldown 边界测试明确用另一只股票的 filler signals 补齐日期网格；目标股票同样的两条信号，在“无 filler”与“有 filler”时可得到不同去重结果。底层 `EML-P0-COOLDOWN-GRID` 因而不仅缺测试，现有 fixture 还把错误耦合写进了预期语义。
-- 新增确认 `EML-P1-TEST-ENTRY-ROW-MASQUERADE`：`test_entry_is_next_open_not_close` 的 `rows[1]` 同时是下一条个股记录与下一市场日，无法区分用户要求与当前 `opens[1:]` 实现；必须增加“下一市场日停牌/缺bar、之后复牌”的 no-entry RED case。
-- 新增确认 `EML-P1-TEST-H504-CLOSE-CONTRACT-MISSING`：当前 labeler 和现有 target tests 都用未来 High；需要 `high>4E but close<=4E`、`close==4E`、`close>4E` 和 same-day risk-first 四个合同测试。
-- 新增 `EML-P2-TEST-KDJ-NESTED-IN-WILSON`：KDJ 跨年连续性代码当前缩进在 Wilson 测试函数尾部，不是独立 pytest case；应拆开，避免 Wilson 提前失败时跳过 KDJ 合同。
-- 研究执行器仍未落地：远端 `scripts/fixup_prompt.txt` 仍是“同报告即 NO_NEW_REPORT、只修 P0/P1”；从上一研究索引到当前 HEAD 只有 docs/status 三个提交。代码搜索未发现 `experiment_registry`、`fold_support`、`research_h504` 或 `FeatureSpec`；该搜索本身标 `incomplete_results=true`，因此结论仅限“远端尚无研究源码提交”，不推断用户本机未 push 状态。
-- 本轮沙箱实际尝试 container clone/shell 与 Python probe，均在工具启动层 `ClientError`；因此没有把上一轮本机 `15 passed` 冒充成本轮测试，也没有新 HGB/MLP/TCN/H504 fit。
-- 本地下一优先级已改成六个 RED contract tests + FeatureSpec leak test，然后修 TaskSpec/calendar/publication；并行实现 raw RSI/SMA-Wilder/fresh-rollout/RRC、真实历史 factor-health 与 `fold_support.json`。有合法 H504 dev fold 才跑 M0–M9；无合法折则保持 `BLOCKED_DATA`，继续真实因子诊断与 prospective ledger。
-- 下一轮优先验收：是否出现非 docs 的研究源码 commit、RED→GREEN 日志、独立 market calendar、no-entry、Close>4E/risk-first、FeatureSpec、`cards100_rsi_attribution` raw RSI、`fold_support`、experiment registry 与完整 dev predictions。
+## 仍需本地落实的共同边界
 
----
+H504仍要求下一市场日有效Open、不顺延，未来504市场日Close严格>4E，之前含达标日Low>=0.8E，同日risk优先。旧High/个股bar标签不替代；`label_end/known_at`贯穿全部fit/预处理/选择/OOF/meta/校准。候选与发布不能根据未来标签完整性删掉，unknown/no-entry不补位。
 
-## 最新独立复核：RSI 归因算术复算无误，并补上「截断」这一定性关键
+FeatureSpec使用白名单；新因子不得接旧权重后冒称提升。仅887市场日不能形成保守完整成熟训练→成熟时间外开发：最早开发起点564，而最后可完整评价起点382。先找更早授权历史；无合法折继续真实因子诊断/可执行模块/前瞻待观察账本，不随机切成熟历史伪造OOS。
 
-- 完整报告：[`2026-09-20_11-27-10_JST.md`](./2026-09-20_11-27-10_JST.md)
-- `publication_kind`：`INDEPENDENT_RECHECK`
-- `audit_time_jst`：`2026-09-20T11:27:10+09:00`
-- `reviewed_source_sha`：`a0ca60b4fc9dc73de0b4ff7ce6b753fc3afd1753`（被复核报告的源码点）
-- `main_head_after_sync`：`5a135d3a95e2d5cc201c7a6c3dda8703fce8431d`
-- 报告发布提交：`e9f7b8cf00a5fd01f25afee48fe70a3157f278cc`（已 `git ls-remote` 回读 MATCHED）
-- **候选报告**：`09-58-00` 报告自报审计沙箱 Python/container 返回 `ClientError`、未跑测试。本轮在**本机**实测 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 4.17s`，exit 0**，与其上一轮记录一致。
-- **逐项复算该报告 RSI 归因，全部精确复现**（未采信散文，用仓库自身 `ExpertCard.from_mapping` + `rsi_mean_reversion.predict`）：`rsi_oversold==0` 为 **97/100**；两边皆零的正负配对**恰为 2350/2500 = 94.0000%**（且恰好取到下界）；`0.30×mean=0.001115`、`0.30×max=0.041631`；`score min/mean/max = 0.0354/0.2095/0.4926`；`AUC(score_total)=0.5836`；`fires=0/100`。**该报告没有编造数字。**
-- **本轮新增三点量化（该报告未做）**：
-  1. 94.0% 是「活动率上界」而非「影响量」：RSI 项的 AUC 边际贡献**为负**——去掉它 AUC **上升** `+0.0032`（≈8/2500 配对）；总分排序力几乎全来自单一分量 `nonpanic_volume`（单独 AUC **0.5828** vs 五项合计 **0.5836**；`drawdown` 单独仅 0.4728）。
-  2. Bootstrap 1000× 留一：五项 ΔAUC 的 95% CI **全部包含 0**——故「RSI 无增量」成立，但「其余四项有增量」**同样未被证明**；总分本身 z≈+1.44 亦不显著。该报告的因果口吻应降级为方向性提示。
-  3. 「AUC≈0.5 ⇒ RSI 无用」**不可判定**：`rsi_mean_reversion.py:46` 的 `_clip((45.0-rsi)/20.0)` 把 `rsi14>45` 压成恰好 0，而实测 **97/100 卡 `rsi14>45`**（min 42.22/max 100.00/mean 67.38）。连续 RSI 信息在进入 AUC **之前**已被销毁 97%，数据无法区分「无信息」与「有信息但被截断遮蔽」。
-- **新增覆盖缺口**：`experts.registry` 共 **36** 个策略，而 `tests/` 单文件 15 个测试中仅 1 个局部 import `experts`、只断言 **4 个**换手率代理策略——**覆盖率 4/36**，`rsi_mean_reversion` **无测试**（无任何测试断言上述截断行为）。**自我更正**：本报告初稿曾误称「零个测试 import `experts`」，实为 `test_engine.py:476-477` 确有 import，正确表述为 4/36；报告中已保留该更正记录。
-- **五项开放项全部 CONFIRMED（0 证伪 / 0 已修）**：`EML-P1-RSI-META-LEAK`（潜伏，今日暴露=0：两矩阵均 91 列、9/9 META、82 特征、`known_at/deadline/label_end` 均不存在；非分组过滤调用点 10 文件 13 处；无白名单）、`EML-P1-EXECUTOR-NO-RESEARCH-QUEUE`、`EML-P2-LABEL-NOT-H504-CLOSE`（`labels.py:62/182/193/199-201` 用 high；`close` 全文仅 1 次且在 `:11` docstring）、`EML-P2-PANEL-WRITE-SIDE-EFFECT`（潜伏，`data/panel_daily.parquet` 已存在故未触发）、`EML-P0-AUDIT-FETCH-FAIL-PASS`（**可执行证明**：fetch 失败 + audit 绿 → 仍发布 `PASS`）。
-- **该报告自身诚实**：明确声明沙箱 `ClientError`、明确不冒充 `15 passed`、其 `reviewed_tree_sha: 74cda26f…` 经我核验**恰等于 `a0ca60b^{tree}`**；「8cadbd2→a0ca60b 只有两次提交」经 `git rev-list --count` 核为 **2**。
-- **源码自上一实质节点未变**：`git diff --stat 8cadbd2..HEAD -- src/ experts/ tests/` **为空**，故只改 `docs/audits/expert-ml/2026-09-20_11-27-10_JST.md` 与 `LATEST.md`；`reports/AUDIT_STATUS.md` 未动。
-- `AUDIT_STATUS` 当前 `PASS / 629 checks / 0 problems / drift 0`（`a0ca60b` 所改），仅代表报告一致性，**不认证 H504**。
+远端旧fixup仍是P0/P1修复合同；新研究工作由用户授权本地执行器接入，不通过把因子假称P0绕过控制。当前助手仅发布Markdown报告/索引，候选代码通过对话附件交付；没有远端改模型、源码、权重、配置或Actions，也没有修改自动任务时刻。
 
-### 本地执行优先级（沿用 `09-58-00` 的 WP-A1…WP-A8，本轮追加 WP-A3 强化）
-
-1. **WP-A1**：冻结 HEAD/dirty、读取真实实验台账与剩余预算，生成 `fold_support.json`；仅 887 sessions 时正式 H504 OOS 继续 `BLOCKED_DATA`。
-2. **WP-A2**：先做显式 FeatureSpec 白名单；`known_at/deadline/label_end/outcome/execution` 及未知新增列不得默认进 X，空 feature group 不得解释为「全部列」（对应 `EML-P1-RSI-META-LEAK`）。
-3. **WP-A3（本轮强化）**：生成 `cards100_rsi_attribution.*` 时**必须**逐卡附 **`rsi14` 原值**，并报告**截断率**与 `AUC(rsi14_raw)`；仅有 `rsi_oversold` 的产物**不得**被引用为 RSI 结论（依据：97% 被 `_clip` 截断）。
-4. **WP-A4/A5**：真实完整历史计算 SMA14、Wilder14、fresh3、rollout3、support_break_atr、RRC；分层输出。
-5. **WP-A6**：仅在存在合法 H504 开发折时跑表格配对；优先 `M2→M3`、`M2→M4`、`M5→M6`、`M6→M7`、`M8→M9`。
-6. **WP-A7**：仅当表格模型在多个开发块方向一致才跑 MLP/TCN RSI 增量。
-7. **WP-A8**：从开发错误切片只选一个机制做一次 paired retrain；无增益记 `COMPLETE_NEGATIVE`。
-8. **新增（本轮）**：任何分量去留以「配对 AUC 差的 95% CI 是否排除 0」为准（依据：五项 CI 全含 0）；并让 `rsi_mean_reversion` 等被漏掉的 32 个策略逐步进入 `tests/`。
-
----
-
-## 上一份专项研究：RSI归因纠偏、Wilder对照与恢复共识
-
-- 完整报告：[`2026-09-20_09-58-00_JST.md`](./2026-09-20_09-58-00_JST.md)
-- `publication_kind`：`AUDIT_AND_RESEARCH_QUEUE_UPDATE`
-- `audit_time_jst`：`2026-09-20T09:58:00+09:00`
-- `reviewed_source_sha`：`a0ca60b4fc9dc73de0b4ff7ce6b753fc3afd1753`
-- `reviewed_tree_sha`：`74cda26fa40f00cf7a0459e390daea04ddbae9e0`
-- 报告发布提交：[`ddfde0e27741cd1339c9be06fc5765e19d3769dc`](https://github.com/fy-god/pro-web-60d-strategy/commit/ddfde0e27741cd1339c9be06fc5765e19d3769dc)
-- 子实验：`EML-EXP-KDJ-PATH-001-REAL/RSI-ATTR-03`，接续 `RSI-CONT-02`，不替代 X17/X18 主线。
-- 新增确认 `EML-P1-RSI-ATTRIBUTION-CONFOUND`：上一轮真实100-card重算只有 **3/100** 张卡的旧 `rsi_oversold` 分量非零。50正/50负的2500个AUC正负配对中，至少 **2350对（94.0%）** 两边RSI分量都为0，因此旧复合专家总分约0.58的练习集排序不能被解释成“RSI本身有排序增量”。旧RSI分量加权贡献均值仅约 `0.00111`、最大约 `0.04164`。
-- 新增确认 `EML-P2-ML-RSI-COVERAGE-GAP`：当前 dense ML matrix 的82个正式特征含KDJ但没有任何独立RSI列；旧ML成绩不能作为“控制其他特征后RSI无增量”的证据。
-- 新候选 `RSI Recovery Consensus (RRC)`：同时保留 SMA-RSI fresh/roll-out、Wilder RSI14 三日变化与 ATR 归一化价格支撑破坏。`RRC=sqrt(tanh(max(F3,0)/5)*tanh(max(W3,0)/5))*exp(-support_break_atr)`；只作交互特征，不是概率或硬发布门槛。持续强趋势的RRC=0不表示看空。
-- 下一配对矩阵把旧复合专家拆成 non-RSI subtotal 与 RSI component，并比较 SMA、Wilder、fresh/rollout、RRC 及等历史长度 raw-delta control；主要看 `M3-M2 / M4-M2 / M6-M5 / M7-M6 / M9-M8`，防止把非RSI信息或更长历史归因给RSI。
-- 本轮沙箱 Python/container/visible-python 启动仍返回 `ClientError`，所以 `new pytest/HGB/MLP/TCN = not_run`、H504实股fit=0；没有把上一轮本地 `15 passed` 或练习卡重算冒充本轮执行。
-- 当前主分支从上一实质源码节点之后仍只有审计文档与 `AUDIT_STATUS.md` 变化；open PR=0。当前 `AUDIT_STATUS` 为 `PASS / 629 checks / 0 problems / drift 0`，仅代表报告一致性，不认证H504模型。
-
-### 本地执行优先级
-
-1. **WP-A1**：冻结HEAD/dirty、读取真实实验台账和剩余预算，盘点更早授权行情，生成 `fold_support.json`；仅887 sessions时正式H504 OOS继续 `BLOCKED_DATA/AWAITING_EVIDENCE`。
-2. **WP-A2**：先做显式 FeatureSpec 白名单；`known_at/deadline/label_end/outcome/execution` 及未知新增列不能默认进X，空feature group不得解释为“全部列”。
-3. **WP-A3**：生成 `cards100_rsi_attribution.*`，逐卡拆 `score_non_rsi / score_rsi_component / score_total`，报告 AUC、pairwise activity、rank-flip、zero share；必须复现旧专家0/100发布。
-4. **WP-A4/A5**：真实完整历史计算 SMA14、Wilder14、fresh3、rollout3、support_break_atr、RRC；输出 `rollout_only / sma_wilder_split / fresh_consensus / supported_recover` 的year/KDJ/position/ATR/liquidity分层。
-5. **WP-A6**：只有存在合法H504开发折才跑表格配对；固定candidate/label/split/policy，优先 `M2→M3`、`M2→M4`、`M5→M6`、`M6→M7`、`M8→M9`。
-6. **WP-A7**：只有表格模型在多个开发块显示一致方向才跑MLP/TCN RSI增量；不同时扩网络容量。
-7. **WP-A8**：从开发错误切片只选一个机制做一次paired retrain；无增益记 `COMPLETE_NEGATIVE`，保留全部失败实验与精确resume队列。
-
----
-
-## 上一份独立复核：RSI二值专家0/100经离线重算坐实
-
-- 完整报告：[`2026-09-20_07-26-54_JST.md`](./2026-09-20_07-26-54_JST.md)
-- `publication_kind`：`INDEPENDENT_RECHECK`
-- `audit_time_jst`：`2026-09-20T07:26:54+09:00`
-- `reviewed_source_sha`：`8cadbd2a0210b2e2cfa475fb4a60ef46f3ed7155`
-- 报告发布提交：[`4d87d080299c4bc8b1152cc2d948cc98a5172950`](https://github.com/fy-god/pro-web-60d-strategy/commit/4d87d080299c4bc8b1152cc2d948cc98a5172950)
-- 实际记录：仓库真实实现重算100张练习卡，`predicted_yes_count=0`；score min/mean/max=`0.0354/0.2095/0.4926`；只有3/100张 RSI14≤45，0/100≤25；阈值0.50仍0次触发，0.49才1次。
-- 该轮本地记录 `python -m pytest tests/ -q -p no:cacheprovider` → **15 passed**；这是该轮证据，不是本轮重新执行。
-- 四条开放项仍在：`EML-P1-RSI-META-LEAK`、`EML-P1-EXECUTOR-NO-RESEARCH-QUEUE`、`EML-P2-LABEL-NOT-H504-CLOSE`、`EML-P2-PANEL-WRITE-SIDE-EFFECT`。
-
-## 上一份完整报告：RSI连续信息融合与本地研究队列
-
-- 报告：[`2026-09-20_06-02-02_JST.md`](./2026-09-20_06-02-02_JST.md)
-- `publication_kind`：`AUDIT_AND_RESEARCH_QUEUE_UPDATE`
-- `reviewed_source_sha`：`efb6e1a7718a5d540107db9c1f1557994f94f5e8`
-- 报告发布提交：[`240e9d8258431d205a6651ba443bc687915f63af`](https://github.com/fy-god/pro-web-60d-strategy/commit/240e9d8258431d205a6651ba443bc687915f63af)
-- 该轮提出 `RSI-CONT-02`：比较 RSI 水位、变化、fresh/new、roll-out、价格支撑破坏及ATR归一化，而不是“RSI<30”硬门槛。
-
-## 更早RSI研究链
-
-- 独立复核：[`2026-09-20_03-41-46_JST.md`](./2026-09-20_03-41-46_JST.md)，`reviewed_source_sha=5da1758e81d74f0dab42c7cdb21861e2caea4990`，发布提交 [`b18e081e8183378e465ca752a5e6a81b7d91710d`](https://github.com/fy-god/pro-web-60d-strategy/commit/b18e081e8183378e465ca752a5e6a81b7d91710d)。该轮确认 RSI 滚出反例并指出 `N+E=ΔRSI` 是构造恒等式，不是预测证据。
-- RSI候选研究：[`2026-09-20_03-06-03_JST.md`](./2026-09-20_03-06-03_JST.md)，`reviewed_source_sha=ed8b6313cba278442eade24508a707e95f629c92`，发布提交 [`2ffd9a955c786452dcd0bb09f08efcfa671f55cd`](https://github.com/fy-god/pro-web-60d-strategy/commit/2ffd9a955c786452dcd0bb09f08efcfa671f55cd)。其中候选软件测试和TOY训练不属于H504市场成绩。
-
-## 主研究执行方案：贯通研究批次 v2
-
-- 任务书：[`2026-09-20_02-04-16_JST.md`](./2026-09-20_02-04-16_JST.md)
-- `publication_kind`：`EXECUTION_PLAN_UPDATE`
-- 任务书发布提交：[`5c1e5c5a5444b94aecfd03759638412faa94c5c1`](https://github.com/fy-god/pro-web-60d-strategy/commit/5c1e5c5a5444b94aecfd03759638412faa94c5c1)
-- 主批次：真实数据与协议 → 因子实现/调试 → M1—M3及单项对照 → M4快照MLP/M5因果TCN → 消融 → 错误驱动配对再训练 → OOF/meta/CR → 校准/发布账本。
-- 同一报告已经处理不等于研究完成；registry中仍有READY/INTERRUPTED、checkpoint、待消融或待错误切片时必须续跑。
-
-## 最近一次完整源码审计＋研究推进（历史指针）
-
-- [`2026-09-20_02-00-47_JST.md`](./2026-09-20_02-00-47_JST.md)
-- `reviewed_source_sha=32155ecae1a0a0be1877b780df0da12354c347ea`
-- 报告发布提交：[`8dafee50ef084cf7398373b62790888e5b6faeaa`](https://github.com/fy-god/pro-web-60d-strategy/commit/8dafee50ef084cf7398373b62790888e5b6faeaa)
-
-## 更早本对话报告
-
-- [`2026-09-19_22-04-07_JST.md`](./2026-09-19_22-04-07_JST.md)，`reviewed_source_sha=82aefeb583ac6f039cc67ae2582c30803fc7cb32`。
-- [`2026-09-19_18-00-42_JST.md`](./2026-09-19_18-00-42_JST.md)，`reviewed_source_sha=318fb47db474195176d101d32dad82bcea11d4e9`。
-- [`2026-09-19_04-05-29_JST.md`](./2026-09-19_04-05-29_JST.md)，`reviewed_source_sha=0df81c65a5a2765027d6447c3cf24e4760e0c5e8`。
-- [`2026-09-19_03-00-00_JST.md`](./2026-09-19_03-00-00_JST.md)，`reviewed_source_sha=14a2e834985248029f23750b80782c9fa5b36f12`。
-
-### 继续开放、但不在本索引重复展开的核心项
-
-- H504 主任务仍需 `Close>4E`、独立 market-session、next-session no-entry、不延期复牌；旧 `low504` High/个股bar结果不能替代。
-- `label_end/known_at` 必须贯穿 fit/imputer/scaler/selection/OOF/meta/calibration。
-- publication 必须先冻结 signal，再 join outcome/execution；unknown/no-entry 不得事后删信号或补位。
-- `EML-P1-RSI-META-LEAK`：旧 ML 特征选择是黑名单式；新增时间合同列和RSI研究列之前必须用显式 FeatureSpec。
-- `EML-P1-EXECUTOR-NO-RESEARCH-QUEUE`：远端 `scripts/fixup_prompt.txt` 仍是“新报告→修P0/P1→同报告即退出”的旧合同；研究任务书已发布不代表用户本机执行器已接入队列。
-- 887 market sessions 不足以形成先成熟训练、再成熟 H504 时间外开发的完整随访折；本地若无更早授权历史，正式 H504 OOS 标 `BLOCKED_DATA/AWAITING_EVIDENCE`。
-
-> 本索引严格区分：审计源码 SHA、文档发布 commit、本地／沙箱软件测试、真实市场 fit 与最终认证。docs 提交不代表模型升级；cards_100、H10、合成数据或 in-sample 结果都不能冒充 H504/Close/Low 正式成绩。
+> 源码SHA、报告提交、索引提交、软件测试、合成fit、真实市场fit和最终认证分别记录。任何文档发布、百万行合成数据、card练习结果或旧H10数字都不代表H504实股命中率已经提升。
