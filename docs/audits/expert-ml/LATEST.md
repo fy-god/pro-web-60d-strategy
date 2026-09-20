@@ -8,8 +8,8 @@
 - `reviewed_source_sha`：`c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
 - `reviewed_tree_sha`：`4c4dff9c9f09af20e9a574033d650e7454e1b305`
 - `main_head_before_sync`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`（本地 `--ff-only` 同步至当前 HEAD）
-- 报告发布提交：`aed53c2da626666848ce06c08e336fb4b7039244`（已 `git ls-remote` 回读 MATCHED，`c9b90e3..aed53c2`）
-- 报告 blob：`9afda5c37623065ad486cf7d9d2dc14b52b17a19`
+- 报告发布提交：`eccc360585b1080b5cccd820a46848da06151cc2`（首次提交 `aed53c2d…` 为报告初版；`eccc3605…` 补入 §3.3 对抗性证伪与量级上界；均已 `git ls-remote` 回读 MATCHED）
+- 报告 blob（最终）：`6243fcd62858d681e7a1382df30ab7915a454d48`（初版 blob 为 `9afda5c3…`）
 - **上一轮报告自报沙箱 `ClientError`、未跑测试；本轮在**本机**实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 0.83s`，REAL exit 0**。这是本轮执行结果，不是转抄。**
 - **源码相对上一审计点未变**：`git diff --stat 1363e68..HEAD -- src/ experts/ tests/ scripts/` **为空**；远端只多两个 docs 提交（`0901b8c` 报告、`c9b90e3` 本文件），作者 `fy-god` 非 `audit-agent`。故所有开放源码项按「仍未修」处理。
 - **上一轮 4 条新增确认全部复现（0 证伪）**，但**第 3 条的 1 个子案例不成立**：报告称「同日 `close>4E` 且 `low<8` → joint=false」是 RED，实测**已 GREEN**（`label_joint=0.0`）。**该条不作为新增失败收录**。
@@ -26,6 +26,7 @@
 - **策略覆盖率 4/36**：`experts.registry.list_strategy_ids()` 真实返回 **36**；`tests/test_engine.py:468-482` 只断言 **4 个**换手率代理策略；`rsi_mean_reversion` **无测试**，无测试断言 `:46` 截断。
 - **`AUDIT_STATUS` 的 `13.61%` 是 H10/+30%**（`src/ml/search.py:219` `--horizon` 默认 10），**不是 H504**；该文件自述仅代表报告一致性，不认证 H504。
 - 本轮**没有**新增实股 H504 结果（`research_verdict = NO_NEW_REAL_MARKET_RESULT`）。
+- **对抗性证伪 4 次攻击全部失败，4 条结论存活，但量级必须同时披露**：A `dedupe` 耦合（3 个真实调用点全为多股票帧，每策略 distinct code 最少 62 / 中位 2,588）、B entry 行相邻（`src/features.py:148-174` 明确不为缺失 session 造 bar）、C High vs Close（`build_matrix.py:434` 的 `label_close` 是百分比 H10 第二列、非 `close>4E`；`git grep -ni goal` = 0 行；无 h504/4x 矩阵）、D 研究队列（被审 SHA 上完整搜索 4 个标识符**只在 `docs/` 下**，`':!docs'` 为空）全部 **SURVIVED**。**但**：A 对已发布去重后 bull precision 每策略最大移动仅 **|Δ| = 0.4588 pp**（均值 0.1219 pp）；B 只占已发布 646,718 行的 **≈0.086%**（943 条 gap 边中 139 条已进发布信号集，聚焦核查的 554 条 webpro 信号**全部**用了复牌日开盘）。→ **A/B 应按合同正确性修，不应期待精度跳变；只有 C 是真正无替代实现的 live 缺口。**
 - 下一轮优先验收：非 docs 研究源码 commit、独立 market calendar（`market_session_id`）、`entry` 按下一市场日 join、`dedupe_signals` 去 filler 依赖后仍 GREEN、H504 `Close>4E` 三条 RED→GREEN、KDJ 拆成独立 case（收集数 15→16）、FeatureSpec 白名单、`write_status` 让 fetch 失败参与判定、`cards100_rsi_attribution` 附 `rsi14` 原值与截断率。
 
 ---
