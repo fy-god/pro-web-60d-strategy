@@ -29,6 +29,24 @@
     **陈述互斥**——前者称 `ClientError`/`NOT_RUN_BLOCKED_ENV`，后者称「沙箱能执行 Python」
     并跑通 30 项 pytest。**我无法判定孰真**，也**不**把「30 项 pytest」当作可核验事实
     （仓库内 `tests/` 只有 `test_engine.py`，实跑 **`15 passed in 1.03s`**）。
+- **r2 追加（第 4 个子 agent B 返回后，逐条亲自复核）**：
+  - **`EML-P2-TEST-KDJ-NESTED` 恢复为 `已确认错误`**。`tests/test_engine.py:306` 是**裸字符串表达式
+    （不是 `def`）**，故 `306-319` 整块掉进 `test_wilson_upper_bound_is_not_a_constant`（`:268-319`）尾部
+    → KDJ 断言**确实执行但没有独立 test id**。**`19:47` 报告把它与「KDJ 从不执行」合并后
+    一并降级为「未复现」是降级过头。**（我已亲自读源码确认结构；双向变异测试证明断言执行。）
+  - **新登记 `EML-P2-COOLDOWN-COUNT-NOT-REPRODUCIBLE`**：`19:47` 报告 §4 `L180-181` 的
+    「帧内时钟保留 **8** 条 / 市场时钟保留 **29** 条」在它**自己引用的 `cooldown=60`** 下
+    **算术不可能**——`N=955` 时上界 = `floor(954/60)+1` = **16 < 29**；
+    我穷举 `stride 1..29 × cooldown 5..120` 网格，命中 (8,29) 的组合 **0** 个。
+    **仅否定该两个数字，不否定 cooldown 缺陷本身**（其最小反例：真实相隔 90 会话只留 1 条，
+    我已独立复现）。
+  - `EML-P1-RSI-META-LEAK` **名实不符**：`rsi_meta` 全仓 **0 命中**，它是 `03:06` 报告起的
+    **计划代号**，机制实体即 `src/ml/walkforward.py:58-61,109`（与 `META-BLACKLIST-H10-NAMES` 同根因）。
+  - 路径笔误：`19:47` 报告 §5.3 的 `live_readiness.py:155` 实为 **`src/live_readiness.py:155`**。
+  - 子 agent B 已完成（`eml_h22_B\REPORT.md`，44.8 KB）：10 项回归中 **7 项确认仍成立、0 项已修**；
+    `cb785b8..HEAD` 对 `src experts tests scripts` **零 diff**（源码 blob 逐位相同）。
+    其未能验证项：`panel_daily.parquet` 与 `webpro_signals.csv` **gitignored 且不在冻结树**，
+    故 entry 实股计数与 pooled 去克隆均值移动量**未能复算**。
 - **对两份并发新报告的核验**：全部 SHA/blob/tree 为真（**14/14** hex token `cat-file -t` rc=0，
   **错误 SHA = 0**）；两份均**诚实标注**了「未验证/合同要求/实股 fit=0」，
   `COMPLETE_LOCAL_1H` **从未被冒用**，**未发现把要求冒充成绩**。
