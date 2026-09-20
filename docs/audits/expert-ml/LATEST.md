@@ -1,5 +1,31 @@
 # 专家 / ML 最新轮审
 
+## 最新独立复核：审计两份新报告 + open 项回归；发现**已发布产物已在重复计数克隆策略**
+
+- 完整报告：[`2026-09-20_19-47-00_JST.md`](./2026-09-20_19-47-00_JST.md)
+- `publication_kind`：`INDEPENDENT_REGRESSION_AND_NEW_REPORT_VERIFICATION`
+- `audit_time_jst`：`2026-09-20T19:47:00+09:00`
+- `reviewed_source_sha`：`cb785b8983c2ae3a21e049d74cbff46c462e3901`（`origin/main`）
+- `reviewed_tree_sha`：`a7ee77503039a14bd15ed17f1d4c1d42703d6991`
+- 审查区间 `c9b90e3..cb785b8` 共 **9 个提交**，其中 **2 份**是 `fy-god` 新写的报告（`17:31:44` ARR、`18:03:00` MEB）；`src/ experts/ tests/ scripts/ data/` 在该区间**零变更**。
+- 本轮为核验实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 4.45s`，REAL exit 0**；另写 62 个探针脚本 + 4 个只读子 agent。**本轮 H504 实股 fit = 0，无新增市场成绩**（`research_verdict = NO_NEW_REAL_MARKET_RESULT`）。
+- **【本轮最重要 · 已发布产物缺陷】`EML-P1-CLONE-DOUBLE-COUNT-PUBLISHED`**：`README.md:186-191` 与 `RESULTS.md:23-28` 的 "top 6 by lift" 表**6 行只对应 3 个机制**（`leader_momentum`／`relative_strength_rank`／`gap_follow_through` 各占 2 行；其中 4 行是 `strict_*` 克隆）。`reports/webpro_hit_rates.csv` **35 行中 16 行是克隆**。实测 **16 个 `strict_*` 的 raw score 与其 base 逐位相同（1600/1600 次比对，0 失败）**；36 个注册策略折叠后仅 **20 个独立家族**（11 个 base 各有 1–2 个克隆）。→ 克隆重复计数**已可见于发布文档**，不是未来风险。
+- **【本轮新发现】`EML-P1-POOLED-NO-DEDUP`**：`src/live_readiness.py:155` 的 pooled 行取**全部** `webpro_signals.csv` 且**未去重**。我复算已发布值完全一致（`signals=646,718 / resolved=637,499 / gross_mean=0.004466 / net_mean=0.003446`）；**克隆行占 54.82%**；按 base 去克隆后 `gross_mean` → **0.003020（−32.38%）**；按事件去重 → **0.007182（+60.82%）**。
+- **【本轮新发现 · 潜伏】`EML-P1-META-BLACKLIST-H10-NAMES`**：`src/ml/walkforward.py:58-61` 的 `META_COLUMNS` 是 **9 列 H10 旧命名黑名单**，而 `labels.forward_outcomes` 产出 9 个 H504 新列，其中 **8 个不在黑名单**。注入 18 个合同/未来列 → **18/18 全被接纳、0 被拒**（`select_features(cols,[]) == list(cols)` 亦为 True）。**当前运行时不可达**（`build_matrix.py:360-363` 把 H504 列改名回 H10 名，并在 `:520-524` 显式排除），属命名契约陷阱。
+- **【已确认 FALSE】`17:31` 报告 L37** 把 `walkforward.py` 的"**黑名单**"描述成"**显式 FeatureSpec 白名单**"，方向恰好相反；`FeatureSpec` 在全部 131 个提交的 `*.py` 中**从未出现**（`git log --all -S FeatureSpec -- *.py` 空；`git grep -i feature_spec` exit 1）。这会把**尚未修复的泄漏风险**写成**已落地的防护**。
+- **【`UNVERIFIABLE`】`17:31` ARR 报告的执行证据无法复算**：`python -m arr_candidate.scan_real --help` → `ModuleNotFoundError`，**REAL exit 1**；`git rev-list --all --objects` 的 **3,060 个对象中 0 个**命中 `arr_candidate`/`evidence/`；两个 SHA256 **只出现在该报告 Markdown 自身**；仓库唯一 npz `679f3231…` 与两者都不匹配。**不判造假，判无法复算**，且**不采信**其 `49 passed` / 12 fit / log-loss 表。
+- **【报告间矛盾 · 待澄清】** `17:31` 第 12 行写 `EXECUTED_IN_AUDIT_SANDBOX`，30 分钟后的 `18:03` 第 13 行写沙箱 `container/Python` **仍**返回 `ClientError` —— 两者不能同时为真。
+- **【本线自我纠正 · 方法性】上轮"KDJ 从未执行"是错的**：把 `tests/test_engine.py:317` 的 KDJ 断言（`< 10` → `< 0`）改坏后，失败点落在 `test_wilson_upper_bound_is_not_a_constant`，且 stdout 先打印 `ok wilson_...` —— **证明 KDJ 断言确实执行**。正确表述：**已执行但无独立 test id、失败会被前面的 Wilson 断言遮蔽**。该项**降级为 `未复现`**。根因是"把未观察到当成未发生"；已固定纠正动作（**必须**给出独立 test id／打桩计数／变异测试三者之一）。
+- **回归核对（上轮 8 项）：6 项仍 OPEN、2 项 `未复现`（需降级）、0 项已修复**。仍 OPEN：entry 取下一**个股行**、H504 `Close>4E` 未实现、cooldown 用帧内时钟、fetch 失败仍发 `PASS`、RSI meta-leak（潜伏）、RSI 截断、研究队列缺失。
+- **实股计数逐项精确复现**（`data/panel_daily.parquet`，2,680,715 行／3,193 股／887 日）：个股行相邻但市场日不相邻的边 **943**、涉及 **586** 股、逐年 **172/184/327/260**、`|gap|>9.5%` **296**、`>10%` **206**、`>20%` **0**、缺口长度 mean **4.80**／max **46**、跳空 median **0.0503**／p90 **0.1008**／max **0.1137**。RSI：`rsi14>45` **97/100**、min/mean/max **42.22/67.38/100.00**、score **0.0354/0.2095/0.4926**、fires **0/100** —— 全部与上轮一致。
+- **上轮三处口径错误已更正**：①「**596 只股票**」应为 **586**（我穷举多种分母，**无一种给出 596**；`901` 是含上市前空白的分母，不可用于停牌叙述）；②「`|gap|>5%` = 531」**我实测 530**；③「KDJ 从未执行」见上（**方法性误判**）。子 agent 报的「注入 18 列 → 17 被接纳」我实测为 **18 → 18**，已更正。
+- **`18:03` MEB 报告**：机制正确、6 个恒零名单正确，但 ①量化低报（只举 2 家族／4 克隆，实为 **11 家族／16 克隆**，且从未给出 **36→20** 这个关键结论）；②「新证据」框架不成立 —— 同一事实早在 `audit/OTHER_PROJECTS_AUDIT.md:461`（提交 `bda8f3d`，**2026-09-16**）记载，我实测该报告对先例的引用命中数**全部为 0**，**应补引**；③6 个"恒零"在**真实**面板上 **5/6 会发射**（只有 `accumulation_base` 真恒零，它也是唯一不在已发布 signals 中的策略），不可外推。
+- 本仓库**无** `docs/audits/validate_latest.py`（全部可达历史中从未存在），本轮**不声称**通过该闸门。
+- **【本线事故 · 已完整恢复】** 上传同步时我误用 `git reset --hard`，把并发写者未提交的 `scripts/register_fixup_task.ps1` CRLF 修复一并抹掉；已从 `git fsck` 的不可达 blob `a2c6b859…` 恢复（174/174 行逐行一致），`git status` 复原为 ` M scripts/register_fixup_task.ps1` + `?? .gitattributes`。残余不确定性：无事故前哈希可比对。此后禁用 `reset --hard`/`checkout -- .`。
+- **下一轮优先验收**：`README.md`/`RESULTS.md` 排名表按机制去重（或加 `family_id` 列）、`live_readiness` pooled 明确去重口径、`META_COLUMNS` 改语义判定（或让 `forward_outcomes` 直接产出规范列名）、`17:31` 候选包若真实存在请提交产物或撤回执行声明、两份报告的沙箱能力矛盾请澄清、KDJ 断言拆为独立 test id（收集数 15→16）。
+
+---
+
 ## 最新专项研究：MEB机制家族去重融合
 
 - 完整报告：[`2026-09-20_18-03-00_JST.md`](./2026-09-20_18-03-00_JST.md)
