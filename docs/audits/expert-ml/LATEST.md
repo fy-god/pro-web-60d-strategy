@@ -1,6 +1,34 @@
 # 专家 / ML 最新轮审
 
-## 最新增量审计：先把 H504 主合同写成会失败的测试，再继续重训练
+## 最新独立复核：上一轮 4 条新增确认全部本机实跑复现，并证明其中 2 条在实股上可达
+
+- 完整报告：[`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
+- `publication_kind`：`INDEPENDENT_RECHECK_AND_CODE_AUDIT`
+- `audit_time_jst`：`2026-09-20T15:34:32+09:00`
+- `reviewed_source_sha`：`c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
+- `reviewed_tree_sha`：`4c4dff9c9f09af20e9a574033d650e7454e1b305`
+- `main_head_before_sync`：`1363e68b1a6419aef71d6508aa3d2dd5a6d18bf0`（本地 `--ff-only` 同步至当前 HEAD）
+- **上一轮报告自报沙箱 `ClientError`、未跑测试；本轮在**本机**实跑 `python -m pytest -o addopts="" -p no:cacheprovider -q` → **`15 passed in 0.83s`，REAL exit 0**。这是本轮执行结果，不是转抄。**
+- **源码相对上一审计点未变**：`git diff --stat 1363e68..HEAD -- src/ experts/ tests/ scripts/` **为空**；远端只多两个 docs 提交（`0901b8c` 报告、`c9b90e3` 本文件），作者 `fy-god` 非 `audit-agent`。故所有开放源码项按「仍未修」处理。
+- **上一轮 4 条新增确认全部复现（0 证伪）**，但**第 3 条的 1 个子案例不成立**：报告称「同日 `close>4E` 且 `low<8` → joint=false」是 RED，实测**已 GREEN**（`label_joint=0.0`）。**该条不作为新增失败收录**。
+- **新增 `EML-P0-ENTRY-ROW-ADJACENCY-ON-REAL-PANEL`（实股可达，本轮最重要）**：`src/labels.py:124-128` 的 `entry[:-1] = opens[1:]` 取的是**个股下一行**而非**下一市场日**。真实 `data/panel_daily.parquet`（2,680,715 行 / 3,193 股 / 887 session）中有 **943 条**边「个股行相邻但市场日不相邻」，涉及 **596 只股票（18.4%）**，**全部错误地拿到复牌日开盘**（应无 entry）。复牌跳空 **530 条 >5%、296 条 >9.5%（涨跌停级）**；**260 条（27.6%）落在 2026 年**即已发布 holdout 窗口。集中在 4 月下旬、逐年复现（与年报截止日 4/30 集中停牌一致），当日全市场参与股票数正常（3,172 / 3,150），故为个股停牌而非数据缺口。**这不是测试质量问题，是发布数字缺陷。**
+- **新增 `EML-P0-COOLDOWN-INDEPENDENT-CLOCK` 影响量化**：在真实已发布账本上复刻两时钟——合计 **49 次 `dedupe_signals` 调用 / 2,056,254 输入行**，帧时钟保留 557,960 vs 日历时钟 575,101，**48/49 次调用结果改变、净 +17,141 行**；影响 `reports/webpro_hit_rates.csv`、`reports/lowzone_hit_rates.csv` 与两个信号账本。硬数字是 48/49 与 +17,141；分组级 77.8% 仅作指示。
+- **`EML-P0-AUDIT-FETCH-FAIL-PASS` 本轮亲自可执行复现**：`scripts/scheduled_report_audit.py:108-109` 的 `ok = code == 0 and not unstable` 完全不看 `note`。把 `write_status()` 重定向到临时目录后实跑 → 输出 `| Verdict | **PASS** |` 与 `| Remote drift | git fetch failed (exit 128): schannel: ... |` 并存，且写「All consistency checks passed.」。
+- **H504 Close 合同 RED 套件（实跑 `3 failed, 1 passed`，exit 1）**：`high=41 close=39` → `label_bull=1.0`（应 false）；`close==40` → `1.0`（应 false）；反例 `close=41 high=39` → `0.0`（应 true，**判别器反转**）。`close` 在 `src/labels.py` 全文仅 **1 次且在 L11 docstring**；数值路径 `close`=0 / `high`=12。
+- **`EML-P1-RSI-META-LEAK` 仍在（潜伏）**：`src/ml/walkforward.py:58-61` 是 9 列黑名单；注入 10 个合同/未知列 → `feature_columns()` **全部接纳**，且 `select_features(cols, []) == list(cols)` 为 **True（空组=全部列）**。上一轮「10 文件 13 处」计数**未复现**（我基准为 17 处/12 文件），已降级标注；判定不依赖该计数。
+- **KDJ 嵌套确认（AST + 短路）**：`tests/test_engine.py:268` 函数体**止于 L319**，KDJ 块 L306-319 是其 4 空格缩进尾部，无独立 `def`；强制 Wilson 常量后 `AssertionError: 0.8` 且 stdout 为空 → KDJ 从未执行。`--collect-only` 真实 **15** 条，**无** KDJ 跨年 id。**「15 passed」≠ 15 条独立合同。**
+- **引用漂移（本轮修正）**：报告称 bull 在 `:188`、掩码 `:199-200`、per-stock 边界 `:226`、cooldown 规则 `:229`，真实为 **`:201` / `:212-213` / `:239` / `:242`**；`labels.py:62` 被引为 `high`，**实为 L118**（L62 是 `REGIMES["low504"]`）。`tests/` 内 docstring 的同类引用亦全部陈旧。
+- **研究队列在代码层完全不存在（完整搜索，强于上一轮）**：`experiment_registry`/`fold_support`/`research_h504`/`FeatureSpec`/`market_session_id`/`TaskSpec` 在 `src/ experts/ tests/` 命中 **全部为 0**（仅存在于 `docs/` 散文）；`src/ml/research_h504/` 不存在。故独立日历修复**尚无现成基础设施**。
+- **本仓库没有 `validate_latest.py` 闸门**：`docs/audits/` 下只有 `expert-ml/`；该文件在**全部可达历史**中从未存在（`git log --all --diff-filter=A` = 0 行）。不得为专家/ML 线声称该闸门。
+- **RSI 截断在真实卡上逐位复现**：100/100 解析成功；`rsi14>45` = **97/100**；`rsi_oversold==0` = 97/100；`rsi14 min/mean/max = 42.22/67.38/100.00`；`score = 0.0354/0.2095/0.4926`；**fires=0/100**。机制 `rsi_mean_reversion.py:46` `_clip((45.0-rsi)/20.0)` 把 `rsi>45` 压成恰好 0 → 连续 RSI 信息进 AUC **之前**已销毁 97%。本轮新增分量统计与加权公式核验（重建 score 最大绝对差 `0.000e+00`）。
+- **策略覆盖率 4/36**：`experts.registry.list_strategy_ids()` 真实返回 **36**；`tests/test_engine.py:468-482` 只断言 **4 个**换手率代理策略；`rsi_mean_reversion` **无测试**，无测试断言 `:46` 截断。
+- **`AUDIT_STATUS` 的 `13.61%` 是 H10/+30%**（`src/ml/search.py:219` `--horizon` 默认 10），**不是 H504**；该文件自述仅代表报告一致性，不认证 H504。
+- 本轮**没有**新增实股 H504 结果（`research_verdict = NO_NEW_REAL_MARKET_RESULT`）。
+- 下一轮优先验收：非 docs 研究源码 commit、独立 market calendar（`market_session_id`）、`entry` 按下一市场日 join、`dedupe_signals` 去 filler 依赖后仍 GREEN、H504 `Close>4E` 三条 RED→GREEN、KDJ 拆成独立 case（收集数 15→16）、FeatureSpec 白名单、`write_status` 让 fetch 失败参与判定、`cards100_rsi_attribution` 附 `rsi14` 原值与截断率。
+
+---
+
+## 上一份增量审计：先把 H504 主合同写成会失败的测试，再继续重训练
 
 - 完整报告：[`2026-09-20_13-57-11_JST.md`](./2026-09-20_13-57-11_JST.md)
 - `publication_kind`：`AUDIT_AND_EXECUTION_PLAN_UPDATE`
