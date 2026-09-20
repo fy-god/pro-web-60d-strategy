@@ -1,5 +1,43 @@
 # 专家／ML最新研究与审计索引
 
+## 最近一次独立复核（本轮，2026-09-20 23:50 JST）
+
+- 完整报告：[`2026-09-20_23-50-06_JST.md`](./2026-09-20_23-50-06_JST.md)。
+- 类型：`INDEPENDENT_REGRESSION_AND_NEW_REPORT_VERIFICATION`。
+- 被审源码：`91726c9f14edf6047e531a53e71df359fb1ffd60`；tree：`56945a5f28b390613b850200c0cfc98f35a7f69d`。
+  （本轮起点 `main_head_at_audit_start` = `908a41334eaf2f38570a7fb93954a63ebb80ad52`。）
+- **本轮最重要的升级**：`EML-P0-AUDIT-FETCH-FAIL-PASS` 从「仍 OPEN」升级为
+  **`已确认错误`，且已在真实生产运行中实际发生并发布过错误结论**。
+  `scripts/scheduled_report_audit.py:108` 的 `ok = code == 0 and not unstable` **从不读取 `note`**，
+  而 `git fetch` 失败恰在 `:86` 只以 `note` 返回 → 「**无法比较**」被发布成「**比较后一致**」的
+  `Verdict PASS`（fail-open）。真实发布提交 `32155ec`（HEAD 祖先）的 `reports/AUDIT_STATUS.md`
+  **同时**写着 `Verdict **PASS**` 与 `Remote drift | git fetch failed (exit 1)`；
+  `3d1488f` 记录 `exit 124 TIMEOUT` **同样配 PASS**。我已用真实不可达 remote
+  （真实 fetch 退出码 **128**）只读复现出同一个 PASS。
+  `--dry-run`（`:82-83`）与 fetch 失败**同构**，是第二入口。
+  `:344`/`:376` 同样忽略 fetch 失败 → 已提交文件、FINDINGS、stdout、退出码四个通道全无痕迹。
+- **本轮无产品源码变更**：`cb785b8 → 91726c9` 的唯一非 `docs/audits/` 改动是自动生成的
+  `reports/AUDIT_STATUS.md`（4 行时间戳）。故本轮是**校验上轮描述的准确性**，而非判断「是否已修」。
+- **上轮（`19:47`）量化声称抽样复算，准确率很高**：RSI 截断 **9/9 项精确一致**
+  （真实 `data/cards_100/cards.json`：rsi14 min/mean/max = 42.2246/67.3807/100.00、
+  score = 0.0354/0.2095/0.4926、fires = 0/100）；`webpro_hit_rates.csv` **16/35** 行是克隆
+  （源码 16 个文件声明 `BASE_STRATEGY_ID`，涉及 **11** 个 base）→ **精确一致**；
+  cooldown 反例（真实相隔 **90** 市场会话只留 **1** 条，`positions` 差 = **1**）**独立复现**。
+- **本轮新登记**：
+  - `EML-P2-CONCURRENT-SANDBOX-CAPABILITY-CONTRADICTION`（`待验证风险`）：
+    并发两份新报告（`22:00:19` 与 `22:10:00`，提交相隔 **10 分钟**）对同一沙箱能力
+    **陈述互斥**——前者称 `ClientError`/`NOT_RUN_BLOCKED_ENV`，后者称「沙箱能执行 Python」
+    并跑通 30 项 pytest。**我无法判定孰真**，也**不**把「30 项 pytest」当作可核验事实
+    （仓库内 `tests/` 只有 `test_engine.py`，实跑 **`15 passed in 1.03s`**）。
+- **对两份并发新报告的核验**：全部 SHA/blob/tree 为真（**14/14** hex token `cat-file -t` rc=0，
+  **错误 SHA = 0**）；两份均**诚实标注**了「未验证/合同要求/实股 fit=0」，
+  `COMPLETE_LOCAL_1H` **从未被冒用**，**未发现把要求冒充成绩**。
+- **测试真数**：冻结树 `python -m pytest -o addopts="" -p no:cacheprovider -q tests/`
+  = **`15 passed in 1.03s`**，exit **0**。
+- 本轮**未**改任何源码/配置/权重/PR；**未**动任何定时任务；只上传本报告与本次索引。
+  取证全部在只读冻结工作树完成，`status --porcelain` 前后为空。
+  （以上计数与 SHA 属本次复核，**不**认证下方历史报告的成绩。）
+
 ## 最新本地执行合同：至少60分钟真实研究
 
 - 完整任务书：[`2026-09-20_22-10-00_JST.md`](./2026-09-20_22-10-00_JST.md)
