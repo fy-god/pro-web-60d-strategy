@@ -1,5 +1,25 @@
 # 专家 / ML 最新轮审
 
+## 最新研究执行方案：VIR量价冲击恢复＋60—75分钟有效本地研究
+
+- 完整报告：[`2026-09-20_22-00-19_JST.md`](./2026-09-20_22-00-19_JST.md)
+- `publication_kind`：`AUDIT_AND_EXECUTION_PLAN_UPDATE`；不是新的H504实股训练结果。
+- `audit_time_jst`：`2026-09-20T22:00:19+09:00`
+- `reviewed_source_sha`：`908a41334eaf2f38570a7fb93954a63ebb80ad52`
+- `reviewed_tree_sha`：`34273d2bb4cf275036ae57770858463ed61721cc`
+- 报告发布提交：[`5114bbc925ca32acd838fb972b9429f41098b69a`](https://github.com/fy-god/pro-web-60d-strategy/commit/5114bbc925ca32acd838fb972b9429f41098b69a)
+- 报告 blob：`3c535d7302637a7592cd2b2badbb512fd200cd31`，已按发布提交回读核验。
+- 子实验：`EML-EXP-KDJ-PATH-001-REAL/VIR-01`；新增假设 `X19-VOLUME-IMPACT-RECOVERY`，接续X17/X18，不重置旧实验台账。
+- 新候选VIR比较两个不重叠10-session块的上涨/下跌“价格冲击÷相对成交量”不对称变化；原始impact、计数、coverage、one-sided全部保留。它是统计代理，不称机构吸筹，也不作为硬发布门槛。
+- 主配对：M2I−M2、M2PI−M2P、M3I−M3，并以C-RAW（同底层原始信息、无VIR合成）和C-NOVOL（price-only impact）做归因控制；表格方向至少两个合法开发块一致后才进入同容量MLP/TCN。
+- 本地执行目标改为：存在G0/G1合法READY工作时，单次连续完成**60—75分钟有效研究**；一个任务提前完成立即领取下一READY包，禁止sleep、重复同hash训练或空转凑时长。若所有任务真实阻塞而不足60分钟，必须记录`MIN_RUNTIME_NOT_MET + BLOCKED_*`，不能伪报1小时。
+- 预算以用户当前v2为准：第一研究批次**累计48 fits / 180 wall-minutes**，不是此前文档曾出现的72/96 fits或360分钟；旧已用量必须从剩余预算扣除。90分钟launcher硬超时下，通过registry/checkpoint分片续跑，而不是一次硬撑三小时。
+- 三段队列：Slice A真实数据/market calendar/TaskSpec/FeatureSpec/全量KDJ-path+pressure+VIR健康检查；Slice B合法H504折上的M1/M2/M2P/M2K/M2I/M2PI/M3/M3I/C-RAW/C-NOVOL；Slice C在剩余预算内进行MLP/TCN、错误切片和一次机制驱动配对再训。
+- 当前审计沙箱container/Python仍在启动层`ClientError`，所以本轮新增pytest=0、模型fit=0、H504实股fit=0，60分钟执行目标在审计沙箱为`NOT_MET_BLOCKED_ENV`；这不代表用户本机缺数据或环境。
+- 下一轮优先验收本地真实产物：`data_inventory/data_fingerprint/task_spec/fold_support/FeatureSpec/factor_health/vir_diagnostics/experiment_registry`，以及`effective_wall_seconds>=3600`的原始日志；若有合法H504折，再验收完整模型预测、hash、checkpoint和paired metrics。
+
+---
+
 ## 最新独立复核：审计两份新报告 + open 项回归；发现**已发布产物已在重复计数克隆策略**
 
 - 完整报告：[`2026-09-20_19-47-00_JST.md`](./2026-09-20_19-47-00_JST.md)
@@ -70,7 +90,7 @@
 ## 最近一次完整独立源码复核（保留）
 
 - 报告：[`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
-- `reviewed_source_sha=c9b90e37f68c0415331ca61e4e8acc3b13ce0bdf`
+- `reviewed_source_sha=c9b90e37f68c0419aef71d6508aa3d2dd5a6d18bf0`
 - 最终报告提交：[`eccc360585b1080b5cccd820a46848da06151cc2`](https://github.com/fy-god/pro-web-60d-strategy/commit/eccc360585b1080b5cccd820a46848da06151cc2)
 - 该次本地复核确认：真实panel存在943条个股行相邻但市场日不相邻entry边；48/49次真实dedupe调用受错误signal-frame时钟影响；H504 Close合同存在High/Close反转；FeatureSpec黑名单可接纳未来合同列。具体量级和反例以该报告为准。
 
