@@ -1,5 +1,19 @@
 # 专家／ML线研究与审计索引
 
+## 最新独立审计（2026-09-22 07:41 JST）：H504 研究管线复核，新增 2 条未被发现的缺陷，并更正 1 条严重度
+
+- 完整报告：[`2026-09-22_07-41-01_JST.md`](./2026-09-22_07-41-01_JST.md)。
+- 被审源码 `reviewed_source_sha`: `2b0232f8acb712569aeb5ce68f7291ab3fc7a5dc`；被审区间 `8287b33da26978f1d513b7880baf06a9103d2879..2b0232f8acb712569aeb5ce68f7291ab3fc7a5dc` 共 9 个提交；被审落地 commit `878cdeba5837a302004a8b3a656afee3d6a62b44`。
+- **新增 P1 `EML-P1-H504-SIGNATURE-BLIND-TO-FEATURE-SOURCE`**（本轮最高危）：`run.py:94` 的 `pipeline_hash` 只哈希 `src/ml/research_h504/*.py`，而 113 个特征实际由 `src/ml/build_matrix.py` 计算。实测：改 `task_spec.py` 签名会变（对照通过），**改 `build_matrix.py` 签名逐位不变** ⇒ `registry.latest_complete` 命中旧记录，`run.py:158` 报 `REUSED_COMPLETE` 并沿用**陈旧特征**结论，破坏"真实模型增益 vs 任务定义变更"的可分离性。
+- **新增 P2 `EML-P2-H504-ALL-NAN-FEATURES-SILENTLY-IMPUTED`**：`train_h504.py:13-15` 用 train 中位数静默填补且无缺失指示。实测某 session 特征全缺时，50 个候选得到**同一个**有限分数 `0.695434`，无缺失标记，仍报 `COMPLETE_H504_DEV`。
+- **严重度更正（对同批报告的更正）**：`EML-…-OBSERVED-BAR-PROVENANCE-LOST` 由 **P1 降级为 P2**。实测两条路径**仅 `outcome_class` 一列不同**，`label_joint`/`label_resolved`/`training_eligible` 完全一致；`src/` 内**零处**对该列做条件分支或聚合；且该列在 `feature_spec.py:18` 的 `_FORBIDDEN_EXACT` 中，不可能进入模型。
+- **我自己的中间结论已撤回**：「`unknown_missing_bar` 是死代码」**过强且错误**。实测在多股票联合日历下该分支**可达**；仅在"单股票 + 面板自生日历"下不可达。
+- 决定性证据：**变异测试**。删除 `data_io.py:38` 的补行后套件仍 **50 passed 全绿**；子 agent 独立把同一性质推向相反方向（对整段日历补行、彻底删除 reindex）**同样全绿** ⇒ 现成 50 测试对**生产路径零覆盖**，唯一相关的测试绕过了 `prepare_panel`。
+- 维持确认：`EML-P1-H504-DEV-RESOLVED-SUPPORT-MISSING`（我实测到 **0** 个 resolved 仍报 `COMPLETE_H504_DEV`，对照组为绿，比同批报告的"1 个"更强）、`EML-P1-H504-GLOBAL-FIT-BUDGET-UNENFORCED`、`EML-P2-AUX-PARTIAL-EPOCH-RESUME-WEIGHTING`（机制确认，真实影响量未测故不升级）。
+- 主动高危检查（负面结论）：**未发现前视泄漏**——切分按时间、特征前缀不变性 30/30 列零变化、`unknown`/`no_entry` 未被编码为 0；子 agent 用独立方法（扰动未来全部行情、783 行前缀 × 113 特征逐位不变）得到一致结论。
+- 本轮**未**启动真实训练、未连本机、未注册或修改 Windows 任务；`real_market_fit_count = 0`，无新增实股结果。本仓**无** `docs/audits/validate_latest.py`，**不声称**通过该门禁。
+
+
 ## 最新源码落地后独立审计（2026-09-22 06:02 JST）：H504 链已入 main，但发现 3 个 P1 + 1 个 P2
 
 - 完整报告：[`2026-09-22_06-02-39_JST.md`](./2026-09-22_06-02-39_JST.md)。
