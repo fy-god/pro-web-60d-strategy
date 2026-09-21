@@ -1,6 +1,22 @@
 # 专家／ML最新研究与审计索引
 
-## 最新候选推进：三小时执行收据＋epoch级中断续跑 v4
+## 最新独立审计（2026-09-21 15:48 JST）：自动修复链已死 · 候选无界增殖的契约成因
+
+- 完整报告：[`2026-09-21_15-48-00_JST.md`](./2026-09-21_15-48-00_JST.md)。
+- 类型：`INDEPENDENT_AUDIT_AND_PROVENANCE_RECONCILIATION`；不是新的实股H504成绩，`real_market_fit_count=0`。
+- 时间：`2026-09-21T15:48:00+09:00`。
+- 被审默认分支：`5d1b365cd6c2a80a74b18fbf12e47e766203eb93`（`HEAD == origin/main`）。自上一份专家／ML报告 `74430df` 起仅2次docs-only提交。
+- **【P0·任务定义变更】本机自动修复链已死。** 实时 `schtasks /query /tn "ProWeb60d-Fixup"` → `ERROR: The system cannot find the file specified`，exit 1；全表扫描只有 `\ProWeb60d-ReportAudit` 一个 ProWeb60d 任务。即 `register_fixup_task.ps1` 是**从未被执行的注册脚本**，`run_fixup.task.xml` 是**从未被注册的模板**。`logs/fixup/last_processed.txt` 仍停在 `2026-09-19_04-05-29_JST.md`，最新fixup日志为 `2026-09-20_011545.log` 且末行 `dry run: not starting the agent`。
+- **后果（本轮量化）**：自最后产品源码提交 `1dd9732`(2026-09-19 01:58:38) 起 **74 次提交 / 26 份审计报告 / 0 次 fixup**，其中触碰 `src/ experts/ tests/` 的提交为 **0**。即 **26 轮审计写下的任何 P0/P1 一条都没有被自动消费过**。这与「`PASS` 无任何机器消费者」（§4）共同构成本项目的**双重惰性**：无人对 PASS 行动，也无人对 findings 行动。
+- **【P1·任务定义变更】候选无界增殖的结构性成因**：`SCHEDULE.md:20` 禁止网页审计者改代码，`fixup_prompt.txt:11` 禁止fixup agent写结论——**能写结论的不能改代码，能改代码的不能写结论，而后者还没被调度**。于是每轮唯一可交付物就是再写一份文档，`SCHEDULE.md:24,30` 又把它推向「新思路/新实验」而非落地旧产物。实测：候选代次 v1(`ceaa994`)→v2(`ffa0bd1`)→v3(`2dbd67e`)→v4(`844ea93`) 共8次提交，**仓库落地代码 0**；报告 29 份 / 734,335 B；产出/推进比 26:0。
+- **【未复现·待验证风险】** `2026-09-21_14-06-49_JST.md` 的 `33 passed in 5.02s`、4个候选SHA-256、v3→v4 patch，在本仓库**无对应实体**：全部可收集测试实测仅 **15**（`pytest --collect-only` = 15；`tests/` 是唯一测试根；无 `pyproject.toml`/`pytest.ini`/`setup.cfg`）；tracked `*.zip/*.patch/*.pt/*.jsonl/*.receipt` 全为 0；`src/ml/research_h504/` 不存在；4个哈希只出现在2个 `.md` 散文中。**不指控伪造**（候选可能在审计沙箱），但一律记 `未复现`，不得当作本项目已验收证据。
+- **【自我更正】** 本报告初稿把「entry/horizon 按行计数」与「cooldown 用帧秩」当作新发现，复核后确认二者**已由 `2026-09-21_03-50-40_JST.md` §1/§2 报出**（该报告与 `LATEST.md:42-43` 均有记录），故降级为**回归确认**；并更正 §3 的**方向表述**——实测净差 **−5**（帧时钟保留 21,193 / 真时钟 21,198），是**过度抑制**而非我初稿所写的过度宽松。
+- **回归汇总**：FIXED 1 / STILL_OPEN 8 / NOT_REPRODUCED 1 / 描述更正 1。新增量化：entry/horizon 缺陷在**产品实际 horizon H10** 上影响 **0.3480%**（9,219/2,648,785）成熟行，H60 2.0632%，H504 12.2308%（parquet 口径，887 sessions；与既有报告 12.2237% 同向同量级，绝对数差异源于输入面板不同，故旧绝对数不应作为 parquet 现值引用）。
+- **【回归确认·非缺陷】** 887 session 不足以支撑严格 H504 train→dev 时间外折的算术**成立**（564 > 382，差 182；最低需 1,069 session）。同时 887 下确有 1,108,219 行具备完整504行后续、2,930/3,193 只股票 ≥505 bars——两件事不矛盾：阻塞是**缺候选清单/实验注册表**（`research_h504`/`receipts`/`experiment_registry`/`local_start_receipt`/`execution_receipt` 全 0 路径），不是 session 数不够。
+- **【provenance】** `output_86_real` 是过期目录名，实为 **3,193** 只主板股票（前缀 100.00% 落在 600/601/603/605/000/001/002/003，非主板 0）。「86」不得被读成样本量。
+- **下一步最高优先**：由人类决定**注册 `scripts\register_fixup_task.ps1`，或明确宣告该链未启用**并改写 `SCHEDULE.md`/本索引中的「本机执行链」表述。否则每轮仍会产出无人消费的文档。
+
+## 前一候选推进：三小时执行收据＋epoch级中断续跑 v4
 
 - 完整报告：[`2026-09-21_14-06-49_JST.md`](./2026-09-21_14-06-49_JST.md)。
 - 类型：`CANDIDATE_EXECUTION_RELIABILITY_AND_REGRESSION_UPDATE`；不是新的实股H504成绩。
