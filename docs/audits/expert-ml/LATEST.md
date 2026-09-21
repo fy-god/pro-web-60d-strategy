@@ -1,5 +1,18 @@
 # 专家／ML线研究与审计索引
 
+## 最新补充审计（2026-09-21 23:44 JST）：11/11 遗留项全部仍坏；并更正我自己的口径 —— 去重对净值的方向取决于统计量
+
+- 完整报告：[`2026-09-21_23-44-53_JST.md`](./2026-09-21_23-44-53_JST.md)。
+- `reviewed_source_sha`: `4a4910ed3ba070a8809cc6ad49ad29079564d7e1`；类型：`ARCHIVED_REAL_MARKET_REEVAL` ＋ `REAL_CODE_MEASUREMENT`；`REAL_MARKET_NEW_FIT = 0`，**未重训**。
+- **11 个遗留项全部 `已确认错误`（0 已修 / 0 未复现）**，含 `EML-P0-FIXUP-SYNC-FAILOPEN`（`run_fixup.py:180/:183-184/:233-238`，远程不可达仍 `exit 0` 打印 `fix-up ok`）、`EML-P0-AUDIT-FETCH-FAIL-PASS`、`EML-P0-AUDIT-STALE-ATTEST`、`EML-P1-AUDIT-DRIFT-PASS`、`EML-P1-META-BLACKLIST-H10-NAMES`（注入 21 列 → **20 列被收进特征**）、`EML-P1-HOLDOUT-ARTIFACT-SCHEMA-DRIFT`（字面 25 vs tracked 27）、`EML-P1-SEARCH-REPORT-SCHEMA-DRIFT`（`ranked_unfiltered` 在 **0/15** tracked 报告中）、date-clustered CI 陈旧（已发布区间比当前 `block=5` 定义**窄 40.2335%**）。
+- **【更正我自己，最重要】** 我在上一份 `2026-09-21_23-32-12_JST.md` §6 沿用了早前的 **−32.38%** 而未加限定。本轮在**真实 646,718 行账本**上实跑：重复 `(code,date)` **55.5547%**；去重后 **`gross_mean_return` 0.0044660826 → 0.0071822910（+60.8186%）**，但 **`gross_median_return` −0.0054054054 → −0.0010483829（−80.6049%）** ⇒ **方向取决于统计量**，均值**抬高**而中位数**压低**。因此 −32.38% 判定 **未复现（量级与符号都不对）**；**缺陷本身仍成立**，但**不得再写成单一负数**。
+- **机制**（`src/live_readiness.py`）：`:72` 直接把**多策略**账本 merge，`:87` 取其均值，**全文件从无 `drop_duplicates`** ⇒ 同一 `(code,date)` 最多被 35 个策略各计一次。
+- **我独立复核了子 agent 的三个承重断言**（非采信）：① `labels.dedupe_signals` 单股票 97 会话 → 保留 **1/2**，加入填充股票 → **2/2** ⇒ **证实**，且表明该项**标签错了**（真因是 `labels.py:233` 用**本帧日期**构造 `session_index`，应叫 **frame-local**，不是墙钟）；② 破坏 `ml_final_holdout.json` → checker `exit 1`（`590 checks, 6 problems`），删文件 → `exit 1`（`590/5`）⇒ **checker 其实 fail-CLOSED**，fail-open **仅在 git-fetch 包装层**；③ 去重数字与子 agent 逐个一致（`0.0044660826` / `0.0071822910` / `resolved 283,768` / `+60.8186%`）。
+- **两处范围/标签更正**：`EML-P0-COOLDOWN-INDEPENDENT-CLOCK` → 缺陷成立但应叫 **frame-local**；`EML-P0-ARR-ARTIFACTS-ABSENT` 与 `EML-P0-AUDIT-FETCH-FAIL-PASS` → **范围收窄**（前者只有 `2026-09-20_03-06-03_JST.md:187` 越界断言；后者 fail-open 只在 fetch 包装层）。
+- 本轮 `程序修复 = 0`；`任务定义变更 = 1`（`live_readiness` 必须声明每个统计量在去重下是否口径一致，因为均值与中位数方向相反）；`真实模型增益 = 0`。
+- **未跑全量测试套件** ⇒ 不宣称零回归。`docs/audits/validate_latest.py` 在本仓库**不存在** ⇒ 未运行、**不编造通过**。
+- 破坏性注入**只在 `%TEMP%` 副本**；仓库只被**只读**访问。**未改源码**，**未动排程**，**未触碰** `scripts/register_fixup_task.ps1` 与 `.gitattributes`。
+
 ## 最新独立审计（2026-09-21 23:32 JST）：被审报告头条成立，但它「无法重建修正排名」被推翻
 
 - 完整报告：[`2026-09-21_23-32-12_JST.md`](./2026-09-21_23-32-12_JST.md)。
