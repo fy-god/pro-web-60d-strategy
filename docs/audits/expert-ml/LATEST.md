@@ -1,5 +1,27 @@
 # 专家／ML线研究与审计索引
 
+## 最新独立审计（2026-09-21 23:32 JST）：被审报告头条成立，但它「无法重建修正排名」被推翻
+
+- 完整报告：[`2026-09-21_23-32-12_JST.md`](./2026-09-21_23-32-12_JST.md)。
+- `reviewed_source_sha`: `7dfababe91fa4b6174d852b0ac2e2eb63034af4a`（= `origin/main`，`ls-remote` 回读一致）。
+- 类型：`ARCHIVED_REAL_MARKET_REEVAL` ＋ `PROVENANCE_AND_RECONCILIATION` ＋ `REAL_CODE_MEASUREMENT`；本轮 `REAL_MARKET_NEW_FIT = 0`，**没有**新的实股成绩，**未重训**。
+- **被审报告 `2026-09-21_22-03-39_JST.md` 的头条成立**：`src/ml/search.py:230-234` 的 help 写 `--min-signals` 是「`a config must clear across every fold`」，而唯一闸门 `:356-360` 只比较 pooled `oos_signals`；`per_fold_signals`（`walkforward.py:478`）**从不参与**资格判断。反例表逐格复现：`wide_logistic_37` [1902,101,321,84]、`wide_hgb_14` [6023,1279,119,300]、`wide_logistic_36` [2213,83,410,60]，位于宽网格第 2/3/4 位。
+- **红队收窄该条**：`src/ml/*.py` 全仓搜索**不存在**任何逐折信号下限；但 `search.py:337-350` 的注释把「signal floor」与「completed every fold」**分开**写，与该 pooled 实现**自洽**。⇒「文档逐折」一侧**仅由那一句 help string 承担**。
+- **推翻它「不能重建修正排名」的结论（`:63`）**：`reports/ml_search_wide.json` 的 `len(ranked) == n_configs == 58`，且 **58/58 行都带 `per_fold_signals`** ⇒ 修正排名**可以**仅用 tracked 数据重建。我重建：**存活 39/58**，冠军**不变**（`wide_rf_32` 20.8379%，min_fold=1545），但发布者的第 2/3/4 名**全部被取消资格**。红队独立重建得**同一结果**。
+  准确边界（采纳子 agent A 措辞）：**排名可重建；不能恢复的是 producer 的自述元数据**（`min_signals`/`ranked_basis`/`ranked_unfiltered`/`oos_base_rate_by_label` 全缺）与任何需重新拟合的结果。
+- **新发现 `EML-P1-SEARCH-ARTIFACT-PREDATES-FILTER`**：该归档产物**早于资格过滤器**。键集指纹缺 `ranked_basis`/`min_signals`/`ranked_unfiltered`，且含 **6 行 `n_folds<4`**（`wide_hgb_0/1/6/7/12/13`）——现 producer 会丢掉它们。红队以 `git rev-list --all` **加强**：该 JSON 的任何已提交版本都从未含这些键，而生成它的提交 `59d2b2c` 的 `search.py` 已含并会写出它们。
+- **新发现 `EML-P1-LEADERBOARD-WRONG-EVEN-UNDER-POOLED-RULE`**（红队贡献）：上述 **6 行连现存总计闸门都过不了**，却已在已发布榜单中 ⇒ 榜单错的理由**独立于**逐折问题。
+- **新发现 `EML-P1-MIN-SIGNALS-FIX-COLLIDES-WITH-MIN-FOLDS`**：被审报告提议的逐折修法**未指明语义**，两种语义后果相反——`rows with n_folds<folds_requested = 58/58`，补 0（语义 B）⇒ **0/58 存活** ⇒ 触发 `search.py:361-369` 的 `else` 回退 ⇒ **守器自我关闭**；只算已上报折（语义 A）⇒ 39/58。
+- **新发现 `EML-P1-ZERO-SIGNAL-FOLD-INVISIBLE`**（红队贡献）：`folds_requested=5` 但 `max(n_folds)=4`，`summarise()`（`walkforward.py:437`）丢零信号折 ⇒ 「逐折下限」在缺折时**空洞**，且 `across every fold` 在当前产物上**无法验证**。
+- **新发现 `EML-P1-ELIGIBILITY-RULE-UNREACHABLE-BY-TEST`**：资格规则**内联在 `main()`**，任何测试都够不到——这正是它长期存活的原因。修补把它提为命名函数 `min_fold_signals`。
+- **已验证修复 + 真探测力**（全部在 `%TEMP%` 纯净副本）：修复版 `exit=0 5 passed`；未修版 `exit=2 ImportError`（规则不可达）；**变异 M1**（helper 在、过滤条件退回 pooled）`exit=1 1 failed, 2 passed` ⇒ **探测力是真的**，不是"打完补丁测试通过"。
+- **仓库自带审计全绿却在漂移之上**：实跑 `python scripts/audit_reports.py` → `exit=0`，`{"checks": 629, "problems": 0, "notes": 12}`（独立复现，非引用）。
+- **对被审报告 §2 的纠正**（`EML-H22-WILSON-COLUMN-MISLABELED`，**待验证风险**）：其 Wilson 数值全部复现（rf 16.2201 / ET 17.6066 / hgb 16.0876，z=1.96），但「最差折 Wilson 下界」一列对 3 行中的 **2 行不是**最差精度折的界（`hgb_14` 的 16.09% 取自一个 **119 信号折**）。其方向性结论不受影响。
+- 引用缺陷（子 agent A）：被审报告引 `lowzone.py#L250-L280`，该文件仅 263 行；真实 V00 `min_tier=1` 在 **`:206-212`**。
+- **未复现**：被审报告 §4 的 6 个沙箱候选文件与 2 个 SHA256 摘要——`git ls-files --error-unmatch` 逐一 `exit 1`，磁盘上也不存在 ⇒ 其 `5 passed in 0.06s` **不可作为项目证据**（作者已自标"沙箱"，**不是造假**）。
+- 本仓库**不存在** `docs/audits/validate_latest.py`（`Test-Path` False）⇒ 未运行，**不编造通过**。
+- **未改任何源码**；补丁/测试/重建**全部在 `%TEMP%` 副本**内。**未触碰** `scripts/register_fixup_task.ps1` 与 `.gitattributes`（他人未提交改动）。
+
 ## 最新研究推进（2026-09-21 22:03 JST）：搜索逐折支持门槛错误＋PIT candidate ledger 候选
 
 - 完整报告：[`2026-09-21_22-03-39_JST.md`](./2026-09-21_22-03-39_JST.md)。
