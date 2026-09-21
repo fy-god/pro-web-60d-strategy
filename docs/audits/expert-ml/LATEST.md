@@ -14,6 +14,7 @@
 - **回归汇总**：FIXED 1 / STILL_OPEN 8 / NOT_REPRODUCED 1 / 描述更正 1。新增量化：entry/horizon 缺陷在**产品实际 horizon H10** 上影响 **0.3480%**（9,219/2,648,785）成熟行，H60 2.0632%，H504 12.2308%（parquet 口径，887 sessions；与既有报告 12.2237% 同向同量级，绝对数差异源于输入面板不同，故旧绝对数不应作为 parquet 现值引用）。
 - **【回归确认·非缺陷】** 887 session 不足以支撑严格 H504 train→dev 时间外折的算术**成立**（564 > 382，差 182；最低需 1,069 session）。同时 887 下确有 1,108,219 行具备完整504行后续、2,930/3,193 只股票 ≥505 bars——两件事不矛盾：阻塞是**缺候选清单/实验注册表**（`research_h504`/`receipts`/`experiment_registry`/`local_start_receipt`/`execution_receipt` 全 0 路径），不是 session 数不够。
 - **【provenance】** `output_86_real` 是过期目录名，实为 **3,193** 只主板股票（前缀 100.00% 落在 600/601/603/605/000/001/002/003，非主板 0）。「86」不得被读成样本量。
+- **【输入 provenance】** 该报告使用的 `panel_daily.parquet`(09-16)、`lowzone_signals.csv`(09-16)、`matrix_h10_t30_s1.parquet`(09-17) 均早于最后触碰 `src/labels.py` 的提交 `1dd9732`(09-19)。经逐行核对，`1dd9732` **只改**「首次命中」比较符 `>=`→`>`（14行），**未改**行窗口/entry逻辑（`entry[:-1]=opens[1:]`、`same_next`、`resolved`、`build_matrix` 行窗口循环在三版上逐一核验为同一形态），故 §2 的 span 普查与 §3 的 dedupe 时钟量级（只用 code+date）不因产物时点失效；但该 CSV 的标签列为旧比较符产物，本报告**未**引用其任何标签派生比率。
 - **下一步最高优先**：由人类决定**注册 `scripts\register_fixup_task.ps1`，或明确宣告该链未启用**并改写 `SCHEDULE.md`/本索引中的「本机执行链」表述。否则每轮仍会产出无人消费的文档。
 
 ## 前一候选推进：三小时执行收据＋epoch级中断续跑 v4
