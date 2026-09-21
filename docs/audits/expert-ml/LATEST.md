@@ -1,6 +1,24 @@
 # 专家／ML最新研究与审计索引
 
-## 最新候选推进：可执行 `--stage all` H504研究流水线 v3
+## 最新候选推进：三小时执行收据＋epoch级中断续跑 v4
+
+- 完整报告：[`2026-09-21_14-06-49_JST.md`](./2026-09-21_14-06-49_JST.md)。
+- 类型：`CANDIDATE_EXECUTION_RELIABILITY_AND_REGRESSION_UPDATE`；不是新的实股H504成绩。
+- 时间：`2026-09-21T14:06:49+09:00`。
+- 被审默认分支：`74430df12f60b6b30b06baa02111feb0d4d0bcee`；tree：`9156857ae721967ca6530bcc966bc57aa79d1047`；Open PR=0。
+- 报告提交：[`844ea93ae7f459867816a81886dd5cbda785def4`](https://github.com/fy-god/pro-web-60d-strategy/commit/844ea93ae7f459867816a81886dd5cbda785def4)，报告 blob `ad07c0be5a7f90a3f82c6cb3d8283699515cc47b`，已按返回提交回读。
+- 从上一索引 `f34d24c7...` 到本轮审计起点只有定时 `AUDIT_STATUS.md` 更新；没有新的产品研究源码、真实checkpoint、prediction或registry提交，`real_market_fit_count=0`。
+- 本机执行链在仓库中仍未接入三小时合同：`fixup_prompt.txt` 仍只修P0/P1且同报告可直接 `NO_NEW_REPORT`；`run_fixup.py` 仍 `timeout=5400`；tracked Windows task XML仍 `PT2H30M`。这些只是仓库模板，实际本机注册值仍需receipt/只读查询证明。
+- 当前 `AUDIT_STATUS.md` 仍同时写 `PASS` 与 `Remote drift = 2`；`scheduled_report_audit.py` 的 verdict依旧不看 `changed/note`，因此PASS不能替代源码同步/训练证据。
+- v4修复候选v3的best-checkpoint语义错误：v3会把**最佳epoch模型**与**最后epoch optimizer**装进同一 `best.pt`；v4改为同一best epoch的model+optimizer，并单独维护 `last.pt`。
+- v4从“完整fit级registry resume”推进到**单个fit的epoch级resume**：每epoch保存last、保存optimizer/early-stop/history/DataLoader generator/Torch+NumPy+Python RNG；wall budget中断返回 `INTERRUPTED_BUDGET`，compatible rerun从last继续。
+- checkpoint新增训练配置hash；feature set / seed / window / batch / LR / weight decay / patience不一致时返回 `BLOCKED_CHECKPOINT_MISMATCH`，禁止静默把旧checkpoint接到新实验。
+- 新增 `local_start_receipt.json / session_progress.json / execution_receipt.json`：实际phase wall、fit计数、real/synthetic training秒、target是否达到及主要产物SHA-256。配置了10800/12600/13200秒不会被冒充为已实际运行。
+- v4候选测试 `33 passed in 5.02s`；6秒synthetic wall-budget探针正确得到 `INTERRUPTED_WALL_BUDGET` 与 `target_met=false`，同一训练signature随后出现 `INTERRUPTED_BUDGET -> COMPLETE_AUX` 且完成项 `resumed=true`。这些是软件/合成证据，不是A股成绩。
+- candidate v4 zip SHA-256=`1aac72397ddaed1ecc51939ae3aed106a5cb49c65495d819dbf375d703eeb27f`；v3→v4 patch SHA-256=`7fa6a9ea90769c19bfb524ce81367222ebe6c254bafd08c6c470fd0cd8b0db84`；verification JSON SHA-256=`08e6cfe3b5afdc570a987f33b196b48230ba76b884210f896aef478e3273e6f7`。候选代码未写入远端产品树。
+- 下一次真正的模型推进必须来自本机真实 `start receipt + REAL_MARKET/AUX_REAL_HISTORY registry + best/last checkpoint + 全量predictions + execution receipt`；在此之前停止继续造新因子名。
+
+## 前一候选：可执行 `--stage all` H504研究流水线 v3
 
 - 完整报告：[`2026-09-21_10-08-25_JST.md`](./2026-09-21_10-08-25_JST.md)。
 - 类型：`CANDIDATE_EXECUTABLE_PIPELINE_AND_REGRESSION_UPDATE`；不是新的实股H504成绩。
