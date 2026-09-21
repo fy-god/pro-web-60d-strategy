@@ -1,5 +1,19 @@
 # 专家／ML线研究与审计索引
 
+## 最新研究推进（2026-09-21 22:03 JST）：搜索逐折支持门槛错误＋PIT candidate ledger 候选
+
+- 完整报告：[`2026-09-21_22-03-39_JST.md`](./2026-09-21_22-03-39_JST.md)。
+- 类型：`ARCHIVED_REAL_RESULT_REANALYSIS_AND_CANDIDATE_IMPLEMENTATION`；`REAL_MARKET_NEW_FIT=0`，不是新的 H504 市场成绩。
+- 被审默认分支：`4d233e32901168531aaa881d9984b90089b1c8f1`；tree：`f7897e90401c47f889a1853d3b3ae139c42a2f78`；Open PR=0。
+- 报告提交：[`adfcb8ef6f724eea2ea73c4b2385a68e8b518796`](https://github.com/fy-god/pro-web-60d-strategy/commit/adfcb8ef6f724eea2ea73c4b2385a68e8b518796)。
+- **新 P1 `EML-P1-SEARCH-MIN-SIGNALS-NOT-PER-FOLD`**：`src/ml/search.py` 的 CLI/help 明确说 `--min-signals` 是“每个 fold 都必须达到”的支持下限，但 eligibility 实际只检查 pooled `oos_signals`。归档真实反例：`wide_logistic_37` 2408 总信号但四折为 `1902/101/321/84`；`wide_hgb_14` 为 `6023/1279/119/300`；两者仍被排在宽网格第2/3位。`wide_rf_32` 和 `wide_extratrees_26` 四折均真正清过250门槛。
+- **归档 H10 新稳健性重算**：RF pooled precision 20.84%，最差折 Wilson 95% 下界16.22%；`wide_extratrees_26` pooled 18.99%，但四折 precision 仅 18.80%–19.33%，最差折 Wilson 下界17.61%，折间 SD 仅0.246pp。它适合作为未来未曝光 H10 时间块的“稳健性控制”，不迁移成 H504 结论。
+- **H504 接口候选**：实现从 causal `lowzone.build_layers` 的 `recall_tier>=1` 直接生成 PIT candidate manifest 的候选，不读 label/entry/future 列、不在 candidate 阶段 cooldown；候选链为 `PIT layers -> candidate_manifest -> session-clock H504 oracle -> fold_support -> T0..T5`。
+- 沙箱候选实跑 `5 passed in 0.06s`；包含真实归档四配置的 ranking-guard 反例测试。候选 ZIP SHA256=`4fe45a463c7d8b0069b2f2c70015a26a8beb61b333bd7016cb23ab0f22b1b9a0`。这仍是软件/归档分析，真实市场 fit=0。
+- 用户本机三小时研究仍无新 start/execution receipt，继续为 `LOCAL_APPLY_PENDING / NOT_RUN`；下一次改变 H504 项目状态的证据必须是本机真实 candidate/outcome/fold-support/registry/checkpoint/full predictions/receipt。
+
+---
+
 ## 最新审计（2026-09-21 19:52 JST）：新提交审查＋守卫变异测试＋折聚类不确定性
 
 - 完整报告：[`2026-09-21_19-52-00_JST.md`](./2026-09-21_19-52-00_JST.md)。
