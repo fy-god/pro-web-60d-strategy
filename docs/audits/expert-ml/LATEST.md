@@ -1,5 +1,18 @@
 # 专家／ML线研究与审计索引
 
+## 2026-09-22 03:34 JST（h=2）独立回归 + 新报告核验：上轮 8 个未修项 **8/8 全部仍坏**；被审 v5 报告的「40 passed」为假；发布器 fail-open 三路径实证
+
+- 完整报告：[`2026-09-22_03-34-01_JST.md`](./2026-09-22_03-34-01_JST.md)。
+- `reviewed_source_sha` = `8287b33da26978f1d513b7880baf06a9103d2879`（实际 `git rev-parse` 读出）；`main_head_at_audit_start` = `8287b33da26978f1d513b7880baf06a9103d2879`（本地是其祖先，落后 2 个**纯文档**提交；`4a4910e..origin/main` 仅 4 个 docs 路径，**零源码改动**，故本轮所有源码结论在两者上等价）。
+- **回归：8/8 `CONFIRMED-STILL-BROKEN`，0 已修，0 未复现。** 关键现址：`run_fixup.py:180,183-184,256-259`（fetch 返回值被丢弃，`sync_code` 仅日志、无分支；不可达 origin → fetch **128** 而脚本**退出 0** 打印 `fix-up ok`；控制组 agent stub `exit 9` → 退出 1，证明退出码**只看 agent**）、`scheduled_report_audit.py:84-86,108,344,376`、`scheduled_report_audit.py:88-89`（**2121/2195** 个受跟踪文件对漂移不可见）、`reports/AUDIT_STATUS.md:11`（实际 2 路径漂移仍发布 `0 path(s) differ`，全文**无 commit SHA、无 dirty 标记**）、`labels.py:233,242`（97 天间隔对单帧保留 1/2、加填充股 2/2 ⇒ **frame-local**，标签更正）、`live_readiness.py:72,87`（全文无 `drop_duplicates`；本地输入 646,718 行 / 35 策略 / 55.5547% 重复）、`final_holdout.py:294-348`（producer 25 键 vs 受跟踪 27）、`search.py:410-433`（producer 15 键 vs 8/8/11；`ranked_unfiltered` 在 **0/15**）。
+- **根因一行之差（我亲自复核）**：发布器 `:108` `ok = code == 0 and not unstable` **不含 `changed`**，而 `:344` `needs_attention = code != 0 or bool(changed) or bool(unstable)` **含** ⇒ **漂移永远不能把已发布判决定性为红色**（文件 PASS 而控制台 ATTENTION）。三路径实证：fetch 失败 / 无诊断 / **零检查** 均发布 PASS。
+- **被审 v5 报告 `2026-09-22_01-57-29_JST.md`**：56 条可检验声明 `TRUE 23 / FALSE 2 / PARTIAL 4 / ABSENT-FROM-REPO 18 / UNVERIFIABLE 8 / CONTRADICTED 1`。**仓库状态声明为真**（`reviewed_tree_sha` 逐字节相符；`src/ml/research_h504/` 确不存在，96 处 `research_h504` 全在 `docs/`；`fixup_prompt.txt:27` `NO_NEW_REPORT`；`run_fixup.py:237` `timeout=5400`）。但 **§8.1「`40 passed in 31.85s`」为假** —— 本仓 `tests/` 仅 15 个 `def test_`，我在**真实工作树**与 **`origin/main` 完整解包副本**各跑一次均为 **`15 passed`，退出码 0**；**§7 前提被证伪**（全仓 `vir_`/`vp_`/`kdj_low` 非文档命中 **0/0/0**）；**§3–§7 全部符号与 §10 的 CLI 在本仓 0 命中**（仅存在于报告自身）。
+- **本仓自带审计「629 checks / 0 problems / PASS」数字为真且我复跑一致**（退出码 0；分节 8+327+162+7+1+84+33=622 + 7 census = 629）；检查器本体 **fail-closed**（注入问题 → 退出 1）；`SECTION_FLOORS`（合计 620）能防缩水但仅 2 条余量且与检查同文件；**头条数字仅内部一致性被验证**，`base_rate 2.90%` 无独立锚、`6,202`/`844` 从未从数据重算。
+- **中途变更防护有后缀/范围双限制**（`:72-73` 只哈希 `reports/**` 的 `.json`/`.csv`）：新增 `reports/*.md`、或 `README.md` 中途被改 → 均 PASS 无 `unstable` 段，而检查器断言恰硬依赖这些**范围外**文件。
+- **【必须披露】本轮我造成并已恢复一次工作树事故**：清点阶段我执行的命令块**第一行**误为 `git checkout origin/main -- .`（我的"不要这么做"说明被写成了其后的独立字符串），**覆盖了并发写者的 ` M scripts/register_fixup_task.ps1`** 并意外 stage 两个文档路径。已按上轮事故报告 `2026-09-20_19-47-00_JST.md:619-627` 记载的**同一不可达 blob `a2c6b85…`**（7145 B/173 行，`git log --all --find-object` 为空=从未提交）恢复，校验 LF 归一后**逐字节相同**、`git diff` 恰为 **+9/-1**、`git status` 与事故前逐字一致。**我第一版恢复脚本还误用"行数最长"启发式把一份 Markdown 报告写进了 `.ps1`，已立即改用谱系判定 + 防 Markdown 断言重做。** 残余不确定性：事故前未取该文件哈希，故"逐字节相同"是**推断**而非证明。子 agent B/C 均把此归因为"外部进程/兄弟 agent"，**该归因是错的，是我**。
+- 门禁：本仓**不存在** `docs/audits/validate_latest.py`（全历史亦无）⇒ **未运行、不声称 PASS**。
+- 本轮 `程序修复 = 0`；`任务定义变更 = 1`（沙箱数字必须标 `SANDBOX-ONLY` 且不得进入验收优先级）；`真实模型增益 = 0`；**没有新增实股结果**。
+
 ## 最新研究推进（2026-09-22 01:57 JST）：H504 executable candidate v5 —— candidate ledger 接入训练链，修三类“假可运行”证据风险
 
 - 完整报告：[`2026-09-22_01-57-29_JST.md`](./2026-09-22_01-57-29_JST.md)。
