@@ -1,5 +1,17 @@
 # 专家／ML线研究与审计索引
 
+## 最新源码落地后独立审计（2026-09-22 06:02 JST）：H504 链已入 main，但发现 3 个 P1 + 1 个 P2
+
+- 完整报告：[`2026-09-22_06-02-39_JST.md`](./2026-09-22_06-02-39_JST.md)。
+- 类型：`POST_INTEGRATION_SOURCE_AUDIT`；被审 HEAD `a8ae13ccf1c4a6a1baf82ad4e86087fbde83e4e4`，源码落地 commit `878cdeba5837a302004a8b3a656afee3d6a62b44`。
+- 源码落地是真实工程进展：`src/ml/research_h504/`、runner/prompt、测试已在 `main`；但用户本机三小时和新实股 H504 fit 仍为 `NOT_VERIFIED / 0`。
+- 新确认 `EML-P1-H504-OBSERVED-BAR-PROVENANCE-LOST`：`prepare_panel` reindex 后丢失原始 stock-session 是否真的存在 bar 的 provenance，labeler 后续会把真实 missing bar 混成 missing price。
+- 新确认 `EML-P1-H504-DEV-RESOLVED-SUPPORT-MISSING`：dev 只要求候选数 `>=50`，未要求可判定 `label_joint` 数量 `>=50`，极少 resolved 样本也可能返回 `COMPLETE_H504_DEV`。
+- 新确认 `EML-P1-H504-GLOBAL-FIT-BUDGET-UNENFORCED`：registry/runner 尚未代码级执行旧 48 次累计 fit 预算，失败/中断/重试的跨 session 计数仍靠 prompt 合同。
+- 新登记 `EML-P2-AUX-PARTIAL-EPOCH-RESUME-WEIGHTING`：epoch 中途超时会保存部分 epoch 模型，再从该 epoch 整体重跑，改变部分样本的暴露次数；paired attribution 应优先回滚到最后完整 epoch，或实现 batch cursor/sampler 精确恢复。
+- source runner 已是 `13200s`，但 tracked Windows XML 仍为 `PT2H30M`；实际注册任务值与真实三小时 receipt 本轮仍未读取，不能说三小时已经跑过。
+- 下一本地优先顺序：source-bar provenance → resolved-aware fold → 48-fit budget → 实际 Windows task 核验 → 真实 candidates/labels/fold → 合法 H504 T0，若主任务阻塞则同 session 跑 `AUX_REAL_HISTORY` base-vs-plus。
+
 ## 最新源码落地：研究代码已写入 main，不再只有候选ZIP
 
 - 用户最新明确授权研究源码、测试和本地执行入口写入GitHub。
