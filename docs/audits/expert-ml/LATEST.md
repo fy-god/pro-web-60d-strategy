@@ -1,6 +1,23 @@
-# 专家／ML最新研究与审计索引
+# 专家／ML线研究与审计索引
 
-## 最新研究推进（2026-09-21 18:03 JST）：H10折支持稳定性＋holdout产物契约检查
+## 最新审计（2026-09-21 19:52 JST）：新提交审查＋守卫变异测试＋折聚类不确定性
+
+- 完整报告：[`2026-09-21_19-52-00_JST.md`](./2026-09-21_19-52-00_JST.md)。
+- 类型：`ARCHIVED_REAL_MARKET_REEVAL` ＋ `PROVENANCE_AND_RECONCILIATION`；本轮 `real_market_fit_count=0`，**不是**新的实股成绩，也**未重训**。
+- 被审新提交：`8b3034d77c418c85919170f7074e909e8540f187`、`92a4d17b7ec691692968f6adde97e14083349848`（=`origin/main`，`ls-remote` 回读一致）。前一份独立审计绑定 `c56f89865d777f525118112bd16ea753de44efc5`。
+- 这两个提交是**纯文档提交**：`git diff --name-only c56f898..origin/main` 只有 `docs/audits/expert-ml/**` 两个文件；`src/ scripts/ tests/ reports/ configs/ .github/` 变更数**全为 0**（**80 个提交 / 33 份报告**未触及产品源码）。
+- **核心纠正「缺 4 个字段而非 3 个」经我 AST 独立复算为真**：producer 字面量 **25** 键 / tracked JSON **27** 键 / 缺 `date_clustered_method`、`date_clustered_95_block1`、`date_clustered_95_signal_dates_only`、`holdout_calendar_sessions`。口径提示：`4` 指**顶层初始字面量**键；排除 producer 自标 `<- old definition` 的 `date_clustered_95_signal_dates_only` 则为 3 —— 报告未声明口径。
+- 我实跑仓库自带审计：`629 checks run, 0 problem(s)`（exit 0），**漂移存在而审计全绿** —— 盲区确认（`TOP_LEVEL_FIELDS` 不含那 4 键；`ARTIFACT_SHAPES=15` 只是最小键数下限）。
+- **发布物陈旧区间仍成立**：tracked `date_clustered_95` 宽 `0.0734944` vs 当前 `block=5` 定义宽 `0.1229692` ⇒ **窄 67.3179%**；tracked 值恰等于 `block1` 变体。陈旧窄区间出现在 `README.md`、`TARGET_70PCT.md`、`docs/REVIEW_RESPONSE.md`。
+- **我实现的守卫已过变异测试**（被审报告只「提议」）：真实陈旧 JSON → **FAIL（抓住）**；补齐后 → **PASS**；仅多出无关键 → PASS。同时指出其措辞在 **`n==0`** 路径会**误判正确输出**，必需集必须**只取字面量键**。
+- **我补上被审报告缺失的区间与稳健性检验**（纯归档 JSON，秒级）：按折聚类的 delete-one-fold jackknife 诚实区间比朴素区间宽 **4.81×–37.35×**（`fam_rf_5` `[14.55, 27.13]%`；三条 HGB 下界**跌破 0**）；**留一折重算，丢第 0 折冠军即由 `fam_rf_5` 变为 `fam_hgb_0`** ⇒ 「RF 优势不是小折抬高」需加限定：它对**丢掉大折并不稳健**。
+- **`LATEST.md` 重写静默丢弃 11 条历史报告索引**（`26+/78-`，89→37 行），另丢 24 个 SHA 令牌与若干开放项陈述；**11 个 `.md` 文件本身未删除**，且有 `LATEST.md@c56f898` permalink 缓解（我验证该 permalink 可解析）。被审报告正文未提及此点。
+- **`3 passed` 与两个候选脚本不在仓库**：`audit_holdout_contract.py` / `analyze_h10_stability.py` 在任何 164 个可达提交中**从未被添加**，仅出现在两份 `.md` 正文里；本仓测试实为 **`15 passed in 5.33s`（exit 0，整仓 collect 15 个）**。作者已明确标注「沙箱」，故判定 **未复现（附件不在仓库）**，**不是造假**，但**不得当作项目证据引用**。
+- `docs/audits/validate_latest.py` 在本仓库**不存在** ⇒ 无法运行，不编造通过。
+- 子 agent：A/B/D 已返回并逐条复核采纳（**无一条被推翻**）；**C 未完成、我在推送后停止、无任何输出，不计为证据**。B 的运行在冻结副本内产生了 **gitignored** 文件（`data/panel_daily.parquet` 等），我已核实并**删除恢复纯净**；外层仓库未被触碰。
+- **更正上一份记录**：`EML-P2-TEST-KDJ-NESTED` 被 15:48 标为「已修复」是**错的** —— `tests/test_engine.py:306` 的 KDJ 断言体**嵌套在** `test_wilson_upper_bound_is_not_a_constant`（L268–319）内部，`test_kdj_continuous_across_year_boundary` **不是 `def`**，pytest 中 KDJ 仅 1 个 id；**仍未修**。
+
+## 上一轮（保留）：2026-09-21 18:03 JST — H10 折支持稳定性＋holdout 产物契约检查
 
 - 完整报告：[`2026-09-21_18-03-47_JST.md`](./2026-09-21_18-03-47_JST.md)。
 - 类型：`ARCHIVED_REAL_RESULT_REANALYSIS_AND_AUDIT_CANDIDATE`；本轮 `real_market_fit_count=0`，不是H504新成绩。
