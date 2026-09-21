@@ -1,5 +1,18 @@
 # 专家／ML线研究与审计索引
 
+## 最新研究推进（2026-09-22 01:57 JST）：H504 executable candidate v5 —— candidate ledger 接入训练链，修三类“假可运行”证据风险
+
+- 完整报告：[`2026-09-22_01-57-29_JST.md`](./2026-09-22_01-57-29_JST.md)。
+- 类型：`CANDIDATE_IMPLEMENTATION_AND_EXECUTION_PLAN_UPDATE`；`REAL_MARKET_NEW_FIT=0`，不是新的H504实股成绩。
+- 被审源码：`9bb1011d46a23718925bcab36f42d3494e71e060`；tree：`20958632f92e2dee6ad03dc9190031a51f74d2a0`；Open PR=0。
+- 当前产品树仍没有 `src/ml/research_h504/`；`fixup_prompt.txt` 仍会对已处理报告直接 `NO_NEW_REPORT`，`run_fixup.py` 仍为5400秒硬超时，因此用户本机三小时继续是 `LOCAL_APPLY_PENDING / NOT_VERIFIED`。
+- 沙箱候选v5把 causal low-zone `recall_tier>=1` candidate manifest 真正接入 `--stage all`；actual candidate-aware `fold_support.json` 与 calendar-only structural reference 分开，不再用“日历够长”冒充“候选支持够”。
+- 集成执行抓出并修复三类证据风险：① calendar structural split可READY而实际候选仍不足；② 默认HGB `min_samples_leaf=300` 时旧100条train门槛连一次二叉切分都不可能，现门槛为 `max(100,2*min_samples_leaf)`；③HGB signature遗漏超参会复用旧完成实验，现绑定完整模型配置并显式记录 `REUSED_COMPLETE`。
+- H504与AUX registry/result新增 `task_scope=H504_JOINT/AUX_HISTORY`；T0 snapshot baseline排除 `vir*`、`vp_*`、`kdj_low_*` 研究增量，后续T3−T0才可干净归因。
+- 候选沙箱实跑 `40 passed in 31.85s`；另跑完整1180-session/12-stock/2664-candidate合成链，candidate→H504 label→actual fold→T0 fit→156条dev prediction→receipt贯通。该集成显式使用测试用 `min_samples_leaf=20`，receipt `real_train_seconds=0`、`target_met=false`，只算软件证据，不算市场成绩。
+- 对话候选包 `eml_auto9_candidate_v5.zip`：SHA256 `2f0325a39d2ac552426d6ea388782f47c4b645dab053e0d8e0703b43a9196960`；v4→v5 patch SHA256 `da2fd6be8158dc5369d6743d4dd17cded6336d671dbaa69291f4b0a556db6cb0`。
+- 下一次真正改变项目状态的证据仍必须来自用户本机：`local_start_receipt`、真实 `candidate_manifest/fold_support`、`REAL_MARKET` 或 `AUX_REAL_HISTORY` registry/checkpoint、完整predictions及 `execution_receipt`。
+
 ## 最新补充审计（2026-09-21 23:44 JST）：11/11 遗留项全部仍坏；并更正我自己的口径 —— 去重对净值的方向取决于统计量
 
 - 完整报告：[`2026-09-21_23-44-53_JST.md`](./2026-09-21_23-44-53_JST.md)。
@@ -33,7 +46,7 @@
 - 引用缺陷（子 agent A）：被审报告引 `lowzone.py#L250-L280`，该文件仅 263 行；真实 V00 `min_tier=1` 在 **`:206-212`**。
 - **未复现**：被审报告 §4 的 6 个沙箱候选文件与 2 个 SHA256 摘要——`git ls-files --error-unmatch` 逐一 `exit 1`，磁盘上也不存在 ⇒ 其 `5 passed in 0.06s` **不可作为项目证据**（作者已自标"沙箱"，**不是造假**）。
 - 本仓库**不存在** `docs/audits/validate_latest.py`（`Test-Path` False）⇒ 未运行，**不编造通过**。
-- **未改任何源码**；补丁/测试/重建**全部在 `%TEMP%` 副本**内。**未触碰** `scripts/register_fixup_task.ps1` 与 `.gitattributes`（他人未提交改动）。
+- **未改任何源码**；补丁/测试/重建**全部在 `%TEMP%` 副本内。**未触碰** `scripts/register_fixup_task.ps1` 与 `.gitattributes`（他人未提交改动）。
 
 ## 最新研究推进（2026-09-21 22:03 JST）：搜索逐折支持门槛错误＋PIT candidate ledger 候选
 
