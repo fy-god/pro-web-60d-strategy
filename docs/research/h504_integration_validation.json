@@ -1,0 +1,59 @@
+{
+  "kind": "SOURCE_INTEGRATION_VALIDATION",
+  "baseline_sha": "8287b33da26978f1d513b7880baf06a9103d2879",
+  "input_candidate_sha256": "2f0325a39d2ac552426d6ea388782f47c4b645dab053e0d8e0703b43a9196960",
+  "module_tree_sha": "60086cf074a73c6956088c81aab5aa7ab3261b95",
+  "tests_tree_sha": "7b5d79c3f0f8872f11726514f54bf286ab990a72",
+  "command": "OPENBLAS_NUM_THREADS=2 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=. python -m pytest -q tests/research_h504 --disable-warnings",
+  "test_result": {
+    "passed": 50,
+    "failed": 0,
+    "elapsed_seconds": 12.66,
+    "exit_code": 0,
+    "scope": "isolated research source and launcher mocks; synthetic training fixtures"
+  },
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "versions": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.8.0",
+    "torch": "2.10.0+cpu",
+    "pytest": "9.0.2"
+  },
+  "full_existing_repository_tests": "NOT_RUN: repository clone failed DNS; only isolated integration tests executed",
+  "real_market_fit_count": 0,
+  "windows_task_applied": false,
+  "user_pc_started": false,
+  "three_hour_runtime": "NOT_RUN",
+  "earlier_attempts": "Original candidate timed out at 45s and 120s; array oracle optimization followed, then tests passed.",
+  "limits": [
+    "Initial T0 HGB and AUX TCN only; T1-T5/MLP/meta/calibration/publication are not all implemented.",
+    "Registry does not replace a global fit-budget controller; local executor must enforce remaining 48-fit cap.",
+    "Checkpoint resume is not claimed bit-exact for interruption inside an epoch.",
+    "Registered Windows timeout unchanged; verify before three-hour start.",
+    "Test fixtures do not validate PIT market universe, adjustment provenance or investment performance."
+  ],
+  "files": {
+    "scripts/run_fixup.py": "4dd4bd9285d9e5a4205ba1e398a0d2924ebe79d5f04cbb414314e98c6863940d",
+    "scripts/fixup_prompt.txt": "9ae66c402f8fe5161de7b58d72d67bb2b52ffd4a67594799c45d48cac1cd037b",
+    "docs/research/h504_integration_pytest.txt": "ed03a5933b3424304ffe281df8395770ddea9790fb1ceee103a0661932b7d39f",
+    "src/ml/research_h504/train_h504.py": "54fb8184e41c61282a4652fc8c2c713e0ce5d4bf5dcbafb576145cd5ba68fc8e",
+    "src/ml/research_h504/family_ecdf.py": "f2c7e6a3f089abf98dadae17b8e937669e58dfaf2476f909da3b04ae1ab52bc8",
+    "src/ml/research_h504/feature_spec.py": "45677f8597efe35221e03f387d3f1ee8d0b0c395b4c2c908eb69edb4d2c8531b",
+    "src/ml/research_h504/snapshot_features.py": "757fd6b1779e0e9de28e231df264232f672fc0f6b1ec3e70448c8c3215f90c68",
+    "src/ml/research_h504/data_io.py": "9197c12baa5c1038d185bdb8ccc1f1407be32c2512a9c17f15f221b930f4130d",
+    "src/ml/research_h504/registry.py": "8fb2ca7644c89605f3e81bc8994865aa8952cc5b1720068b71a0420006771436",
+    "src/ml/research_h504/factors.py": "30948bb803f93b8dc084849e678dccd797a09a3f3e59b0180ef5bdbc576d53a5",
+    "src/ml/research_h504/__init__.py": "40de3849a029c2c9369e3ffbeeb31a979b1e35e9d695184df0cf2d926a98ef45",
+    "src/ml/research_h504/aux_tcn.py": "f4afb3328105d48d9c03cc3b5e507031fab580e43914c9354f1c76646349f548",
+    "src/ml/research_h504/fold_support.py": "5e093187abe86c8c48fbfb10c2ad5d7830fa9dbc22901074f9f55cecf4347e8f",
+    "src/ml/research_h504/receipts.py": "8e4a37af50e818374673b07963ef9e67353ea4659dd3667d9e8c9e10b0d9dd6b",
+    "src/ml/research_h504/run.py": "e7cf461b1e807efa761ab1fbdffeffa5a817d03c99402c2113e9e23afdd0b93a",
+    "src/ml/research_h504/diagnostics.py": "182eb5760c9a8c7f54c84663cc12b5ef024ec64f32f794bbc91f3084a6484792",
+    "src/ml/research_h504/candidate_manifest.py": "d7f666485eb0d80f25328d10fc9e57ce710b057bcaa4f7493094a1ad09260ede",
+    "src/ml/research_h504/session_clock.py": "3179c1d6b449ca8ef997b78e7f43f7442ca362aee05ae31a00708b97edf865c9",
+    "src/ml/research_h504/task_spec.py": "96d29b199cd932729dd317bb30ad3c4fe0aac8726471ddbf8371903f68d8c0ff",
+    "tests/research_h504/test_candidate.py": "092f3f3a1bba50bc48f18cd08da7a03c86edb344134c723e563828c65a23eb5a",
+    "tests/research_h504/test_github_delivery.py": "be8ede91024e91262760807896fa1742042f4efb59fc5ada210c9025d5d13ae4"
+  }
+}
