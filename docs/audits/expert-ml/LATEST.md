@@ -1,5 +1,15 @@
 # 专家／ML线研究与审计索引
 
+## 最新审计（2026-09-23 01:57 JST）：三小时单实例锁可被 direct runner 绕过；H504 价格基准仍只有文档约定、没有 REAL_MARKET 机器门禁
+
+- 完整报告：[`2026-09-23_01-57-44_JST.md`](./2026-09-23_01-57-44_JST.md)。
+- 被审 `main` 起点：`2032a26a398282f7209c5512d978303b434c4c60`；产品源码仍为 `8163db84e10f52057aab1216e969f2ee121ad54f`，`8163db84..2032a26a` 之间只有审计 docs 变化，Open PR=0。
+- 新增 P1 `EML-P1-H504-SINGLE-INSTANCE-LOCK-NOT-SHARED-WITH-DIRECT-RUNNER`：`scripts/run_fixup.py` 只在 scheduler/agent 外层拿 `logs/fixup/agent.lock`；`src/ml/research_h504/run.py` 的 `all / h504-hgb / aux-tcn` 不拿同一把跨进程锁。Windows `MultipleInstancesPolicy=IgnoreNew` 只能挡第二个计划任务实例，挡不住手工/direct CLI；同 `--out` 可竞态 registry/checkpoint/receipt，不同 `--out` 仍可双重消耗尚未代码强制的48-fit预算。
+- 新增 P1（认证阻塞）`EML-P1-H504-PRICE-BASIS-CONTRACT-ADVISORY-ONLY`：`H504TaskSpec.price_basis='same_basis_required'`，但 `prepare_panel()`、标签函数、CLI 与 panel manifest 都没有 `raw/qfq/hfq/total_return` 的机器可验证 basis。`RESEARCH_QUICKSTART.md` 已承认“OHLC必须同一价格基准、读文件不自动认证”，但 `REAL_MARKET` 缺 basis 仍不会 fail closed；因此首个真实 fit 前需要 `BLOCKED_PRICE_BASIS`/mixed-basis guard，并把 basis 绑定数据指纹、signature、receipt 与模型/预测 manifest。
+- 隔离候选 `eml_auto12_runtime_basis_guard.zip`：共享锁 + price-basis fail-closed contract，**5 passed in 0.07s**；ZIP SHA256=`5df70880499bac7bec3e4892b46f4ad57cf392b80c26eff41217bd5bba7642ae`。软件测试不计市场 fit。
+- 三小时状态严格分开：源码 runner=`13200s`；tracked XML/旧注册脚本仍 `PT2H30M`，本机实际 registered timeout 未读取；`LOCAL_RUNTIME_APPLIED=UNKNOWN / LOCAL_APPLY_PENDING`，`LOCAL_3H_COMPLETED=NOT_VERIFIED`。
+- 本轮 `real_market_fit_count += 0`；无新 H504/AUX 实股成绩。下一本地优先级：shared lock → price-basis gate → 已开放 provenance/artifact/resolved-dev/48-fit 等门禁及变异必红测试 → 真实 candidate/label/fold；合法则 H504 主线，否则同 session 执行 `AUX_REAL_HISTORY`。
+
 ## 最新审计（2026-09-23 00:00 JST）：门禁机制已被上游报过，但**没人量过测试套件能否发现它**——实测 5 个机制中 **4 个删除后套件仍 65 passed**
 
 - 完整报告：[`2026-09-23_00-00-43_JST.md`](./2026-09-23_00-00-43_JST.md)。
@@ -82,6 +92,7 @@
 - **新增 `EML-P1-H504-DEDUPE-FAILCLOSED-UNREACHABLE`**：`session_clock.py:54-56` 承诺 signal 日期缺席即 fail closed，但 `--calendar` 缺省时 `cal` = panel 并集 ⇒ `unknown` **恒为空**，该分支**永不可达**。实测 `--stage dedupe` 无日历 → **rc=0 无报错**。
 - **新增索引缺陷 `EML-DOC-STALE-P1-OBSERVED-BAR-IN-LATEST`**：同一 `LATEST.md` 内 `:11`/`:53` 写 P2、`:66` 仍写 `P1-H504-OBSERVED-BAR-PROVENANCE-LOST`，自相矛盾；本次已把 `:66` 修为 P2（降级本身早在 `2026-09-22_07-41-01_JST.md:25/:85` 有记录）。
 - **归属更正（重要）**：`EML-P1-H504-SIGNATURE-BLIND-TO-FEATURE-SOURCE` 与 `EML-P1-H504-REUSE-TRUSTS-REGISTRY-WITHOUT-ARTIFACT-VERIFICATION` **是上游既有发现**（分别见 07:41 与 10:12 报告，11:56 报告已端到端复现），**本轮不计作新发现**，仅记录独立复算的加强数字：T0 基线 **82/82 = 100%** 列来自未被 `pipeline_hash` 覆盖的文件；保列名变异（atr 14→13）后矩阵 sha 与列 sha 均变而**签名逐字节不变**。
+  - **更正**：一处子 agent 报告把该导入记作 `snapshot_features.py:31`；实测 `:31` 是 `missing = req - set(panel.columns)`，正确为 **`:78`**。
 - 三小时链：runner `13200`（`run_fixup.py:23`）；tracked XML 仍 `PT2H30M`（**UTF-16LE，普通 grep 会漏**）；`:133` 的 `registered_task_timeout` 是硬编码 `NOT_CHECKED_BY_THIS_SCRIPT`，**非测量值** ⇒ 真实注册值不可由仓库证明，`LOCAL_RUNTIME_APPLIED=UNKNOWN`。
 - 合同措辞更正：v5 合同字面只说「H504 缺合法折时做独立 AUX 历史表征」，**未**要求 AUX 让位给 T1–T5/MLP/TCN 优先队列，后者是推论而非引文。
 - 执行：全仓 `python -m pytest -q -o addopts= -p no:cacheprovider` 从仓库根 **65 passed / exit 0**（22.55s；`tests/research_h504` 50 + `tests/test_engine.py` 15）。
