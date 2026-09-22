@@ -1,5 +1,17 @@
 # 专家／ML线研究与审计索引
 
+## 本轮复核（2026-09-22 20:30 JST）：peer 的股票代码键 P1 降级为 P2，并实测一个特征连接 fail-open
+
+- 完整报告：[`2026-09-22_20-30-00_JST.md`](./2026-09-22_20-30-00_JST.md)。
+- 被审源码仍为 `8163db84e10f52057aab1216e969f2ee121ad54f`；本轮开始时 `main=84528cb98a9634a801747460370b085c670c75ec`。`git diff 8163db84..origin/main -- src tests` = **空**，故产品源码未变，既有开放项不宣称修复。
+- **降级**：`EML-P1-H504-STOCK-CODE-KEY-NORMALIZATION-MISMATCH` → **P2**。机制经真实 CLI 端到端复现（未补零 panel + 补零 candidate ⇒ `no_entry`，改回补零 ⇒ `success/entry_open=10.0`），但在仓库自己的数据路径上**可达性 0**：`data_pipeline.py:46-53` 补零，实测 `panel_daily.parquet` / `lowzone_layers.parquet` / `features_cache` / `labelled_cache` / `shard_00` 共 5 个真实产物 `code` 全为 6 位、非 6 位计数 **0**。
+- **更正 peer 三处**：① 浮点子声明不成立 —— `pd.Series([1.0]).astype(str).str.zfill(6) = '0001.0'`，不是 `'000001'`；② 方向反了 —— `candidate_manifest.py:39` 是**被测试锁定**的合规侧（`test_candidate.py:415-428`），另 5 处也补零，未补零的是 `data_io.py:25` 与 `task_spec.py:57,65`；③ §3.3「别名冲突」**未复现** —— 实测不碰撞也不合并，而是**键空间分裂**（两只不同股票）。
+- **新增 P2 `EML-P2-H504-FEATURE-JOIN-NO-COVERAGE-GATE-001`**：`train_h504.py:34` 的 `merge(how='left')` 无 `indicator=`、无匹配率断言，`:13-15` 的 `_safe_impute` 把全 NaN 列变成**常量 0.0**。实测特征匹配率 **0.0000** 时仍报 `COMPLETE_H504_DEV`，`logloss=0.6931471805599454`（= ln2，差 1.1e-16）、`brier=0.25`、`AP=0.5`，与「特征为纯噪声」臂（0.7000778416543246）**状态相同**，且 `metrics` 中**无任何** match/join/coverage 字段。
+- **诚实降级**：该特征连接缺口在 CLI 内**可达性 0** —— `run.py:111` 的特征与 `run.py:93` 的标签同源同一个 `panel`，CLI 无 `--features` 输入；实测「标签已解析但特征未匹配」的行数 = **0**，两谓词结构重合。故记待验证风险，非已确认错误。
+- 训练阶段会 **fail closed**：键失配时返回 `BLOCKED_PROTOCOL_H504`（`resolved=0`），不会拟合出坏模型。
+- 本轮实测基线（纯净树 `84528cb98a96`）：全仓 **65 passed / exit 0**（32.48s）。本仓库**无** `docs/audits/validate_latest.py`，故手册第 5 步门禁在本线**不适用**，本轮不声称 gate PASS。
+- `real_market_fit_count` 增量 **0**；本轮无任何实股收益/命中率数字；未启动训练，未改源码。
+
 ## 最新补充审计（2026-09-22 18:13 JST）：candidate/panel 股票代码键不一致可把有效入场静默改成 `no_entry`
 
 - 完整报告：[`2026-09-22_18-13-20_JST.md`](./2026-09-22_18-13-20_JST.md)。
