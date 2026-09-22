@@ -1,6 +1,19 @@
 # 专家／ML线研究与审计索引
 
-## 最新协议审计（2026-09-22 15:40 JST）：上游两条 P1 由静态断言升级为实测反例，并新证 3 个未登记 fail-open 面
+## 最新补充审计（2026-09-22 18:13 JST）：candidate/panel 股票代码键不一致可把有效入场静默改成 `no_entry`
+
+- 完整报告：[`2026-09-22_18-13-20_JST.md`](./2026-09-22_18-13-20_JST.md)。
+- 被审源码仍为 `8163db84e10f52057aab1216e969f2ee121ad54f`；本轮开始时 `main=6e11203e72f055bf223c4336b28b5cdf48606c61`，相对被审源码仍只有 docs-only 审计变化，Open PR=0。
+- **新增 P1 `EML-P1-H504-STOCK-CODE-KEY-NORMALIZATION-MISMATCH`**：`candidate_manifest.py` 对 `code` 做 `astype(str).str.zfill(6)`，而 `data_io.prepare_panel()` 与 `task_spec.label_h504_candidates()` 只做 `astype(str)`。因此 `1`/`"1"`/数值型 `1.0` 可在 candidate 侧变 `000001`、panel 侧仍为 `1`。
+- **本轮实际反例**：存在合法 t+1 `Open=11.0` 的股票，panel key=`1`、candidate key=`000001`；当前 labeler 查不到 `arrays['000001']`，实际输出 `entry_open=NaN / outcome_class=no_entry / label_joint=NaN`。统一 key helper 后同一反例恢复 `entry_open=11.0`。
+- 影响不只 Parquet：CSV loader 虽强制 string，但不会把 `"1"` 自动补成 `"000001"`；Parquet 更可直接保留 numeric dtype。大批 unpadded/numeric code 可因此批量伪造 `no_entry`，污染 outcome ledger、resolved/fold 支持、自然分母与真实 fit。
+- 现有 H504 测试公共 `_panel()` 默认就是 `code="000001"`，所以此前 `65 passed` 没覆盖这条输入表示路径；本轮不把那 65 项冒充成本轮执行成绩。
+- 沙箱候选 guard：当前语义反例 + 统一 canonicalizer；附加测试 **4 passed in 0.05s**。候选 ZIP SHA256=`f6827a23bb1fcbbe827f9582d65cb4db6d49d4f736569bdd2872a0f249f8500c`。这些是软件/合成数据证据，不是市场成绩。
+- 修复顺序提升：真实 H504 前先统一 panel/layers/candidate/feature-source 的实体键，并在 canonicalize 后做 duplicate/alias collision guard；否则后续 label/fold/fit 指标没有研究含义。
+- 三小时链仍无本机回执：source runner `13200s`，tracked XML 仍 `PT2H30M`，真实 registered timeout 未读；`LOCAL_RUNTIME_APPLIED=UNKNOWN / LOCAL_3H_COMPLETED=NOT_VERIFIED`。
+- `real_market_fit_count=0`；无新增 H504 成功率；旧48-fit余额因没有本机台账回传，本轮不猜数字。
+
+## 前次协议审计（2026-09-22 15:40 JST）：上游两条 P1 由静态断言升级为实测反例，并新证 3 个未登记 fail-open 面
 
 - 完整报告：[`2026-09-22_15-40-19_JST.md`](./2026-09-22_15-40-19_JST.md)。
 - 被审源码 `8163db84e10f52057aab1216e969f2ee121ad54f`；审计起点 `origin/main` = `74857e8f250adf2f40d79dda23245c4cdfce918b`。**待审仅 2 个 docs-only 提交**（`05225aa` 报告、`74857e8` 索引），`git diff 8163db84..74857e8f -- src tests` = **空**，故被审源码即当前产品代码。
