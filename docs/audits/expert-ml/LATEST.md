@@ -1,5 +1,16 @@
 # 专家／ML线研究与审计索引
 
+## 最新补充审计（2026-09-22 10:12 JST）：registry 完成态复用缺少底层产物完整性验证
+
+- 完整报告：[`2026-09-22_10-12-36_JST.md`](./2026-09-22_10-12-36_JST.md)。
+- 报告首次发布提交：`a33b9d2a624178d510810c565ab549af2e6340e2`；被审 HEAD：`95dca888e95beaf2da04f5b09af424f6e2bc3995`，tree：`54926a21a3dd4b31df55593d6a762c1bb6cb0d6b`。
+- **新增 P1 `EML-P1-H504-REUSE-TRUSTS-REGISTRY-WITHOUT-ARTIFACT-VERIFICATION`**：`Registry.latest_complete()` 只检查 signature 与 `COMPLETE*` status；`run.py` 命中后直接 `REUSED_COMPLETE` 跳过 H504/AUX 训练，不验证模型、完整开发预测、checkpoint 或训练日志是否存在，更不校验 SHA-256。
+- `train_h504.py` 虽写出 `model.pkl / dev_predictions.csv / metrics.json`，但完成结果没有把这些关键文件的 path+sha256 写入 registry。因此 registry 行可以在底层证据已删除/损坏后继续“证明完成”。
+- 沙箱 synthetic guard 复现：缺 model/prediction 时当前逻辑仍命中 complete；候选 guard 拒绝；完整文件+hash 允许复用；完成后篡改 prediction 则按 hash mismatch 拒绝。3/3 场景符合预期。候选 ZIP SHA256=`4c3343b1d67e400a980085d34ab069cfba9a0c891bae0c237322a9c3f06ea690`。
+- 本轮仍 `real_market_fit_count=0`；没有新的本机 start/execution receipt，故单次连续三小时为 `NOT_VERIFIED`。源码 runner 已是13200秒，但 tracked Windows XML 仍是 `PT2H30M` 模板，不能用模板推断机器注册值。
+- 相对上次被审基线没有产品研究源码变化；signature 外部特征依赖、resolved dev 支持、全局48-fit门、AUX部分epoch恢复等旧开放项继续开放，本轮不重复计作新增。
+- 下一本地优先级：先把 `COMPLETE_*` 改成 artifact-manifest + hash 的 fail-closed 复用，再做全局fit预算与resolved-aware支持；随后真实 candidate/label/fold，合法则T0/T3，否则同session继续AUX_REAL_HISTORY。
+
 ## 最新独立审计（2026-09-22 07:41 JST）：H504 研究管线复核，新增 2 条未被发现的缺陷，并更正 1 条严重度
 
 - 完整报告：[`2026-09-22_07-41-01_JST.md`](./2026-09-22_07-41-01_JST.md)。
