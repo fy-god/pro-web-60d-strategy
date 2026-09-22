@@ -1,5 +1,17 @@
 # 专家／ML线研究与审计索引
 
+## 最新协议审计（2026-09-22 13:57 JST）：真实日历守卫默认 fail-open，AUX fallback 在 H504 READY 时仍无条件消耗拟合槽位
+
+- 完整报告：[`2026-09-22_13-57-18_JST.md`](./2026-09-22_13-57-18_JST.md)。
+- 被审源码 `8163db84e10f52057aab1216e969f2ee121ad54f`，tree `974f7b4e4ef10f586b53316260f79629b37e010b`；Open PR=0。相对上一产品源码点 `89b722d7...` 仍只有 docs 变化，故此前开放缺陷没有被源码修复。
+- **新增 P1 `EML-P1-H504-REAL-CALENDAR-GUARD-SELF-REPORT-FAILOPEN`**：`--evidence-type` 默认 `UNSPECIFIED`，而缺 `--calendar` 的阻断只对 `REAL_MARKET/AUX_REAL_HISTORY` 生效。漏写 evidence type 时，`prepare_panel(..., None)` 会使用 panel 日期并集作为 market calendar；真实数据若存在全市场缺档/子宇宙日期缺口，`t+1/t+504/deadline/fold` 可按错误 session clock 计算。相同误配置还使 receipt 的 `real_train_seconds=0`。
+- 仓库现有测试已经证明该 fail-open 路径可执行：`test_all_stage_runs_diagnostics_and_blocks_h504_without_candidate_manifest` 在无 calendar、无 evidence type 下要求 exit 0；synthetic 完整链也可在无独立 calendar 下走到 `COMPLETE_H504_DEV`。修复应把 `UNSPECIFIED` 对研究阶段改为 fail-closed，并显式记录 `calendar_source/path/hash`。
+- **新增 P1 `EML-P1-H504-AUX-FALLBACK-RUNS-WHEN-PRIMARY-READY`**：`--stage all` 在 H504 T0 执行/复用后，只检查 `not args.skip_neural` 就无条件进入 AUX base/plus × seeds。默认最多 6 个 AUX fit；即使 H504 已 `COMPLETE_H504_DEV`，首次 session 仍可形成 1 个 T0 + 6 个 AUX 拟合。v5 合同把 AUX 定义为 H504 无合法 fold 时的 fallback，因此当前默认队列会在主任务 READY 时抢占有限 fit/wall 预算。
+- 最小队列修复：默认仅在 `PRIMARY_BLOCKED` 时进入 AUX；主任务 READY/COMPLETE 时继续预登记的 H504 T1–T5/MLP/TCN，未实现就明确 `NEEDS_IMPLEMENTATION`，不能用 AUX 自动填满。若确需同行 AUX，必须显式预登记并进入全局 fit 台账。
+- 旧开放项继续开放：完成态 artifact 未校验、resolved-dev 支持缺门、feature-source signature 不完整、48-fit 全局预算未强制、AUX 部分 epoch 重放、全 NaN dev 静默常数化。observed-bar provenance 维持 07:41 审计更正后的 P2。
+- 执行链：源码 runner 已 `13200s`；tracked Windows XML 仍 `PT2H30M`，真实 registered task 未回读。本轮没有本机 receipt / REAL_MARKET registry / checkpoint / full predictions，所以 `LOCAL_RUNTIME_APPLIED=UNKNOWN`、`LOCAL_3H_COMPLETED=NOT_VERIFIED`。
+- `real_market_fit_count=0`，无新增 H504 成功率。本轮是实时源码协议审计，不把软件结论换算成市场增益。
+
 ## 最新独立审计（2026-09-22 11:56 JST）：完成态复用无产物校验端到端复现，并新增守卫不对称证据
 
 - 完整报告：[`2026-09-22_11-56-38_JST.md`](./2026-09-22_11-56-38_JST.md)。
