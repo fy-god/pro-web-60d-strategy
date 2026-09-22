@@ -1,5 +1,26 @@
 # 专家／ML线研究与审计索引
 
+## 最新独立审计（2026-09-22 11:56 JST）：完成态复用无产物校验端到端复现，并新增守卫不对称证据
+
+- 完整报告：[`2026-09-22_11-56-38_JST.md`](./2026-09-22_11-56-38_JST.md)。
+- 被审源码 `reviewed_source_sha`: `89b722d7ab88f6a5fc5f381a14c742a1f53d44cc`；上一被审基线 `2b0232f8acb712569aeb5ce68f7291ab3fc7a5dc`。
+- 该区间**产品研究源码零变化**：只有 2 个 docs 提交（`a33b9d2a…` 新增 10:12 报告、`89b722d7…` 更新索引）。因此本轮**没有**任何「已修复」结论。
+- **维持 P1 `EML-P1-H504-REUSE-TRUSTS-REGISTRY-WITHOUT-ARTIFACT-VERIFICATION`，并用真实入口端到端复现**：真实 `run.py --stage all` + `run_h504_hgb` 调用计数，run1 调用 1 次报 `COMPLETE_H504_DEV`；删除 `h504_T0/model.pkl` 与 `dev_predictions.csv` 后 run2 调用 **0** 次、状态 `REUSED_COMPLETE`、无 stale 标记。截断、同尺寸篡改、零字节同样命中。`registry.py:19-23` 全文 25 行无任何 path/存在性/sha256 校验。
+- **本轮精确化（此前未写）**：仓库**已有**所需哈希机制 —— `receipts.py:15 sha256_file()`、`:33 hash_tree()`，并在 `:184` 写入 `execution_receipt.json`。缺陷不是「没有哈希」，而是 `latest_complete` 从不读它、`finalize()` 每轮**覆盖**该 receipt 销毁旧证据、且全仓无消费者。⇒ 最小修复是**持久化既有清单到 registry 行并 fail-closed**，比重造哈希便宜。
+- **影响面收窄**：盲复用仅限 `--stage all`；`--stage h504-hgb` / `--stage aux-tcn` 不查 registry、总是重训。不降低严重度，因为 `all` 是文档化的生产调用方式。
+- **新增守卫不对称（P1，此前报告只作定性描述）**：`train_h504.py:43` 是**唯一**支持度门，只查 `train.sum()`/`dev.sum()`；`resolved`（`:42`）**只被使用从未被守卫**。AST 枚举 `run_h504_hgb`(24-60) 仅 3 个 `if`（`:37/:43/:47`），`resolved` 与 `len(ydv)` 均不在任何守卫中；`:59` 仍无条件报 `COMPLETE_H504_DEV` 并写入 `n_dev_resolved`。实测 **0** 个 resolved 样本仍返回 `COMPLETE_H504_DEV`。
+- **`EML-P1-H504-SIGNATURE-BLIND-TO-FEATURE-SOURCE` 证据链补齐**：`run.py:94` 的 `glob('*.py')` 非递归，只覆盖 `src/ml/research_h504/` 下 **16** 个文件；该包**唯一**跨包导入在 `snapshot_features.py:78`（`from src.ml import build_matrix as bm`），`src/ml/build_matrix.py` 实为 **546** 行且又 `:44 from src import data_pipeline` ⇒ 二阶未覆盖。变异实验（ATR 窗口 14→13、**不改列名**）后 `pipeline_hash` 逐位不变、`latest_complete` 命中 ⇒ 会报 `REUSED_COMPLETE` 并跳过训练。T0 输入 **82/82 = 100%** 来自未覆盖文件。
+  - **更正**：一处子 agent 报告把该导入记作 `snapshot_features.py:31`；实测 `:31` 是 `missing = req - set(panel.columns)`，正确为 **`:78`**。
+- **我自己提出并已自行推翻的候选**：曾疑「签名无法区分 rich 与 minimal 特征分支」。实跑两分支列数为 **85 vs 33**，且签名载荷含 `'features'` 键（`run.py:150/173`）⇒ 列集合变化**会**改变签名，该候选**不成立**，不计入缺陷。据此把签名问题的措辞限定为「**不改列名的取值级**改动不可见」。
+- **`EML-P1-H504-GLOBAL-FIT-BUDGET-UNENFORCED` 搜索路径已明确**：`fits_*` 全仓 12 处**全部**是写入或输出，**0 处**与上限比较；`global_fits|cumulative|total_fits` **0 命中**；`ledger` 全仓 29 处逐条核对**全部无关**（报告级/lowzone/tradeability/候选台账）。唯一强制比较是 `run.py:170` 的**单进程** `--max-aux-fits`（默认 6）。**这同时是条款漂移**：合同写「48 fits/180 min 硬上限」，代码不可强制 ⇒ 需在「落地台账门控」与「明确降级为非强制指引」之间抉择。
+- **`EML-P2-AUX-PARTIAL-EPOCH-RESUME-WEIGHTING` 量级已实测**：24 批/epoch，中途超时存 `epoch=0` 但 optimizer 已 9 步；恢复后 epoch 0 整体重跑 ⇒ **9/24 = 37.5%** 锚点获二次梯度，总步数 81 = 9+3×24。`best.pt` 仅由完整 epoch 产生，故**选择**未污染，维持 P2。
+- **`EML-P2-H504-ALL-NAN-FEATURES-SILENTLY-IMPUTED`**：实测 `_safe_impute` 使全 NaN 的 dev 行塌缩为**同一向量**（`drop_duplicates` 后 1 行），无缺失指示列；端到端 504 个 dev 行得到**同一个**分数 `0.5747904879932492`，状态仍 `COMPLETE_H504_DEV`、`average_precision=0.5`。
+- **未复现**：对端 10:12 报告所指「沙箱 guard 3/3」与候选 ZIP SHA-256 `4c3343b1…`、验证 JSON `6a6f2763…` —— `git log --all -S` 与磁盘穷举均**未找到**该 ZIP 或任一哈希，`latest_complete_validated`/`STALE_COMPLETE_ARTIFACT`/`required_artifact` 在源码中 **0 命中**，仅见于对端 md 正文。对端已自述其为沙箱候选 guard，属**诚实的范围限定**；但其索引一句话概括易被误读为「当前生产代码已验证」，属**表述风险**。**§1 的 P1 不依赖该未复现项**。
+- **真实数字**：全仓测试 AST **65**（40+10+15）；`pytest -q -o addopts= -p no:cacheprovider` 从仓库根 **exit 0 / 65 passed**；`tests/research_h504` **50 passed**；`tests/test_engine.py` **15 passed**；`real_market_fit_count=0`；本机三小时与 receipt **NOT_VERIFIED**（仓库与磁盘均无 `local_start_receipt.json`/`execution_receipt.json`/`experiment_registry.jsonl`）。
+- **三轴**：执行=本轮审计动作真实执行；研究结论=完成态复用不具可审计性（工程/证据链结论，**不构成命中率结论**）；证据=上述均为**软件/合成面板**上的真实执行。三类区分：§1–§6 为**程序修复**；48-fit 上限为**任务定义变更**；**真实模型增益 = 0**。
+- **并发写入者警示**：本地 HEAD `4b1f3f6e…` 与远端**分叉**且**不在真实远端历史中**（`cat-file -e` False、`is-ancestor` False），相对 `origin/main` 还显示**删除 3 份对端报告** ⇒ 本轮**不以其为基线**。另：`git clone <本地路径>` 得到的 `origin` 是**本地路径**，其 `origin/main` 是该仓**本地** `main` 而非 GitHub 远端；须以 `git ls-remote <url> refs/heads/main` 为权威 tip。
+- 本仓**无** `docs/audits/validate_latest.py` ⇒ **不声称**通过任何门禁。
+
 ## 最新补充审计（2026-09-22 10:12 JST）：registry 完成态复用缺少底层产物完整性验证
 
 - 完整报告：[`2026-09-22_10-12-36_JST.md`](./2026-09-22_10-12-36_JST.md)。
