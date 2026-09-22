@@ -1,5 +1,17 @@
 # 专家／ML线研究与审计索引
 
+## 最新审计（2026-09-23 00:00 JST）：门禁机制已被上游报过，但**没人量过测试套件能否发现它**——实测 5 个机制中 **4 个删除后套件仍 65 passed**
+
+- 完整报告：[`2026-09-23_00-00-43_JST.md`](./2026-09-23_00-00-43_JST.md)。
+- 新增 P1 `EML-P1-H504-GUARDS-HAVE-ZERO-TEST-DETECTION-POWER-001`：把上游**已发表**的 5 个机制逐个注入纯净树再跑全仓套件——dev-support 支持门放松、**只**删 horizon 守卫、`pipeline_hash` 改哈希常量、`_safe_impute` 完全不填补：**四者删除后套件仍 65 passed（零检测力）**；只有 registry signature 检查与 calendar 守卫各有一条测试会红。主 agent 用**独立第二份提取**亲自复跑 horizon 变异，得到同样 `65 passed`。运行时探针证明这些代码**确实被执行**（`_safe_impute` 在 864 个 NaN 单元上被调用），故属**假阴性而非死代码**。
+- **独立复现**上游 `EML-P1-H504-RECEIPT-PROVENANCE-CALLER-CONTROLLED`：真 CLI `--evidence-type REAL_MARKET` + 假 source/prompt/timeout → **rc=0**，假值原样落盘。**归属更正**：其 `registered_task_timeout_seconds` 一半早在 `2026-09-22_13-57-18_JST.md:129` 已发表且属仓库自述限制；**新的是 `source_sha`+`effective_prompt_sha256` 一半**。
+- 字节同一性：本仓 `core.autocrlf=true` 使 `git archive` 落盘转 CRLF，我对盘上文件直接 `hash-object` 曾得**不相等**；按 EOL 归因后权威校验（blob 头+原始字节 sha1）确认 `receipts.py` = `cdac56d8…`、`run.py` = `c27711f6…` **与 GitHub 逐字节一致**。
+- **9 个未修项逐条复测：0 个被修复、0 个被证伪**（`src/tests/scripts` 的 diff 为空）。
+- 更正：上游 22:10 报告把真实 **14 键**收据贴成 **4 键**子集（P3 表述，值本身正确）。
+- 本仓**无** `docs/audits/validate_latest.py`（`cat-file -e` rc=128）⇒ 手册第 5 步门禁**不适用**，本轮**不声称**任何 gate PASS。
+- 本轮全仓基线 **65 passed / exit 0**（纯净尖端）；`real_market_fit_count` 增量 **0**；无实股结果；未改源码；未启动训练。
+
+
 ## 最新审计（2026-09-22 22:10 JST）：真实运行收据的源码／prompt／任务上限是调用者自报，未绑定实际工作树（P1）
 
 - 完整报告：[`2026-09-22_22-10-00_JST.md`](./2026-09-22_22-10-00_JST.md)。
