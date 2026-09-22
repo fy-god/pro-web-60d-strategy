@@ -1,17 +1,17 @@
 # 专家／ML线研究与审计索引
 
-## 最新审计（2026-09-23 06:13:30 JST）：10800 秒目标目前只记账、不拦截成功退出
+## 最新审计（2026-09-23 06:30:00 JST）：每 4 小时的状态发布器已连续 6 次把提交留在本地、远端状态冻结约 24 小时
 
-- 完整报告：[`2026-09-23_06-13-30_JST.md`](./2026-09-23_06-13-30_JST.md)。
-- 被审实时 `main`：`d651300765eae63bf8dce42febb4df0af7f55e97`；tree：`1ba55f04b56d406dbe4840d9be775280817f2957`；Open PR=0。
-- 新增 P1 `EML-P1-H504-TARGET-ACTIVE-NOT-ENFORCED-AT-EXIT`：`ResearchSessionReceipt.finalize()` 会写 `target_met`，但 `run.py --stage all` 不用它决定退出；当前流程在 `target_met=false` 时仍可 `return 0`。
-- **决定性现成测试证据**：`test_all_stage_writes_start_and_execution_receipts` 同时断言 `main(...) == 0` 和 `end['target_met'] is False`，即测试套件主动把“10800秒未达但成功退出”锁成正确行为。
-- 外层 `scripts/run_fixup.py` 又只按 child `rc==0` 返回成功；虽然打印 `training_status='READ_RESEARCH_EXECUTION_RECEIPT'`，实际并没有读取／验证 final `execution_receipt.json`。因此即使以后把 Windows 任务上限修到 ≥13800 秒，当前链条仍可能明显早于三小时正常退出。
-- 新增从属 P2 `EML-P2-H504-DIRECT-STAGE-NO-SESSION-RECEIPT`：receipt 只在 `--stage all` 创建；`h504-hgb` / `aux-tcn` 直接训练入口可完全绕过 start/progress/execution receipt 与三小时 target 验收。
-- 隔离候选：single-session exit classifier + launcher receipt handoff，**7 passed in 0.06s**；候选只算软件证据，不计 fit，不等于产品已修。
-- 最新本机侧证据仍是 03:33:44 JST 的真实 Windows 查询：213 个任务中**没有 `ProWeb60d-Fixup`**，因此当前不是“任务只有150分钟”，而是该 fixup 任务根本未注册；状态继续为 `BLOCKED_RUNTIME_CONFIG`。
-- 四状态：GitHub prompt=`YES`；GitHub任务书=`YES`；本机runtime applied=`NO / BLOCKED_RUNTIME_CONFIG`；本机单次3h completed=`NOT_VERIFIED`。
-- 本轮 `real_market_fit_count += 0`；无新的 H504/AUX 实股成绩，旧48-fit余额无本机台账回传，因此不猜数字。
+- 完整报告：[`2026-09-23_06-30-00_JST.md`](./2026-09-23_06-30-00_JST.md)。
+- 被审实时 `main`：`dc725a820f6ea8bf835820c6cce8baf6325b7546`；tree：`1ba55f04b56d406dbe4840d9be775280817f2957`；Open PR=0。
+- 新增 P1 `EML-P1-AUDIT-STATUS-PUBLISHER-REBASE-ABORTS-ON-UNTRACKED-LEFTOVER`：`scripts/scheduled_report_audit.py:255-256` 的 `git rebase --autostash origin/main` **无法处理未跟踪路径**；另一条自动化（本审计线）留下的未跟踪 `docs/audits/expert-ml/*.md` 使 checkout 被拒，重试在 `:257-260` **abort 并返回**，提交永远留在本地。
+- **实测留档**：被 gitignore 的 `logs/report_audit/scheduler.out` 记录 16 次发布结果 = 3 次直接成功 + 4 次 rebase 后成功 + **6 次 `committed locally; rebase … failed on attempt 1`** + 3 次更早期的普通 push 失败；**末尾连续 6 次全部失败**。判别性对照（仓外沙箱，单变量）：有未跟踪文件时 `rebase` rc=1 且逐字输出 `would be overwritten by checkout`；去掉该文件后 rc=0。
+- **影响**：远端发布物仍停在 `| Last run (local) | 2026-09-22 03:15:01 |`、`3 path(s) differ`，而实测真实漂移为 **20** 个路径；本地 `main` 与远端 **ahead 6 / behind 27**；最后一次成功发布 `a8ae13c`（09-22 03:15:08）正是两侧的 merge-base。失败在本地有 4 处痕迹，在 GitHub 侧 **0 处**（`:369` 只打印、启动器 `--quiet`、输出落进被 gitignore 的 `logs/`、`:376` 退出码只看一致性检查器、无 CI）。
+- **重试环救不回**：`:257-260` 在 rebase 第一次非 0 时即 abort 并 return，`:248` 的 `for attempt in range(1,4)` 对该类失败**永远走不到**（`push failed after 3 rebase attempts` 计数 = 0）。
+- **同一脚本自己的 docstring 断言被推翻**：`:217-221` 称 "a file no other job touches -- so the rebase cannot conflict"。冲突源不是它提交的文件，而是另一条线的未跟踪路径。
+- 上一轮（06:13）新登记的 `EML-P1-H504-TARGET-ACTIVE-NOT-ENFORCED-AT-EXIT` 及其 P2 本轮**逐条实测确认，未被推翻**（`run.py:194` 无条件 `return 0`；`run_fixup.py:162` 只看 `rc==0`；`tests/research_h504/test_candidate.py:320-322` 与 `:327` 在同一测试里正向锁死）。
+- 本轮 `src/` 与 `scripts/` 改动数 = **0**（`2026-09-23_06-13-30_JST.md` 之后 27 个提交全部是 docs）；因此本轮**不把任何旧项写成"已修复"**。
+- 四状态：GitHub 报告=`YES`；本机 runtime applied=`NO / BLOCKED_RUNTIME_CONFIG`（沿用 03:33:44 JST 的真实 Windows 查询，本轮未复验）；本机单次 3h completed=`NOT_VERIFIED`；新实股成绩=`real_market_fit_count += 0`。
 
 ## 当前最小落地顺序
 
@@ -38,7 +38,7 @@
 
 ## 前一版完整索引（不可变保留）
 
-[截至 2026-09-23 03:33:44 JST 的完整 LATEST.md](https://github.com/fy-god/pro-web-60d-strategy/blob/d651300765eae63bf8dce42febb4df0af7f55e97/docs/audits/expert-ml/LATEST.md)。
+[截至 2026-09-23 06:13:30 JST 的完整 LATEST.md](https://github.com/fy-god/pro-web-60d-strategy/blob/dc725a820f6ea8bf835820c6cce8baf6325b7546/docs/audits/expert-ml/LATEST.md)。
 
 上一版索引中的全部历史报告、补遗、争议、更正与旧状态均按该固定 SHA 原样保留；本轮没有删除任何历史审计 Markdown。旧“当前状态”按其固定源码 SHA 和审计时点解释。
 
