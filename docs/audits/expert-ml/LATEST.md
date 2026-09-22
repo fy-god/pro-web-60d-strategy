@@ -1,5 +1,14 @@
 # 专家／ML线研究与审计索引
 
+## 最新审计（2026-09-22 22:10 JST）：真实运行收据的源码／prompt／任务上限是调用者自报，未绑定实际工作树（P1）
+
+- 完整报告：[`2026-09-22_22-10-00_JST.md`](./2026-09-22_22-10-00_JST.md)。
+- 新增 P1 `EML-P1-H504-RECEIPT-PROVENANCE-CALLER-CONTROLLED`：`run.py` 的 `--source-sha` / `--effective-prompt-sha256` 默认 `UNKNOWN`，`--registered-task-timeout-seconds` 默认空；`receipts.py` 将三者原样写入 start receipt，不核实际 Git HEAD、prompt 文件、Windows task，也不记录 fit-time tracked diff / untracked source manifest。
+- **当前产品组件实测**：GitHub `receipts.py` blob 与隔离副本 `git hash-object` 同为 `cdac56d80f1aba6ad964cf1525e69feced16fbf0`；以 `evidence_type=REAL_MARKET` 传入假的 source=`THIS_IS_NOT_A_GIT_SHA`、prompt=`not-a-sha256`、registered timeout=`1`，收据**原样落盘且无异常**。这证明 receipt 当前记录的是 caller claim，不是 measured provenance。
+- `run_fixup.py` 启动前虽会测 prompt SHA，但不测 registered task、HEAD/diff，也不把测得值自动绑定到每个 fit；本地 agent 又允许同 session 实现代码，因此仅保存启动前 HEAD 仍不足以复现实训代码。
+- 隔离候选 measured-provenance guard：临时 Git repo **4 passed in 0.11s**，覆盖 clean 真值、假 source/prompt 拒绝、HEAD 不变但 tracked diff 改变、untracked source manifest 改变；候选 ZIP SHA256=`f2d680a56478d6973f0bf2dbaec9a6de86cd7072847ec92ac2dc51e7a70642ae`。
+- 本轮 `real_market_fit_count=0`；用户本机 runtime 仍 `UNKNOWN / LOCAL_APPLY_PENDING`，单次连续三小时仍 `NOT_VERIFIED`。该 P1 是执行证据完整性问题，不是新的模型精度或收益结论。
+
 ## 补充（2026-09-22 22:05 JST）：开放项清单存在一个**无正文**的 ID（可追溯性断裂，P3）
 
 - 完整报告：[`2026-09-22_22-05-00_JST.md`](./2026-09-22_22-05-00_JST.md)。
