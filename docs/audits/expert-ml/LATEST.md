@@ -1,5 +1,19 @@
 # 专家／ML线研究与审计索引
 
+## 最新审计（2026-09-23 03-13-56 JST）：产品源码自 8163db84 未变；上一轮两条 P1 复核成立并各补一条决定性实测
+
+- 完整报告：[`2026-09-23_03-13-56_JST.md`](./2026-09-23_03-13-56_JST.md)。
+- 被审 `main` 起点：`1ac289d29dd4a078c8da6680eb5d42af6423e811`；**产品源码**基准：`8163db84e10f52057aab1216e969f2ee121ad54f`；`git diff 8163db84..1ac289d29 -- src tests scripts` = **空**（11 个改动文件全在 `docs/audits/expert-ml/`）。
+- **两条 P1 均复核成立**：`EML-P1-H504-SINGLE-INSTANCE-LOCK-NOT-SHARED-WITH-DIRECT-RUNNER`、`EML-P1-H504-PRICE-BASIS-CONTRACT-ADVISORY-ONLY`。
+- 锁：`local_lock` 经**三臂实测**证明是真 fail-closed 跨进程锁（A 持锁→B 被 `ALREADY_RUNNING` 拒绝→A 释放后 C 成功）；缺口在 runner **从不调用**它——runner 包 16 个模块令牌级命中 **0**，全仓库只有 `scripts/run_fixup.py` 一处。**两个直接 runner 并发实跑：都 rc=0 且都写了产物**。
+- 基准：`price_basis`（`task_spec.py:18`）**读取点 = 0**（AST 扫描）；**CLI 29 个选项里没有任何 basis 开关**；`BLOCKED_PRICE_BASIS` 在代码中 0 次（13 个既有 `BLOCKED_*` 里没有它，而 `BLOCKED_CALENDAR` 阳性对照实跑 rc=1）。对抗性 1000× 混基准面板被接受且 **4 候选全部 `success`**。
+- **本轮新增真实数据实测**：权威面板 `bars_qfq.parquet` 共 **8,728,355** 个四列有限行，单一基准不变式 `low<=open,close<=high` **0 违反**（0/3157 会话、0/3392 股票）⇒ 权威输入上**未观测到混基准危害**，故 basis 项分级为 **`待验证风险`**，**不是** `已确认错误`。
+- **更强的一点**：该面板带可机检字段 `adjustflag=2.0`（qfq）**全部 8,728,357 行常量**，而 `src/data_pipeline.py:43,63` 的 `usecols=REQUIRED_COLUMNS` **把它丢掉** ⇒ 问题不是“无从机检”，而是“**已有的可机检字段被丢弃**”。
+- **新判据 F4**：`scripts/run_fixup.task.xml` 的 `ExecutionTimeLimit=PT2H30M`（**9000 s**）比 `run_fixup.py` 的 `AGENT_TIMEOUT_SECONDS=13200` **短 4200 s** ⇒ 三小时合同在**跟踪的**计划任务模板下**结构上不可达**。
+- **测试检测力（含阳性对照）**：基线 `65 passed`；破坏 `local_lock` → `65 passed`；删除/篡改 `price_basis` → `65 passed`（**三道臂全零检测力**）；而破坏 calendar 与 registry 签名两个**阳性对照**各得 **`1 failed, 64 passed`** ⇒ 测量方法有区分力。
+- **开放项回归**：9 项逐条在真实源码上重新定位，**0 项已修、0 项被证伪**（因 `src/tests/scripts` 本轮零改动，按构造不可能被修）。
+- `real_market_fit_count` 增量 **0**；本轮**未改任何源码/权重/配置/Actions/PR**，**未动任何排程**；`validate_latest.py` 在本仓库**不存在**（`cat-file -e` rc 128）⇒ 门禁 **N/A，不声称 PASS**。
+
 ## 最新审计（2026-09-23 01:57 JST）：三小时单实例锁可被 direct runner 绕过；H504 价格基准仍只有文档约定、没有 REAL_MARKET 机器门禁
 
 - 完整报告：[`2026-09-23_01-57-44_JST.md`](./2026-09-23_01-57-44_JST.md)。
