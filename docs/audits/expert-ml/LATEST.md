@@ -1,6 +1,23 @@
 # 专家／ML线研究与审计索引
 
-## 最新协议审计（2026-09-22 13:57 JST）：真实日历守卫默认 fail-open，AUX fallback 在 H504 READY 时仍无条件消耗拟合槽位
+## 最新协议审计（2026-09-22 15:40 JST）：上游两条 P1 由静态断言升级为实测反例，并新证 3 个未登记 fail-open 面
+
+- 完整报告：[`2026-09-22_15-40-19_JST.md`](./2026-09-22_15-40-19_JST.md)。
+- 被审源码 `8163db84e10f52057aab1216e969f2ee121ad54f`；审计起点 `origin/main` = `74857e8f250adf2f40d79dda23245c4cdfce918b`。**待审仅 2 个 docs-only 提交**（`05225aa` 报告、`74857e8` 索引），`git diff 8163db84..74857e8f -- src tests` = **空**，故被审源码即当前产品代码。
+- **升级为实测**：`EML-P1-H504-REAL-CALENDAR-GUARD-SELF-REPORT-FAILOPEN` —— 差分实验：同一 panel、同缺 `--calendar`，`REAL_MARKET` → **rc=1 `BLOCKED_CALENDAR`**，而**默认（不传 `--evidence-type`）→ rc=0 静默跑完**。收据实测 `real_train_seconds=0.0` **且** `synthetic_train_seconds=0.0`，训练时间**两个桶都不进**（上游只指出 real 桶）。
+- **升级为实测**：`EML-P1-H504-AUX-FALLBACK-RUNS-WHEN-PRIMARY-READY` —— 用上游自己写出的验收测试跑出：主任务 `COMPLETE_H504_DEV` 时 `run_aux_tcn` 调用 **6** 次（seeds `17,29,43,17,29,43`），默认上限独立量得 **6**。
+- **新增 `EML-P1-H504-HORIZON-GUARD-SAME-FAILOPEN`**：`run.py:90-91` 的 horizon 守卫与日历守卫**共用同一个错误枚举条件**。实测默认 + `--horizon 252` → **rc=0 跑完**；`REAL_MARKET` → rc=1。⇒ 一个默认值同时打穿两个守卫，「保持现有守卫」的修法低估了面。
+- **新增 `EML-P1-H504-AUX-RUNS-WHEN-PRIMARY-NEVER-RAN`**：`run.py:162` 是 `:144` 的**兄弟分支**而非子分支，故**完全不给 candidate manifest** 时结果序列为 `['BLOCKED_CANDIDATE_MANIFEST', 'COMPLETE_AUX' × 6]`，主任务从未执行 AUX 仍跑满。
+- **新增 `EML-P1-H504-DEDUPE-FAILCLOSED-UNREACHABLE`**：`session_clock.py:54-56` 承诺 signal 日期缺席即 fail closed，但 `--calendar` 缺省时 `cal` = panel 并集 ⇒ `unknown` **恒为空**，该分支**永不可达**。实测 `--stage dedupe` 无日历 → **rc=0 无报错**。
+- **新增索引缺陷 `EML-DOC-STALE-P1-OBSERVED-BAR-IN-LATEST`**：同一 `LATEST.md` 内 `:11`/`:53` 写 P2、`:66` 仍写 `P1-H504-OBSERVED-BAR-PROVENANCE-LOST`，自相矛盾；本次已把 `:66` 修为 P2（降级本身早在 `2026-09-22_07-41-01_JST.md:25/:85` 有记录）。
+- **归属更正（重要）**：`EML-P1-H504-SIGNATURE-BLIND-TO-FEATURE-SOURCE` 与 `EML-P1-H504-REUSE-TRUSTS-REGISTRY-WITHOUT-ARTIFACT-VERIFICATION` **是上游既有发现**（分别见 07:41 与 10:12 报告，11:56 报告已端到端复现），**本轮不计作新发现**，仅记录独立复算的加强数字：T0 基线 **82/82 = 100%** 列来自未被 `pipeline_hash` 覆盖的文件；保列名变异（atr 14→13）后矩阵 sha 与列 sha 均变而**签名逐字节不变**。
+- 三小时链：runner `13200`（`run_fixup.py:23`）；tracked XML 仍 `PT2H30M`（**UTF-16LE，普通 grep 会漏**）；`:133` 的 `registered_task_timeout` 是硬编码 `NOT_CHECKED_BY_THIS_SCRIPT`，**非测量值** ⇒ 真实注册值不可由仓库证明，`LOCAL_RUNTIME_APPLIED=UNKNOWN`。
+- 合同措辞更正：v5 合同字面只说「H504 缺合法折时做独立 AUX 历史表征」，**未**要求 AUX 让位给 T1–T5/MLP/TCN 优先队列，后者是推论而非引文。
+- 执行：全仓 `python -m pytest -q -o addopts= -p no:cacheprovider` 从仓库根 **65 passed / exit 0**（22.55s；`tests/research_h504` 50 + `tests/test_engine.py` 15）。
+- `real_market_fit_count=0`；无新增 H504 成功率；本轮为执行契约/证据链/索引卫生修复，**不是模型增益**。
+
+
+## 前次协议审计（2026-09-22 13:57 JST）：真实日历守卫默认 fail-open，AUX fallback 在 H504 READY 时仍无条件消耗拟合槽位
 
 - 完整报告：[`2026-09-22_13-57-18_JST.md`](./2026-09-22_13-57-18_JST.md)。
 - 被审源码 `8163db84e10f52057aab1216e969f2ee121ad54f`，tree `974f7b4e4ef10f586b53316260f79629b37e010b`；Open PR=0。相对上一产品源码点 `89b722d7...` 仍只有 docs 变化，故此前开放缺陷没有被源码修复。
@@ -63,7 +80,7 @@
 - 完整报告：[`2026-09-22_06-02-39_JST.md`](./2026-09-22_06-02-39_JST.md)。
 - 类型：`POST_INTEGRATION_SOURCE_AUDIT`；被审 HEAD `a8ae13ccf1c4a6a1baf82ad4e86087fbde83e4e4`，源码落地 commit `878cdeba5837a302004a8b3a656afee3d6a62b44`。
 - 源码落地是真实工程进展：`src/ml/research_h504/`、runner/prompt、测试已在 `main`；但用户本机三小时和新实股 H504 fit 仍为 `NOT_VERIFIED / 0`。
-- 新确认 `EML-P1-H504-OBSERVED-BAR-PROVENANCE-LOST`：`prepare_panel` reindex 后丢失原始 stock-session 是否真的存在 bar 的 provenance，labeler 后续会把真实 missing bar 混成 missing price。
+- 新确认 `EML-P2-H504-OBSERVED-BAR-PROVENANCE-LOST`：`prepare_panel` reindex 后丢失原始 stock-session 是否真的存在 bar 的 provenance，labeler 后续会把真实 missing bar 混成 missing price。
 - 新确认 `EML-P1-H504-DEV-RESOLVED-SUPPORT-MISSING`：dev 只要求候选数 `>=50`，未要求可判定 `label_joint` 数量 `>=50`，极少 resolved 样本也可能返回 `COMPLETE_H504_DEV`。
 - 新确认 `EML-P1-H504-GLOBAL-FIT-BUDGET-UNENFORCED`：registry/runner 尚未代码级执行旧 48 次累计 fit 预算，失败/中断/重试的跨 session 计数仍靠 prompt 合同。
 - 新登记 `EML-P2-AUX-PARTIAL-EPOCH-RESUME-WEIGHTING`：epoch 中途超时会保存部分 epoch 模型，再从该 epoch 整体重跑，改变部分样本的暴露次数；paired attribution 应优先回滚到最后完整 epoch，或实现 batch cursor/sampler 精确恢复。
