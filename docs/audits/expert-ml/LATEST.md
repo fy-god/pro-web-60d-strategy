@@ -1,22 +1,21 @@
 # 专家／ML线研究与审计索引
 
-## 最新审计（2026-09-23 14:06:58 JST）：`FeatureSpec` 仍可显式接入未来 oracle 字段 `bars_scanned`
+## 最新审计（2026-09-23 16:10:10 JST）：报告发布器连续 8 次无法发布（untracked 残留锁死 rebase）＋ FeatureSpec oracle 绕过是类级缺陷
 
-- 完整报告：[`2026-09-23_14-06-58_JST.md`](./2026-09-23_14-06-58_JST.md)。
-- 被审实时 `main`：`d363617da5ca7c74d849647b12b49e62bc40c20b`；tree=`6577b8d5168863fd9c9ccdc418c979e80635ae5c`；Open PR=0。
-- **新 P1** `EML-P1-H504-ORACLE-METADATA-BARS-SCANNED-ALLOWLIST-BYPASS-001`：`label_h504_candidates()` 生成数值型未来路径字段 `bars_scanned`，而 `FeatureSpec` 的 forbidden set 没有它；`run_h504_hgb()` 又是在完整 label ledger 与 feature frame 合并后才执行 `FeatureSpec.select(data)`，所以显式 `feature_cols=["bars_scanned"]` 当前可通过 guard。
-- 边界：当前默认 T0 的列来自 `build_research_features()`，本轮**没有证据证明默认 T0 已自动使用该字段**；确认的是训练 API / FeatureSpec 的 PIT 安全门 fail-open，必须在 T1–T5、H504 MLP/TCN 扩展前修复。
-- 现有 `test_feature_spec_rejects_new_h504_oracle_metadata` 只检查 `training_eligible / target_price / risk_floor / candidate_id / signal_date`，没有检查 `bars_scanned / first_missing_session`。
-- 隔离候选：补 `bars_scanned`、`first_missing_session` guard，并保留 causal `ret5`；**4 passed in 0.07s**。候选 ZIP SHA256=`06342d0e9f4343e046b1aa1e59cd5a1570d451723c77c175e9c732e8ceae74bf`。
+- 完整报告：[`2026-09-23_16-10-10_JST.md`](./2026-09-23_16-10-10_JST.md)。
+- 被审实时 `main`：`664b78d58e3e34a0e3937e944b54d63ad33e0e36`；tree=`c4ac8946d908f11b841a27da3e3d7f01346439bd`；Open PR=`未能核验`（本沙箱无 GitHub API 通道）。
+- **新 P0** `EML-P0-REPORT-AUDIT-PUBLISHER-REBASE-BLOCKED-BY-UNTRACKED-LEFTOVER-001`：`scripts/scheduled_report_audit.py:248-266` 的 rebase 重试被两个 **untracked** 残留报告卡死（`--autostash` 不 stash untracked），`:257-260` 直接 return。生产日志 `logs/report_audit/scheduler.out` 直证 **连续 8 次失败、跨 28.0 小时**，远端 `reports/AUDIT_STATUS.md` 冻结在 `a8ae13c`（2026-09-22 03:15）；本地 main ahead 8 / behind 35，merge-base 恰为最后一次成功发布的提交。
+- **P1 升级为类级** `EML-P1-H504-ORACLE-ALLOWLIST-BYPASS-CLASS-NOT-INSTANCE-001`：独立穷举确认上一轮点名的 2 列（`bars_scanned`、`first_missing_session`）**恰好就是全部**（18 列 / 未覆盖 2 列），但补这 2 个名字**修不好这个类**——实测未点名的第三列仍被放行；改用本仓库自己的 allowlist 才拦下。
+- **新 P1** `EML-P1-FEATURE-SCHEMA-WRITTEN-BUT-NEVER-READ-001`：`run.py:112` 每次运行都写出规范 `feature_schema.json`，但产品源码里是 **1 writer / 0 reader**——修复资产已在，只差接线。
+- 真实测试真数：`python -m pytest` = **65 passed in 30.18s**，exit 0；该套件对上述 oracle 缺陷类**完全盲**。
 - 四状态：GitHub 报告=`YES`；本机 runtime applied=`NO_LAST_VERIFIED / NOT_RECHECKED_THIS_TURN`；本机单次 3h completed=`NOT_VERIFIED`；新实股成绩=`real_market_fit_count += 0`。
 
 ## 当前最小落地顺序
 
-1. 先修已确认的 risk/Close 缺失 oracle 与本轮 `bars_scanned` oracle-feature 缺口；把 H504 oracle 输出字段维护成 canonical schema。
-2. `run_h504_hgb()` 训练前强制 `feature_cols ⊆ feature_frame_schema`，只把正式 feature pipeline 产出的列送入模型；不要只依赖不断增长的 blacklist。
-3. 补产品级 metadata injection + mutation tests：删除 `bars_scanned` guard 时必须测试变红。
-4. 一次性恢复／注册 `ProWeb60d-Fixup` 并核 `ExecutionTimeLimit >= PT3H50M`；再落 target enforcement、shared lock、measured provenance、artifact hash、resolved-dev 支持、跨 session 48-fit 原子台账、feature-source signature、price-basis 与 REAL calendar/evidence gate。
-5. 重新生成真实 candidate/outcome ledger 与 candidate-aware fold support；有合法 H504 mature train→dev 才继续 T0/T3/T1–T5，否则 `BLOCKED_PROTOCOL_H504` 后同 session 转 `AUX_REAL_HISTORY`，绝不混报。
+1. 先修发布器（唯一能让本仓库对外状态恢复可见的项）：rebase 前 `--include-untracked` 收走残留，或改为直接推送单个 status 提交、不 rebase 本地分支。
+2. 把训练入口的安全门接到 `run.py:112` 已产出的 `feature_schema.json`，并加“实跑 label builder 后断言其全部输出列都被拒”的契约测试。
+3. 让发布失败参与退出码/被检查项，不再 28 小时无人发现。
+4. 真实 H504 验收仍须来自用户本机：真实 task/runtime、真实 panel/calendar、重生成的 outcome ledger、合法 candidate-aware fold、真实 registry/checkpoint 与 `execution_receipt`。
 
 ## 仍开放但本轮不重复计新的关键项
 
@@ -33,7 +32,7 @@
 
 ## 前一版索引（不可变保留）
 
-[截至 2026-09-23 10:05:12 JST 的 LATEST.md](https://github.com/fy-god/pro-web-60d-strategy/blob/d363617da5ca7c74d849647b12b49e62bc40c20b/docs/audits/expert-ml/LATEST.md)。
+[截至上一版（最新审计（2026-09-23 14:06:58 JST）：`FeatureSpec` 仍可显式接入未来 oracle 字段 `bars_scanned`）的 LATEST.md](https://github.com/fy-god/pro-web-60d-strategy/blob/664b78d58e3e34a0e3937e944b54d63ad33e0e36/docs/audits/expert-ml/LATEST.md)。
 
 历史审计 Markdown 未删除。旧状态按各自固定 SHA 与审计时点解释。
 
