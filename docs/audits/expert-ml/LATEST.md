@@ -1,60 +1,45 @@
 # 专家／ML线研究与审计索引
 
-## 最新审计（2026-09-24 03:48:00 JST）：云端"训练内 50.6% ⇒ 拟合能力存在"的推断**不被其引用的证据支持**；零假设同口径对照显示无信号构型也能到 29.84% 训练内
+## 最新审计（2026-09-24 09:59 JST）：先修“几分钟下班”的执行器，再把模型预算转向 causal regime + 候选总体富集
 
-- 完整报告：[`2026-09-24_03-48-00_JST.md`](./2026-09-24_03-48-00_JST.md)。
-- 被审 `main` 起点：`3110d22e04a9c740d1dae7135db518d7402fe9b0`；`git diff --stat e72c7258 3110d22e -- . ':(exclude)docs'` = **EMPTY**，**本轮无新产品源码提交**，Open PR=0。
+- 完整报告：[`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)。
+- 被审 `main` 起点：`7c8596e654dc1a376df195540d3b4aa72347b055`；本轮开始时 Open PR=0，产品研究源码相对上一轮无新提交。
 - 本轮真实 A 股 H504 fit 增量：**0**；`TARGET50_REACHED=NO`；`TARGET70_REACHED=NO`。
-- 上一轮云端报告：[`2026-09-24_02-01-50_JST.md`](./2026-09-24_02-01-50_JST.md)（本轮逐条复算的对象）。
+- 本机 runtime：**NOT_VERIFIED / LOCAL_APPLY_PENDING**；单次连续10800有效秒：**NOT_VERIFIED**。
 
-### 本轮做了什么（不含新实股结果）
+### 本轮新增的模型研究诊断
 
-1. **云端 12 个数字全部逐一复现**（19,885 / 50.600955% / 1,790 / 15.977654% / 4.0878% / 3.91x / 34.6233pp / 31.6% / 1,406,181 / 57,505 / 26.7790% / 32.7273% / 消融 5 行 + 4 个 delta）⇒ **数字本身没有造假**。
+1. **HGB 的 pooled 16.44% 被强烈的折间信号密度偏斜支配。** `wide_hgb_2` 四折 precision 为 14.56% / 24.72% / 21.09% / 33.60%，但 **83.78%** 的信号都出现在最弱的第一折；pooled=16.44%，四折等权均值=23.49%。这说明“市场阶段下应该发多少信号”本身是核心建模问题，下一步优先 causal regime conditioning / rank budget，而不是继续加树深。
+2. **RF 是更稳健的 H10 方法学基准。** `wide_rf_32` 四折约 22.88% / 18.36% / 18.06% / 20.71%，pooled=20.84%，等权均值=20.00%；离50%仍远，但折间稳定性明显好于 HGB。真实 H504 首轮不应只有 HGB，至少固定同一 candidate/outcome/fold 比较 Logistic/HGB/RF/ExtraTrees。
+3. **旧 H10 score 仅靠阈值仍没有50%的证据。** dense OOS precision ceiling：raw max≈26.78%，rank 在至少50个信号时≈32.73%；因此下一步的50%假设必须来自候选总体重定义、因果 regime、hard-negative discrimination 或真正的新信息，而不是 threshold cosmetics。
 
-2. **但 §1 的推断被证伪（本轮新结论）**：`outputs/ml/audit/nulls_audit.json` 是仓库**自己的零假设电池**，跑在**同一张 stride-5 网格**（`pooled_rows == n_rows == 281,227`；其 `real` 行 `insample_precision` 与云端引用的值**十五位小数相同**，并自证 `harness_vs_audit_precision_max_abs_diff = 0.0`）。同一口径下：
+### 本轮执行器候选
 
-   | 构型 | 训练内 | OOS | gap | AUC |
-   |---|---:|---:|---:|---:|
-   | real（对照） | 50.6010% | 15.9777% | +34.623pp | 0.6306 |
-   | **feat_gauss_auc0**（特征 N(0,1) + 标签 Bernoulli = 双重零假设） | **29.8416%** | 3.2673% | **+26.574pp** | **0.4976** |
-   | oracle_strong（阴性对照，标签泄露） | 56.9575% | 39.0459% | +17.912pp | **0.7754** |
+隔离沙箱实现了 `eml_auto18_research_queue_candidate.zip`，SHA-256 `cf3c313fe7a1a92cd4f6c26e73d743599e4b54baa332a28bdf8e4885b9bf300e`，单测 **7 passed in 0.07s**。它把 v5 中目前只写在任务书里的工作真正编码成 queue node：H504 T0-T5、MLP、TCN、六项消融、第二dev、error mechanism/control 与 AUX fallback；`REUSED_COMPLETE` 不算新工作，`INTERRUPTED` 优先续跑，`evidence_type` 进入 signature，under-target 且仍有 READY/NEEDS_IMPLEMENTATION/INTERRUPTED 时不得成功退出。
 
-   阳性臂 AUC **0.4976 ≤ 0.5**（确证无信号）却已拿到真实 gap 的 **76.8%**；阴性臂 AUC **0.7754 ≫ 0.5** 证明该度量**能**区分信号与噪声。
-   ⇒ **"训练内能到 50.6%"不是拟合能力的证据**（选择偏差 + 噪声高分切片就够），该句推断**不被其引用的证据支持**。
-   报告全文 **0 次**提到零假设 / `nulls_audit` / `null_ceiling`（逐串实测计数）。
+### 当前执行器仍开放的硬问题
 
-3. **`EML-P2-EVIDENCE-TYPE-NOT-IN-REUSE-SIGNATURE-002` 确认，并已做执行级证明**：签名键集（`src/ml/research_h504/run.py:150`，AST 展开）为 `{pipeline_hash, calendar_hash, task, data, cand_sha256, features, horizon, model_config}`，**不含 `evidence_type`**；`registry.py:19-23` 的 `latest_complete` 只比对 `signature` 与 `COMPLETE` 前缀，而 `evidence_type` 在整个 `registry.py` 中出现 **0 次**。实跑证明：先写入 `evidence_type='SYNTHETIC'`、`status='COMPLETE_H504'` 的行，随后同签名的 `REAL_MARKET` 运行会被 `latest_complete` 判定为"已完成"并发出 `REUSED_COMPLETE`，而该结果键集（`['experiment_id','model_id','signature','source_status','status','task_scope']`）**不含 `evidence_type`**；3 个阴性对照全部成立（异签名→None、非 COMPLETE 状态→None、`COMPLETED_AVAILABLE_RESEARCH_NOT_CERTIFIED` 也会通过前缀测试）。**这是来源标注（provenance）缺陷**，不会篡改一个正确标注的 fit。
+- `run.py --stage all` 机器化的主线仍只有 **H504 T0 1 fit + 有限 AUX-TCN**；T1-T5 / H504 MLP/TCN / ablation / error-driven refit 仍不是持久任务节点。
+- `Registry.latest_complete(signature)` 仍不校验 evidence class；真实和合成来源隔离不足。
+- `ResearchSessionReceipt` 只记录 `target_met`，runner 不用它控制成功退出。
+- `scripts/run_fixup.py` 仍最终依据 child rc；`target_met=false` 也可能外层成功。
+- tracked runner timeout=13200s，但 `register_fixup_task.ps1` 仍生成 `PT2H30M`，且会 delete/create task；不符合 v5 的既有任务窄修改要求。
 
-4. **口径问题**：三份产物**不是同一个 OOS 总体** —— `ml_crosssec_final.json` 的 `n_rows` **281,227**（stride-5）vs `ml_precision_ceiling.json` 的 `oos_rows` **1,406,181**（`stride=1`, dense），base rate 分别为 `0.040878009579` 与 `0.040894450999`（十五位小数不同）。仓库自己在 `TARGET_70PCT.md:382-396` 有明确的"哪一节用哪张网格"表并写明 **No cross-grid subtraction is made anywhere**，`scripts/audit_reports.py:3001-3030`（gate `EML-P0-CROSSSEC-POP`）还要求 stride-5 运行必须内部自洽。新报告全文 **0 次**出现 `stride` / `dense` / `grid` / `281,227` / `population` / `网格`，**0 次**引用 `TARGET_70PCT`。
-   另：`ml_precision_ceiling.json` 的 `recall`/`at_signals` 只对应 `max_precision_raw`（整数性检验：raw×N **8/8** 为整数，rank×N **5/8** 非整数），报告却把 rank 精度 32.7273% 与由 raw 推出的 0.2487% recall 写在同一句 —— **轻微不自洽**；两数都极小，不改变任何决策。
+### 下一次真实本机研究的第一波 6 fit
 
-### 仍未修的完整清单
+固定同一 H504 candidate/outcome/fold，只先跑：
 
-- `EML-P2-EVIDENCE-TYPE-NOT-IN-REUSE-SIGNATURE-002`（**本轮执行级确认**）。
-- `scripts/run_fixup.py:23` `AGENT_TIMEOUT_SECONDS = 13200`；`:162 return 0 if rc==0 else 1`，文件内 `target_met` 出现 **0 次**；`receipts.py:173` 仅**记录** `target_met`。`scripts/register_fixup_task.ps1` 的 Windows task 上限 `PT2H30M`(=9000s) < 13200s（须以 **utf-16** 读 `run_fixup.task.xml`；按 UTF-8 解码会误判为缺失）。
-- `REUSED_COMPLETE` / `QUEUE_DRAINED` 在 `tests/*.py`（共 4 个测试文件）中覆盖数 **0**。
-- `outputs/charts_120d` 实测 **1920** 个跟踪文件（939 hit / 980 miss / 1 `index.html`），**每个策略目录 40 个文件 = 20 hit + 20 miss = 50.00%**，`src/make_charts.py:319/382-383/417` 源码自称 balanced sample 且明写 **"this is NOT the hit rate"** —— 禁止当作命中率引用。
+1. `T0_clean_hgb`
+2. `T0_clean_rf`
+3. `T1_pruned_hgb`
+4. `T1_pruned_rf`
+5. `T2_regime_hgb`
+6. `T2_regime_rf`
 
-### 测试真数
-
-净提取（`git archive origin/main`，绕过脏工作树）内：`python -m pytest -q` → **65 passed in 23.81s, exit 0**；`-v` 第二次独立计数 → **65 passed in 21.87s, exit 0**。本仓库**无** `pyproject.toml` / `pytest.ini`，故 `-q` 会照常打印汇总行。
-
-### 三小时四状态
-
-- 云端／本轮 prompt：**未改**；本轮没有管理排程。
-- GitHub 审计／任务书：**已更新**。
-- 本机 runtime：**NOT_VERIFIED / LOCAL_APPLY_PENDING**。
-- 本机单次连续 10800 有效秒：**NOT_VERIFIED**。
-
-tracked 13200s 只是 runner 硬超时，不是完成三小时的证据；`PT2H30M` 短上限本轮无本机证据证明已修。
-
-## 历史报告（链接直接保留）
-
-- [`2026-09-24_02-01-50_JST.md`](./2026-09-24_02-01-50_JST.md)
-- [`2026-09-23_23-41-00_JST.md`](./2026-09-23_23-41-00_JST.md)
+其中 regime 只能使用 t 及以前已知的 breadth / index drawdown-volatility / liquidity-turnover / cross-sectional dispersion。每个 fit 必须保存**全部 dev candidate predictions**以及 TP/signals/precision/recall/base rate/lift/AP/Brier/log-loss/逐折结果。随后必须做高置信 FP/FN 切片，并只基于一个有支持机制做 `ERR_MECH` + `ERR_CONTROL` 配对重训。没有这些产物，pytest 或 Markdown 不算模型进展。
 
 ## 前一版索引（不可变保留）
 
-[截至 `3110d22e04a9c740d1dae7135db518d7402fe9b0` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/3110d22e04a9c740d1dae7135db518d7402fe9b0/docs/audits/expert-ml/LATEST.md)。
+[截至 `7c8596e654dc1a376df195540d3b4aa72347b055` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/7c8596e654dc1a376df195540d3b4aa72347b055/docs/audits/expert-ml/LATEST.md)。
 
-历史审计 Markdown 未删除。旧状态按各自固定 SHA 与审计时点解释。
+历史审计 Markdown 未删除；旧状态按各自固定 SHA 与审计时点解释。H10 历史结果只用于研究方法诊断，不得冒充 H504 成绩。
