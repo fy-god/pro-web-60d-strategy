@@ -1,93 +1,52 @@
 # 专家／ML线研究与审计索引
 
-## 最新审计（2026-09-24 11:40 JST）：时长链倒置——注册上限 9000s 低于 10800s 目标，且成功退出口不读收据
+## 最新审计（2026-09-24 13:59 JST）：H504 现在没有冻结 publication policy，`COMPLETE_H504_DEV` 不能回答 50%/70%
 
-- 完整报告：[`2026-09-24_11-40-00_JST.md`](./2026-09-24_11-40-00_JST.md)。
-- 被审 `main` 起点：`0a5f5932a31687578b2e775478ad9d92853dd9a5`；`git ls-remote` 回读一致；相对其父 `7c8596e6` **只加 2 个 docs 提交**，
-  `git diff --name-status -- . ':(exclude)docs'` **为空** ⇒ 被点名的 6 个源码文件**零字节变化**。
-- 本轮真实 A 股 H504 fit 增量：**0**；`TARGET50_REACHED=NO`；`TARGET70_REACHED=NO`。
-- 本机 runtime：**NOT_VERIFIED**（本线未查询本机已注册任务，只对跟踪模板下结论）。
-- 本仓**无** `docs/audits/validate_latest.py` ⇒ **不声称**通过该门禁。
-
-### 本轮新增/升级
-
-1. **【已确认错误 · P1】`PT2H30M` = 9000 s 比 10800 s 研究目标低 1800 s。**
-   `scripts/register_fixup_task.ps1:96`（→`:115`）与 `scripts/run_fixup.task.xml:16` 同值。
-   链序应当单调，实测**倒置**：`9000 < 13200 > 12600 > 10800`。
-   ⇒ 在该任务定义下 `target_met`（`receipts.py:173`）**由构造即不可满足**。
-   前轮已建议改 `PT3H50M`(13800 s)，本轮补上算术后果：不是「还没接入」，而是**接入了也达不成**。
-2. **【已确认错误 · P1】成功退出口不读 `target_met`（4 臂实测，含阴性对照）。**
-   真 `scripts/run_fixup.py`，仅替换 `Popen`：收据写 `target_met=false`、`effective_seconds=12.5` ⇒ **exit 0**；
-   **完全无收据**也 exit 0；**阴性对照** child `rc=1` ⇒ **exit 1**（证明映射确由 child rc 驱动，故 0 是真 fail-open）。
-   `run_fixup.py` 从不打开 `execution_receipt.json`（命中 0）；`:161` 的
-   `'training_status':'READ_RESEARCH_EXECUTION_RECEIPT'` 是**字面量**，不是读取。
-3. **【已确认错误 · P2】缺陷被测试钉死**：`tests/research_h504/test_candidate.py:315-331`
-   **同一测试**既断言 `main(...) == 0`（`:320-322`）又断言 `end['target_met'] is False`（`:327`）。
-4. **【已确认错误 · P2】零测试覆盖（变异实测）**：`run_fixup.py` 终判改 `return 0` ⇒ **65 passed 存活**；
-   `PT2H30M`→`PT3H50M` ⇒ **65 passed 存活**。
-   **阳性对照**：打断 `registry.latest_complete` ⇒ 1 failed；`run.py` 末 `return 0`→`7` ⇒ 3 failed（装置有判别力）。
-5. **【修复后回归】前轮 5 条开放项 5/5 仍 `STILL_TRUE`**（blob：`run.py c27711f6`、
-   `registry.py 82b1987b`、`receipts.py cdac56d8`、`run_fixup.py 26a61796`、
-   `register_fixup_task.ps1 1c133254`、`run_fixup.task.xml 363a57e4`）。路径精度更正：真实文件是
-   `src/ml/research_h504/run.py`，仓库根**没有** `run.py`。
-
-### 真实执行计数（软件样本）
-
-- 尖端干净克隆真套件：**`65 passed`**（`26.92s`；复跑 `22.18s`），`65 tests collected`。
-- 退出码臂 **4 条**；变异 **5 组**（含基线 + 2 阳性对照）。
-
-### 待验证风险
-
-- 另一个写入者工作树里**未提交**的 `docs/audits/expert-ml/LATEST.md`（9081 B，sha256 `84f75697…`）
-  表头是 **2026-09-22 07:41**，比尖端**落后 52 个提交**；若其提交/推送，**索引会回退**。
-  我**未**改动它（不得覆盖他人未提交改动），本轮从尖端克隆发布。
-  其同批未提交的 `scripts/register_fixup_task.ps1` 改动只是 CRLF 归一化，`PT2H30M` 两版都是 1 处，**未修本问题**。
-
-## 上一轮索引（不可变保留）
-
-上一轮：`2026-09-24 09:59 JST`（[`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)），被审 `main` 起点
-`7c8596e654dc1a376df195540d3b4aa72347b055`。
-
-## 最新审计（2026-09-24 09:59 JST）：先修“几分钟下班”的执行器，再把模型预算转向 causal regime + 候选总体富集
-
-- 完整报告：[`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)。
-- 被审 `main` 起点：`7c8596e654dc1a376df195540d3b4aa72347b055`；本轮开始时 Open PR=0，产品研究源码相对上一轮无新提交。
+- 完整报告：[`2026-09-24_13-59-17_JST.md`](./2026-09-24_13-59-17_JST.md)。
+- 被审 `main` 起点：`6050d6e4abfaac9efc8f55629a7973717238d1f1`；Open PR=0。
+- `0a5f5932..6050d6e4` 只有上一份审计报告与 `LATEST.md` 两个 docs 路径变化，产品研究源码没有新提交。
 - 本轮真实 A 股 H504 fit 增量：**0**；`TARGET50_REACHED=NO`；`TARGET70_REACHED=NO`。
 - 本机 runtime：**NOT_VERIFIED / LOCAL_APPLY_PENDING**；单次连续10800有效秒：**NOT_VERIFIED**。
 
-### 本轮新增的模型研究诊断
+### 本轮新增核心结论
 
-1. **HGB 的 pooled 16.44% 被强烈的折间信号密度偏斜支配。** `wide_hgb_2` 四折 precision 为 14.56% / 24.72% / 21.09% / 33.60%，但 **83.78%** 的信号都出现在最弱的第一折；pooled=16.44%，四折等权均值=23.49%。这说明“市场阶段下应该发多少信号”本身是核心建模问题，下一步优先 causal regime conditioning / rank budget，而不是继续加树深。
-2. **RF 是更稳健的 H10 方法学基准。** `wide_rf_32` 四折约 22.88% / 18.36% / 18.06% / 20.71%，pooled=20.84%，等权均值=20.00%；离50%仍远，但折间稳定性明显好于 HGB。真实 H504 首轮不应只有 HGB，至少固定同一 candidate/outcome/fold 比较 Logistic/HGB/RF/ExtraTrees。
-3. **旧 H10 score 仅靠阈值仍没有50%的证据。** dense OOS precision ceiling：raw max≈26.78%，rank 在至少50个信号时≈32.73%；因此下一步的50%假设必须来自候选总体重定义、因果 regime、hard-negative discrimination 或真正的新信息，而不是 threshold cosmetics。
+1. **【P1 · 已确认】`EML-P1-H504-NO-FROZEN-PUBLICATION-POLICY-001`**：当前 `src/ml/research_h504/train_h504.py` 的 HGB 只输出 `logloss / brier / average_precision` 和 raw dev `score`；没有 `threshold / signals / TP / FP / precision / recall / publication_rate / TARGET50_REACHED`。因此 `COMPLETE_H504_DEV` 目前只代表 score model 跑完，**不是 50%/70% 命中率认证**。
+2. `src/ml/research_h504/run.py` 也没有 calibration block 或 frozen threshold；如果事后直接在同一 dev 上扫阈值找 50%，会把 dev 同时当 policy-selection 与 evaluation，重新产生选择偏差。
+3. 正确协议应为 **train → calibration → untouched dev**：模型在 train 拟合；publication policy 只在 calibration 预注册 grid 上选择；threshold/rank budget 在打开 dev 前冻结；dev 只做一次 TP/signals/precision/recall 评价。
+4. unknown/no-entry 不能在结果出来后从 issued set 删除并补位。应同时保存 `issued_signals / resolved_signals / unknown / no_entry / precision_resolved / precision_issued_lower_bound`；target gate 首轮建议用更保守的 issued-denominator lower bound。
+5. 当前 `fold_support.py` 的 train→dev dense 理论下界是 `2H+2=1010` sessions；若要 train→calibration→untouched dev 三段均 full maturity，dense 理论下界是 **`3H+3=1515` market sessions**（H=504）。本机真实历史是否达到该支持仍 `NOT_VERIFIED`。
 
-### 本轮执行器候选
+### 本轮隔离候选
 
-隔离沙箱实现了 `eml_auto18_research_queue_candidate.zip`，SHA-256 `cf3c313fe7a1a92cd4f6c26e73d743599e4b54baa332a28bdf8e4885b9bf300e`，单测 **7 passed in 0.07s**。它把 v5 中目前只写在任务书里的工作真正编码成 queue node：H504 T0-T5、MLP、TCN、六项消融、第二dev、error mechanism/control 与 AUX fallback；`REUSED_COMPLETE` 不算新工作，`INTERRUPTED` 优先续跑，`evidence_type` 进入 signature，under-target 且仍有 READY/NEEDS_IMPLEMENTATION/INTERRUPTED 时不得成功退出。
+- `eml_auto19_h504_precision_policy.zip`
+- SHA-256：`14d930846fe5f877b939107a91879e15f9b009ff491d6db8fd724c2009057928`
+- 软件测试：**6 passed in 0.05s**。
+- 候选接口：`PolicySpec`、`choose_policy_on_calibration()`、`apply_frozen_policy()`、`evaluate_fixed_issued_set()`、`minimum_dense_sessions_train_calib_dev()`。
+- 该候选不写产品源码，不计48-fit，不计 real_train_seconds，不是市场成绩。
 
-### 当前执行器仍开放的硬问题
+### 下一次真正有资格叫“模型进展”的 H504 证据
 
-- `run.py --stage all` 机器化的主线仍只有 **H504 T0 1 fit + 有限 AUX-TCN**；T1-T5 / H504 MLP/TCN / ablation / error-driven refit 仍不是持久任务节点。
-- `Registry.latest_complete(signature)` 仍不校验 evidence class；真实和合成来源隔离不足。
-- `ResearchSessionReceipt` 只记录 `target_met`，runner 不用它控制成功退出。
-- `scripts/run_fixup.py` 仍最终依据 child rc；`target_met=false` 也可能外层成功。
-- tracked runner timeout=13200s，但 `register_fixup_task.ps1` 仍生成 `PT2H30M`，且会 delete/create task；不符合 v5 的既有任务窄修改要求。
+必须同时出现：
 
-### 下一次真实本机研究的第一波 6 fit
+```text
+真实 candidate/outcome ledger
+合法 train→calibration→dev support
+真实 fit/checkpoint
+calibration predictions
+frozen_policy.json
+untouched dev predictions
+TP / signals / precision / recall / base rate / lift / AP / Brier / log-loss
+TARGET50_REACHED 或 TARGET50_NOT_REACHED
+```
 
-固定同一 H504 candidate/outcome/fold，只先跑：
+若历史不支持三段 full-maturity，状态必须是 `BLOCKED_PROTOCOL_H504_POLICY`；可以继续 score 模型/AUX/forward ledger，但不能拿同一 dev 调 threshold 后再报 50%。
 
-1. `T0_clean_hgb`
-2. `T0_clean_rf`
-3. `T1_pruned_hgb`
-4. `T1_pruned_rf`
-5. `T2_regime_hgb`
-6. `T2_regime_rf`
+### 继续开放但本轮不重复展开
 
-其中 regime 只能使用 t 及以前已知的 breadth / index drawdown-volatility / liquidity-turnover / cross-sectional dispersion。每个 fit 必须保存**全部 dev candidate predictions**以及 TP/signals/precision/recall/base rate/lift/AP/Brier/log-loss/逐折结果。随后必须做高置信 FP/FN 切片，并只基于一个有支持机制做 `ERR_MECH` + `ERR_CONTROL` 配对重训。没有这些产物，pytest 或 Markdown 不算模型进展。
+上一轮 11:40 JST 已确认的运行时问题仍未见产品源码提交修复：tracked task template `PT2H30M=9000s < 10800s target`、`target_met=false` 不阻止成功退出、evidence class 复用隔离不足、机器任务图没有覆盖完整 T1-T5/MLP/TCN/ablation/error-driven queue。更早的 G1 数据/标签问题同样仍开放。
 
-## 前一版索引（不可变保留）
+## 上一版索引（不可变保留）
 
-[截至 `7c8596e654dc1a376df195540d3b4aa72347b055` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/7c8596e654dc1a376df195540d3b4aa72347b055/docs/audits/expert-ml/LATEST.md)。
+[截至 `6050d6e4abfaac9efc8f55629a7973717238d1f1` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/6050d6e4abfaac9efc8f55629a7973717238d1f1/docs/audits/expert-ml/LATEST.md)。
 
-历史审计 Markdown 未删除；旧状态按各自固定 SHA 与审计时点解释。H10 历史结果只用于研究方法诊断，不得冒充 H504 成绩。
+上一份完整报告：[`2026-09-24_11-40-00_JST.md`](./2026-09-24_11-40-00_JST.md)。历史审计 Markdown 未删除；旧状态按各自固定 SHA 与审计时点解释。H10 历史结果只用于研究方法诊断，不得冒充 H504 成绩。
