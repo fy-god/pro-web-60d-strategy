@@ -1,5 +1,53 @@
 # 专家／ML线研究与审计索引
 
+## 最新审计（2026-09-24 11:40 JST）：时长链倒置——注册上限 9000s 低于 10800s 目标，且成功退出口不读收据
+
+- 完整报告：[`2026-09-24_11-40-00_JST.md`](./2026-09-24_11-40-00_JST.md)。
+- 被审 `main` 起点：`0a5f5932a31687578b2e775478ad9d92853dd9a5`；`git ls-remote` 回读一致；相对其父 `7c8596e6` **只加 2 个 docs 提交**，
+  `git diff --name-status -- . ':(exclude)docs'` **为空** ⇒ 被点名的 6 个源码文件**零字节变化**。
+- 本轮真实 A 股 H504 fit 增量：**0**；`TARGET50_REACHED=NO`；`TARGET70_REACHED=NO`。
+- 本机 runtime：**NOT_VERIFIED**（本线未查询本机已注册任务，只对跟踪模板下结论）。
+- 本仓**无** `docs/audits/validate_latest.py` ⇒ **不声称**通过该门禁。
+
+### 本轮新增/升级
+
+1. **【已确认错误 · P1】`PT2H30M` = 9000 s 比 10800 s 研究目标低 1800 s。**
+   `scripts/register_fixup_task.ps1:96`（→`:115`）与 `scripts/run_fixup.task.xml:16` 同值。
+   链序应当单调，实测**倒置**：`9000 < 13200 > 12600 > 10800`。
+   ⇒ 在该任务定义下 `target_met`（`receipts.py:173`）**由构造即不可满足**。
+   前轮已建议改 `PT3H50M`(13800 s)，本轮补上算术后果：不是「还没接入」，而是**接入了也达不成**。
+2. **【已确认错误 · P1】成功退出口不读 `target_met`（4 臂实测，含阴性对照）。**
+   真 `scripts/run_fixup.py`，仅替换 `Popen`：收据写 `target_met=false`、`effective_seconds=12.5` ⇒ **exit 0**；
+   **完全无收据**也 exit 0；**阴性对照** child `rc=1` ⇒ **exit 1**（证明映射确由 child rc 驱动，故 0 是真 fail-open）。
+   `run_fixup.py` 从不打开 `execution_receipt.json`（命中 0）；`:161` 的
+   `'training_status':'READ_RESEARCH_EXECUTION_RECEIPT'` 是**字面量**，不是读取。
+3. **【已确认错误 · P2】缺陷被测试钉死**：`tests/research_h504/test_candidate.py:315-331`
+   **同一测试**既断言 `main(...) == 0`（`:320-322`）又断言 `end['target_met'] is False`（`:327`）。
+4. **【已确认错误 · P2】零测试覆盖（变异实测）**：`run_fixup.py` 终判改 `return 0` ⇒ **65 passed 存活**；
+   `PT2H30M`→`PT3H50M` ⇒ **65 passed 存活**。
+   **阳性对照**：打断 `registry.latest_complete` ⇒ 1 failed；`run.py` 末 `return 0`→`7` ⇒ 3 failed（装置有判别力）。
+5. **【修复后回归】前轮 5 条开放项 5/5 仍 `STILL_TRUE`**（blob：`run.py c27711f6`、
+   `registry.py 82b1987b`、`receipts.py cdac56d8`、`run_fixup.py 26a61796`、
+   `register_fixup_task.ps1 1c133254`、`run_fixup.task.xml 363a57e4`）。路径精度更正：真实文件是
+   `src/ml/research_h504/run.py`，仓库根**没有** `run.py`。
+
+### 真实执行计数（软件样本）
+
+- 尖端干净克隆真套件：**`65 passed`**（`26.92s`；复跑 `22.18s`），`65 tests collected`。
+- 退出码臂 **4 条**；变异 **5 组**（含基线 + 2 阳性对照）。
+
+### 待验证风险
+
+- 另一个写入者工作树里**未提交**的 `docs/audits/expert-ml/LATEST.md`（9081 B，sha256 `84f75697…`）
+  表头是 **2026-09-22 07:41**，比尖端**落后 52 个提交**；若其提交/推送，**索引会回退**。
+  我**未**改动它（不得覆盖他人未提交改动），本轮从尖端克隆发布。
+  其同批未提交的 `scripts/register_fixup_task.ps1` 改动只是 CRLF 归一化，`PT2H30M` 两版都是 1 处，**未修本问题**。
+
+## 上一轮索引（不可变保留）
+
+上一轮：`2026-09-24 09:59 JST`（[`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)），被审 `main` 起点
+`7c8596e654dc1a376df195540d3b4aa72347b055`。
+
 ## 最新审计（2026-09-24 09:59 JST）：先修“几分钟下班”的执行器，再把模型预算转向 causal regime + 候选总体富集
 
 - 完整报告：[`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)。
