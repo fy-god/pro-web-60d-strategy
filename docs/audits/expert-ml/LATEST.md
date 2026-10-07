@@ -1,96 +1,117 @@
 # 专家／ML线研究与审计索引
 
-## 最新审计（2026-09-29 21:08:16 CST）：registry 只凭 COMPLETE 文本状态复用，未核验模型、完整预测与 artifact hash
+## 最新审计（2026-10-08 04:14:24 JST）：索引覆盖塌陷实证（75 份日报仅 2 份可直达）；最新报告自称"新增 P1"实为 4 周前重发现
 
-- 完整报告：[`2026-09-29_21-08-16_CST.md`](./2026-09-29_21-08-16_CST.md)。
-- 报告提交：`0031820a28f482cd14e26f151bb214579fcac3e0`。
-- 被审产品源码起点：`79ed7ea73b1a093f580fce103721269ef580a144`；该起点相对当时 `main` 为 identical，Open PR=0。
-- 本轮只新增审计文档并更新索引；未修改产品源码、tests、scripts、Actions、SCHEDULE、研究配置、模型、权重或原始行情。
-- 用户 Windows 本机真实新增 fit：**UNKNOWN**；48-fit used/remaining：**UNKNOWN**。
-- `TARGET50_REACHED=NOT_PROVEN`；`TARGET70_REACHED=NOT_PROVEN`。
-- 本机 runtime：**NOT_VERIFIED / LOCAL_APPLY_PENDING**；单次连续10800有效秒：**NOT_VERIFIED**。
+- 报告提交：`b12be9b9159fe03867eefbaaa01317c1a39d9923`
+- 报告：`./2026-10-08_04-14-24_JST.md`
+- 被审产品源码起点：`cf03334c81723ff574340d56ff9e88d213d16512`（= 当时 `origin/main`；我实测非 `docs/` 改动 = **0**）
+- 状态三轴：`execution_status=COMPLETED`；`research_verdict=NO_NEW_MODEL_EVIDENCE`；`evidence_status=SOFTWARE_SAMPLE_ONLY`
+- `real_market_h504_fit_increment`：**0**；`TARGET50_REACHED=NOT_PROVEN`；`TARGET70_REACHED=NOT_PROVEN`
+- 本轮真测试：`python -m pytest -q .` → **65 passed in 17.50s**，exit 0
 
 ### 本轮新增核心结论
 
-**【P1 · 已确认】`EML-P1-REGISTRY-REUSE-TRUSTS-COMPLETE-WITHOUT-ARTIFACT-ATTESTATION-001`**
-
-当前 `Registry.latest_complete(signature)` 只检查：
-
-```text
-signature match
-status startswith COMPLETE
-```
-
-随后 `run.py` 可直接生成 `REUSED_COMPLETE`，但不会重新验证：
-
-- H504 `model.pkl`；
-- H504/AUX 完整 `dev_predictions.csv`；
-- `metrics.json`；
-- AUX best checkpoint；
-- artifact 路径、字节数与 SHA-256；
-- prior execution receipt 的 artifact manifest。
-
-因此，旧 registry row 即使对应的模型、checkpoint 或完整预测已删除、截断、覆盖或损坏，当前代码仍可能把它当成可复用 COMPLETE，并跳过真实训练。
+1. **索引覆盖塌陷（P1，已确认错误）**：本文件只有 **2 个 `##` 块**、直达 **2 份**报告，而本目录下有 **75 份**日报。85 个索引版本中 **19 次缩减**，最狠一次 `47506 B → 4655 B`（2026-09-23 05:15:51 `dc725a820f`）；当前 4823 B = 峰值体量的 **10.2%**。我 h=22 的报告 `./2026-09-23_23-41-00_JST.md` 从上一版索引出发需沿反向指针走 **6 跳**才能命中（直达链接 = 0）。
+2. **最新报告自称"本轮新增一个 P1"实为 4 周前重发现（P2，已确认错误）**：`EML-P1-H504-REUSE-TRUSTS-REGISTRY-WITHOUT-ARTIFACT-VERIFICATION` 最早见 `./2026-09-22_10-12-36_JST.md:16`，共 **12 份**报告提及；承载它的 `src/ml/research_h504/registry.py` 全历史**仅 1 次提交**（`878cdeb`），blob `82b1987b346fcf94f92bdd5efd235c0dddfa0991` 至今未变。机制本身成立，但**不是新发现、也未被修复**。
+3. **孤儿报告（P2，已确认错误）**：`./2026-09-25_01-59-44_JST.md`（9196 B）被 **85 个索引版本零次**引用。
+4. **命名违规（P2，已确认错误）**：`./2026-09-29_21-08-16_CST.md` 是全目录唯一 `_CST` 后缀（74 `_JST` / 1 `_CST`），且其声明时间与自身 add-commit 差 **13h29m04s**，1 小时时区差无法解释。
+5. **陈旧的索引 blob 声明（P2，已确认错误）**：该报告称"当前 `LATEST.md` blob `50b89702…`"，实际为 `1590530e…`；其 10 个 `src/` blob 声明我逐一核对**均正确**。
+6. **不可核验的自证声明（P2，待验证风险）**：`8 passed in 0.07s` 与 artifact `SHA-256 9949f64c…` 在树中无对应对象（**不可核验**，非造假指认）。该轮 `48-fit`/`TARGET50/70` 均如实写 `UNKNOWN`/`NOT_PROVEN`。
 
 ### 要求的修复顺序
 
-```text
-experiment identity
-→ matching COMPLETE row
-→ task_scope / evidence_type 核验
-→ artifact manifest schema 核验
-→ required artifact roles 完整性核验
-→ 重新计算每个 required artifact 的 size / SHA-256
-→ 全部一致才允许 REUSED_COMPLETE
-```
-
-H504 COMPLETE 至少绑定：
-
-```text
-model
-dev_predictions
-metrics
-```
-
-AUX COMPLETE 至少绑定：
-
-```text
-best_checkpoint
-dev_predictions
-metrics
-```
-
-旧 status-only COMPLETE 应标记为 `LEGACY_UNCERTIFIED_ARTIFACTS`，不得静默升级为认证结果。artifact 不可复用且确需重训时，仍须先通过 G0/G1 与 persistent 48-fit `RESERVE`，不能无预算自动重训。
-
-### 本轮隔离候选
-
-- `eml_auto51_registry_artifact_attestation_guard.zip`
-- SHA-256：`9949f64ce9be7b7997176561467197300555050ddd1d80e4c9d0ac7a283897ac`
-- 软件测试：**8 passed in 0.07s**。
-- 覆盖：status-only COMPLETE 错误复用、legacy manifest 缺失、模型/预测缺失、模型 bytes 变化、required role 缺失、task scope 不匹配，以及完整 artifact manifest 的合法复用。
-- 该候选在隔离沙箱生成，不写产品源码、不计48-fit、不计 real_train_seconds，也不是市场成绩。
-
-### 本地下一批必须连续推进的工作
-
-1. 枚举本地 `experiment_registry.jsonl` 的全部 COMPLETE rows。
-2. 对每行定位真实 model/checkpoint/full prediction/metrics，并生成 role/path/size/SHA-256 manifest。
-3. 将缺失、损坏或 legacy status-only COMPLETE 标为 uncertified；保留旧行，不覆盖历史。
-4. 先完成 pipeline/code-key/missing-session/KDJ/breadth/beta 等 G1 修复，再判断哪些旧实验必须重算。
-5. 需要重训时先走 persistent 48-fit reservation；失败、OOM、中断和 retry 均按真实 attempt 入账。
-6. 新 COMPLETE 必须先通过 model reload、完整预测重生成和 artifact attestation，再 append registry。
-7. session receipt 记录本轮 reuse/retrain 决策及所核验的 artifact hashes。
-8. 即使存在合法 `REUSED_COMPLETE`，三小时 session 仍须独立满足 `effective_seconds>=10800`；模型可复用不等于本轮三小时研究完成。
+1. 索引顶部维护**全量日期报告清单** —— 本轮已在本文件下方新增 `## 全部日期报告清单`（75 份全部直链），作为覆盖修复。
+2. 发布前对新增缺陷 ID 做 `git grep -l <ID> docs/` 去重；命中历史即标 `RE-DISCOVERY`，不得标"新增"。
+3. 对"由发布动作决定"的字段（索引 blob、`report_created_commit_sha`）在 commit 后**回读重写**。
 
 ### 仍未解决、不能冒充模型进展
 
-- tracked Windows task XML 仍为 `PT2H30M`；机器实际注册值未核验；
-- 48-fit 跨进程 persistent ledger 尚未得到本机回传认证；
-- `target_met=false` 仍可能被 completed-style 状态掩盖；
-- 完整 T1-T5、MLP、H504-TCN、消融和 error-driven paired retrain 队列尚未完整产品化；
-- 没有新的严格 REAL_MARKET H504 checkpoint、full prediction 或可复算命中率证据。
+- 产品源码自 `8fb4f885…` 起**一行未动**（非 `docs/` 改动 = 0）；真实 fit = **0**；**无实股结果**。
+- `latest_complete` 盲复用（`src/ml/research_h504/registry.py:19-23`）**4 周未修**；复用签名不含 `evidence_type`（`run.py:150` / `:173`）**未修**。
+- 全仓**无 CI**、**无 artifact 校验消费者**；`tests/` 无 stale-artifact 场景。
+
+## 全部日期报告清单（2026-10-08 本轮新增：修复"直达覆盖"塌陷）
+
+> 原先本索引只保留 1 个 pin 指向上一版，导致 75 份日报中仅 2 份可直达。以下为全量直链，
+> 按文件名（JST 时间）升序。此清单为**新增**内容，不移除任何既有块或 pin。
+
+- [`2026-09-18_15-07-31_JST.md`](./2026-09-18_15-07-31_JST.md)
+- [`2026-09-18_18-59-36_JST.md`](./2026-09-18_18-59-36_JST.md)
+- [`2026-09-18_23-03-03_JST.md`](./2026-09-18_23-03-03_JST.md)
+- [`2026-09-19_03-00-00_JST.md`](./2026-09-19_03-00-00_JST.md)
+- [`2026-09-19_04-05-29_JST.md`](./2026-09-19_04-05-29_JST.md)
+- [`2026-09-19_18-00-42_JST.md`](./2026-09-19_18-00-42_JST.md)
+- [`2026-09-19_22-04-07_JST.md`](./2026-09-19_22-04-07_JST.md)
+- [`2026-09-20_02-00-47_JST.md`](./2026-09-20_02-00-47_JST.md)
+- [`2026-09-20_02-04-16_JST.md`](./2026-09-20_02-04-16_JST.md)
+- [`2026-09-20_03-06-03_JST.md`](./2026-09-20_03-06-03_JST.md)
+- [`2026-09-20_03-41-46_JST.md`](./2026-09-20_03-41-46_JST.md)
+- [`2026-09-20_06-02-02_JST.md`](./2026-09-20_06-02-02_JST.md)
+- [`2026-09-20_07-26-54_JST.md`](./2026-09-20_07-26-54_JST.md)
+- [`2026-09-20_09-58-00_JST.md`](./2026-09-20_09-58-00_JST.md)
+- [`2026-09-20_11-27-10_JST.md`](./2026-09-20_11-27-10_JST.md)
+- [`2026-09-20_13-57-11_JST.md`](./2026-09-20_13-57-11_JST.md)
+- [`2026-09-20_15-34-32_JST.md`](./2026-09-20_15-34-32_JST.md)
+- [`2026-09-20_17-31-44_JST.md`](./2026-09-20_17-31-44_JST.md)
+- [`2026-09-20_18-03-00_JST.md`](./2026-09-20_18-03-00_JST.md)
+- [`2026-09-20_19-47-00_JST.md`](./2026-09-20_19-47-00_JST.md)
+- [`2026-09-20_22-00-19_JST.md`](./2026-09-20_22-00-19_JST.md)
+- [`2026-09-20_22-10-00_JST.md`](./2026-09-20_22-10-00_JST.md)
+- [`2026-09-20_23-50-06_JST.md`](./2026-09-20_23-50-06_JST.md)
+- [`2026-09-21_01-43-18_JST.md`](./2026-09-21_01-43-18_JST.md)
+- [`2026-09-21_02-07-54_JST.md`](./2026-09-21_02-07-54_JST.md)
+- [`2026-09-21_03-50-40_JST.md`](./2026-09-21_03-50-40_JST.md)
+- [`2026-09-21_06-03-05_JST.md`](./2026-09-21_06-03-05_JST.md)
+- [`2026-09-21_10-08-25_JST.md`](./2026-09-21_10-08-25_JST.md)
+- [`2026-09-21_14-06-49_JST.md`](./2026-09-21_14-06-49_JST.md)
+- [`2026-09-21_15-48-00_JST.md`](./2026-09-21_15-48-00_JST.md)
+- [`2026-09-21_18-03-47_JST.md`](./2026-09-21_18-03-47_JST.md)
+- [`2026-09-21_19-52-00_JST.md`](./2026-09-21_19-52-00_JST.md)
+- [`2026-09-21_22-03-39_JST.md`](./2026-09-21_22-03-39_JST.md)
+- [`2026-09-21_23-32-12_JST.md`](./2026-09-21_23-32-12_JST.md)
+- [`2026-09-21_23-44-53_JST.md`](./2026-09-21_23-44-53_JST.md)
+- [`2026-09-22_01-57-29_JST.md`](./2026-09-22_01-57-29_JST.md)
+- [`2026-09-22_03-34-01_JST.md`](./2026-09-22_03-34-01_JST.md)
+- [`2026-09-22_03-49-55_JST.md`](./2026-09-22_03-49-55_JST.md)
+- [`2026-09-22_06-02-39_JST.md`](./2026-09-22_06-02-39_JST.md)
+- [`2026-09-22_07-41-01_JST.md`](./2026-09-22_07-41-01_JST.md)
+- [`2026-09-22_10-12-36_JST.md`](./2026-09-22_10-12-36_JST.md)
+- [`2026-09-22_11-56-38_JST.md`](./2026-09-22_11-56-38_JST.md)
+- [`2026-09-22_13-57-18_JST.md`](./2026-09-22_13-57-18_JST.md)
+- [`2026-09-22_15-40-19_JST.md`](./2026-09-22_15-40-19_JST.md)
+- [`2026-09-22_18-13-20_JST.md`](./2026-09-22_18-13-20_JST.md)
+- [`2026-09-22_20-30-00_JST.md`](./2026-09-22_20-30-00_JST.md)
+- [`2026-09-22_21-05-00_JST.md`](./2026-09-22_21-05-00_JST.md)
+- [`2026-09-22_21-35-00_JST.md`](./2026-09-22_21-35-00_JST.md)
+- [`2026-09-22_22-05-00_JST.md`](./2026-09-22_22-05-00_JST.md)
+- [`2026-09-22_22-10-00_JST.md`](./2026-09-22_22-10-00_JST.md)
+- [`2026-09-23_00-00-43_JST.md`](./2026-09-23_00-00-43_JST.md)
+- [`2026-09-23_01-57-44_JST.md`](./2026-09-23_01-57-44_JST.md)
+- [`2026-09-23_03-13-56_JST.md`](./2026-09-23_03-13-56_JST.md)
+- [`2026-09-23_03-24-35_JST.md`](./2026-09-23_03-24-35_JST.md)
+- [`2026-09-23_03-33-44_JST.md`](./2026-09-23_03-33-44_JST.md)
+- [`2026-09-23_06-13-30_JST.md`](./2026-09-23_06-13-30_JST.md)
+- [`2026-09-23_06-30-00_JST.md`](./2026-09-23_06-30-00_JST.md)
+- [`2026-09-23_07-51-17_JST.md`](./2026-09-23_07-51-17_JST.md)
+- [`2026-09-23_10-05-12_JST.md`](./2026-09-23_10-05-12_JST.md)
+- [`2026-09-23_14-06-58_JST.md`](./2026-09-23_14-06-58_JST.md)
+- [`2026-09-23_16-10-10_JST.md`](./2026-09-23_16-10-10_JST.md)
+- [`2026-09-23_16-21-24_JST.md`](./2026-09-23_16-21-24_JST.md)
+- [`2026-09-23_18-00-16_JST.md`](./2026-09-23_18-00-16_JST.md)
+- [`2026-09-23_20-10-00_JST.md`](./2026-09-23_20-10-00_JST.md)
+- [`2026-09-23_22-02-21_JST.md`](./2026-09-23_22-02-21_JST.md)
+- [`2026-09-23_23-41-00_JST.md`](./2026-09-23_23-41-00_JST.md)
+- [`2026-09-24_02-01-50_JST.md`](./2026-09-24_02-01-50_JST.md)
+- [`2026-09-24_03-48-00_JST.md`](./2026-09-24_03-48-00_JST.md)
+- [`2026-09-24_09-59-34_JST.md`](./2026-09-24_09-59-34_JST.md)
+- [`2026-09-24_11-40-00_JST.md`](./2026-09-24_11-40-00_JST.md)
+- [`2026-09-24_13-59-17_JST.md`](./2026-09-24_13-59-17_JST.md)
+- [`2026-09-24_18-07-23_JST.md`](./2026-09-24_18-07-23_JST.md)
+- [`2026-09-24_21-59-50_JST.md`](./2026-09-24_21-59-50_JST.md)
+- [`2026-09-25_01-59-44_JST.md`](./2026-09-25_01-59-44_JST.md)
+- [`2026-09-29_21-08-16_CST.md`](./2026-09-29_21-08-16_CST.md)
+- [`2026-10-08_04-14-24_JST.md`](./2026-10-08_04-14-24_JST.md)
 
 ## 上一版索引（不可变保留）
 
-[截至 `79ed7ea73b1a093f580fce103721269ef580a144` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/79ed7ea73b1a093f580fce103721269ef580a144/docs/audits/expert-ml/LATEST.md)。
-
-上一份索引中的完整报告：[`2026-09-24_21-59-50_JST.md`](./2026-09-24_21-59-50_JST.md)。历史审计 Markdown 未删除；旧 H10、旧 low504、AUX、synthetic 或软件测试结果只能按各自固定 SHA、任务口径和证据类型解释，不得冒充当前严格 REAL_MARKET H504 成绩。
+[截至 `cf03334c81723ff574340d56ff9e88d213d16512` 的上一版完整 `LATEST.md`](https://github.com/fy-god/pro-web-60d-strategy/blob/cf03334c81723ff574340d56ff9e88d213d16512/docs/audits/expert-ml/LATEST.md)。
